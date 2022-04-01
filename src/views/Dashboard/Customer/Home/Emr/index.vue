@@ -104,9 +104,8 @@ import {
 } from "@debionetwork/polkadot-provider"
 
 import {
-  queryGetEMRList,
-  queryElectronicMedicalRecordFileById,
-  queryElectronicMedicalRecordById
+  queryElectronicMedicalRecordByOwnerId,
+  queryElectronicMedicalRecordFileById
 } from "@debionetwork/polkadot-provider"
 import CryptoJS from "crypto-js"
 import Kilt from "@kiltprotocol/sdk-js"
@@ -227,7 +226,7 @@ export default {
       this.showModal = false
       this.emrDocuments = []
 
-      const dataEMR = await this.metamaskDispatchAction(queryGetEMRList, this.api, this.wallet.address)
+      const dataEMR = await this.metamaskDispatchAction(queryElectronicMedicalRecordByOwnerId, this.api, this.wallet.address)
 
       if (dataEMR !== null) {
         const listEMR = dataEMR.reduce((filtered, current) => {
@@ -236,22 +235,10 @@ export default {
           return filtered
         }, [])
 
-        if (listEMR.length > 0) {
-          listEMR.reverse() // TODO: BAD way, Need reverse from backend
-          for (let i = 0; i < listEMR.length; i++) {
-            const emrDetail = await this.metamaskDispatchAction(queryElectronicMedicalRecordById,
-              this.api,
-              listEMR[i]
-            )
+        listEMR.reverse()
 
-            if (emrDetail !== null) {
-              this.prepareEMRData(emrDetail)
-            }
-          }
-
-          this.emrDocuments.sort(
-            (a, b) => parseInt(b.timestamp) - parseInt(a.timestamp)
-          )
+        for (const emrDetail of listEMR) {
+          await this.prepareEMRData(emrDetail)
         }
       }
     },

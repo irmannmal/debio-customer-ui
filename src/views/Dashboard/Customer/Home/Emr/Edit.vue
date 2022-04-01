@@ -177,6 +177,7 @@
         ui-debio-button.white--text(
           color="secondary"
           height="2.5rem"
+          :loading="isLoading"
           @click="handleModalPassword"
           block
         ) Submit
