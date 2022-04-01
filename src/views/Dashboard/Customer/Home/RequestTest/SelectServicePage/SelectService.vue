@@ -107,9 +107,7 @@ export default {
 
     async getServices () {
       if (!this.services) return
-      
       for (let i = 0; i < this.services.length; i++) {
-
         let {
           id: serviceId,
           lab_id: labId,
@@ -185,7 +183,7 @@ export default {
           resultSample,
           serviceFlow
         }
-              
+
         if (service.verificationStatus === "Verified") {
           this.serviceList.push(service)
         }
