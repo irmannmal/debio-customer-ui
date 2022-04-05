@@ -378,12 +378,12 @@ export default {
 
     signOut () {
       localStorage.clear()
+      this.$router.push({ name: "sign-in"})
       this.clearAuth()
       this.clearWallet()
       this.ethAccount = null
       this.loginStatus = false
       this.menus.find(menu => menu.type === "metamask").active = false
-      this.$router.push({ name: "sign-in"})
     }
   }
 }
