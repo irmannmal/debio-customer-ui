@@ -78,16 +78,23 @@
         @close="error = null"
       )
 
-      ui-debio-alert-dialog(
+      ui-debio-modal(
         :show="isUpdated"
         :width="289"
         title="Success"
-        message="Your genetic data has been edited successfully"
-        imgPath="check-circle-primary.png"
-        btn-message="Back to Dashboard"
-        @close="showAlert = false"
-        @click="toDashboard"
+        cta-title="Back to Dashboard"
+        :cta-outlined="false"
+        :cta-action="toDashboard"
+        @onClose="toDashboard"
       )
+        ui-debio-icon(
+          :icon="checkCircleIcon"
+          size="90"
+          color="#c400a5"
+          stroke
+        )
+
+        p.genetic-data-add__modal-text Your genetic data has been edited successfully
 
 </template>
 
@@ -181,15 +188,13 @@ export default {
   },
 
   async mounted () {
-
     if (this.$route.params.id) {
       this.isEdit = true
       this.dataId = this.$route.params.id
     }
 
-    await this.getTxWeight()
     await this.getDetails()
-
+    await this.getTxWeight()
   },
 
   watch: {
@@ -393,8 +398,6 @@ export default {
             this.link
           )
         }
-
-        this.isLoading = false
       } catch (e) {
         const error = await errorHandler(e.message)
 
@@ -443,6 +446,15 @@ export default {
       text-align: center
       margin-bottom: 54px
       @include h6-opensans
+
+    &__modal-text
+      width: 240px
+      display: flex
+      align-items: center
+      text-align: center
+      letter-spacing: -0.0044em
+      padding: 0px 37px 0px 37px
+      @include new-body-text-2
 
     &__forms
       display: flex
