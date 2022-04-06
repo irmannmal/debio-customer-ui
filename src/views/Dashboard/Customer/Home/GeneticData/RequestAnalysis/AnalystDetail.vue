@@ -54,6 +54,7 @@
             width="48%"
             height="38"
             outlined
+            @click="handleDownloadReport"
           ) Download Sample Report
 
           ui-debio-button.analyst-detail__button-text(
@@ -106,7 +107,6 @@ export default {
     links: [],
     files: [],
     file: "",
-    downloadFile: [],
     geneticLink: "",
     isLoading: false
   }),
@@ -181,6 +181,10 @@ export default {
 
     closeDialog() {
       this.$emit("close")
+    },
+
+    async handleDownloadReport() {
+      window.open(this.service.testResultSample)
     },
 
     async onSelect() {
