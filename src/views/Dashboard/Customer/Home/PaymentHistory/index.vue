@@ -16,14 +16,6 @@
               @input="onSearchInput(searchQuery)"
             )
               ui-debio-icon(slot="icon-append" size="20" @click="onSearchInput(searchQuery)" role="button" :icon="searchIcon" stroke)
-        template(v-slot:[`item.service_info.name`]="{ item }")
-          .payment-history__name-details
-            ui-debio-avatar(:src="item.service_info.image" size="41" rounded)
-            .payment-history__item-details
-              .payment-history__item-name {{ item.service_info.name }}
-              .payment-history__item-speciment(
-                :title="`Specimen Number / Tracking ID : ${item.dna_sample_tracking_id || item.genetic_analysis_tracking_id}`"
-              ) {{ item.dna_sample_tracking_id || item.genetic_analysis_tracking_id }}
 
         template(v-slot:[`item.service_info.prices_by_currency[0].total_price`]="{ item }")
           .payment-history__price-details
@@ -106,13 +98,19 @@ export default {
         provider: result._index === "orders"
           ? result._source.lab_info.name
           : `${result._source.genetic_analyst_info.first_name} ${result._source.genetic_analyst_info.last_name}`,
-        created_at: new Date(parseInt(result._source.created_at.replaceAll(",", ""))).toLocaleDateString("id", {
-          day: "2-digit",
+        timestamp: parseInt(result._source.created_at.replaceAll(",", "")),
+        created_at: new Date(parseInt(result._source.created_at.replaceAll(",", ""))).toLocaleDateString("en-GB", {
+          day: "numeric",
           month: "short",
           year: "numeric"
-        }),
-        timestamp: parseInt(result._source.created_at)
+        })
       }))
+
+      // NOTE: Set unpaid status to always be in the top position
+      this.payments.sort((a, b) => {
+        if (b.status === "Unpaid") return
+        else return b.timestamp - a.timestamp
+      })
     }, 1000),
 
     setButtonBackground(status) {

@@ -1,7 +1,12 @@
 import Kilt from "@kiltprotocol/sdk-js"
 import axios from "axios"
 import store from "@/store"
-import { uploadFile as pinataIpfsUploadFile, downloadJson, getIpfsMetaData as pinataIpfsGetIpfsMetadata, downloadDocumentFileInBrowser } from "@debionetwork/pinata-ipfs"
+import {
+  getIpfsMetaData as pinataIpfsGetIpfsMetadata,
+  uploadFile as pinataIpfsUploadFile,
+  downloadDocumentFileInBrowser,
+  downloadJson
+} from "@debionetwork/pinata-ipfs"
 
 const pinataJwtKey = process.env.VUE_APP_PINATA_JWT_KEY
 
@@ -19,29 +24,27 @@ export const uploadFile = val => {
 
   const CancelToken = axios.CancelToken
   const source = CancelToken.source()
- 
+
   store.dispatch("geneticData/setCancel", {
     source
   })
-  
+
   return pinataIpfsUploadFile(
     options,
     val.file,
     pinataJwtKey,
     source.token,
     (progressEvent) => {
-      if(progressEvent.lengthComputable) {
-        let percentCompleted = Math.round( (progressEvent.loaded * 100) / progressEvent.total )
-        store.dispatch("geneticData/getLoadingProgress", {
-          progress: percentCompleted
-        })
-      }
+      if(!progressEvent.lengthComputable) return
+
+      let percentCompleted = Math.round( (progressEvent.loaded * 100) / progressEvent.total )
+      store.dispatch("geneticData/getLoadingProgress", { progress: percentCompleted })
     }
   )
 }
 
 export const getFileUrl = cid => {
-  return `https://ipfs.debio.network/ipfs/${cid}`
+  return `${process.env.VUE_APP_PINATA_GATEWAY}/${cid}`
 }
 
 export const downloadFile = async (ipfsLink, withMetaData = false) => {
