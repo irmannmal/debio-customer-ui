@@ -53,8 +53,8 @@
               )
               
         AnalystDetail(
+          ref="analystDetail"
           :show="showAnalystDetail"
-          :service="selectedService"
           :experiences="selectedAnalystExperiences"
           @close="closeDetailDialog"
         )
@@ -68,12 +68,13 @@
 
 <script>
 
-import { mapState } from "vuex"
+import { mapState, mapMutations } from "vuex"
 import ServiceAnalysisCard from "./ServiceAnalysisCard"
 import AnalystDetail from "./AnalystDetail"
-import { queryGeneticAnalystByAccountId } from "@debionetwork/polkadot-provider"
 import { queryGetAllGeneticAnalystServices } from "@/common/lib/polkadot-provider/query/genetic-analysts-services"
-import { queryGeneticAnalystQualifications } from "@debionetwork/polkadot-provider"
+import { 
+  queryGeneticAnalystByAccountId, 
+  queryGeneticAnalystQualificationsByHashId } from "@debionetwork/polkadot-provider"
 import ImportantDialog from "./Information.vue"
 
 export default {
@@ -91,7 +92,8 @@ export default {
     selectedService: null,
     selectedAnalystExperiences: null,
     isLoading: false,
-    showInformationDialog: false
+    showInformationDialog: false,
+    isShowLoading: false
   }),
 
   computed: {
@@ -119,6 +121,10 @@ export default {
 
 
   methods: {
+    ...mapMutations({
+      setSelectedAnalysisService: "geneticData/SET_SELECTED_SERVICE"
+    }),
+    
     async getGeneticAnalystService() {
       this.isLoading = true
       const geneticAnalystService = await queryGetAllGeneticAnalystServices(this.api)
@@ -165,14 +171,22 @@ export default {
 
     async showDetail(val) {
       this.selectedService = val
+      this.setSelectedAnalysisService(val)
       const qualifications = val.analystsInfo.qualifications[0]
-      this.showAnalystDetail = true
       await this.getExperience(qualifications)
     },
 
     async getExperience(id) {
-      const experiences = await queryGeneticAnalystQualifications(this.api, id)
-      this.selectedAnalystExperiences = experiences.info.experience
+
+      let experiences
+      if (id) {
+        experiences = await queryGeneticAnalystQualificationsByHashId(this.api, id)
+        this.selectedAnalystExperiences = experiences.info.experience
+      } else {
+        this.selectedAnalystExperiences = ["-"]
+      }
+      await this.$refs.analystDetail.getTxWeight()
+      this.showAnalystDetail = true
     },
 
     closeDetailDialog() {

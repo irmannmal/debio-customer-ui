@@ -43,8 +43,7 @@
 <script>
 import { mapState } from "vuex"
 import { pencilIcon, trashIcon } from "@debionetwork/ui-icons"
-import { queryGeneticDataByOwnerId } from "@debionetwork/polkadot-provider"
-import { removeGeneticData, getRemoveGeneticDataFee} from "@debionetwork/polkadot-provider"
+import { queryGeneticDataByOwnerId, removeGeneticData, removeGeneticDataFee} from "@debionetwork/polkadot-provider"
 import { errorHandler } from "@/common/lib/error-handler"
 import ConfirmationDialog from "../MyTest/ConfirmationDialog"
 
@@ -160,7 +159,7 @@ export default {
     },
 
     async getRemoveDataFee() {
-      const txWeight = await getRemoveGeneticDataFee(this.api, this.wallet, this.selectedDataId)
+      const txWeight = await removeGeneticDataFee(this.api, this.wallet, this.selectedDataId)
       this.txWeight = this.web3.utils.fromWei(String(txWeight.partialFee), "ether")
     },
 

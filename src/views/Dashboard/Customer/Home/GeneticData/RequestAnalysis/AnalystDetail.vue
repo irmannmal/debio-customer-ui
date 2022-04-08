@@ -48,6 +48,21 @@
           :key="i"
         ) - {{ experience.title }}
 
+        .analyst-detail__tx-weight
+          .analyst-detail__data-tx-weight Estimated transaction weight 
+            v-tooltip.visible(bottom )
+              template(v-slot:activator="{ on, attrs }")
+                v-icon(
+                  style="font-size: 12px;"
+                  color="primary"
+                  dark
+                  v-bind="attrs"
+                  v-on="on"
+                ) mdi-alert-circle-outline
+              span(style="font-size: 10px;") Total fee paid in DBIO to execute this transaction.
+          .analyst-detail__data-tx-weight {{ txWeight }}
+
+
         .analyst-detail__button
           ui-debio-button.analyst-detail__button-text(
             color="secondary" 
@@ -84,15 +99,16 @@
 
 <script>
 
-import { mapMutations, mapState } from "vuex"
+import { mapState } from "vuex"
 import Kilt from "@kiltprotocol/sdk-js"
 import CryptoJS from "crypto-js"
 import cryptWorker from "@/common/lib/ipfs/crypt-worker"
 import { u8aToHex } from "@polkadot/util"
+import { queryGeneticAnalystByAccountId, 
+  createGeneticAnalysisOrder, 
+  createGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
+import { queryLastGeneticAnalysisOrderByCustomer } from "@/common/lib/polkadot-provider/query/genetic-analysis-orders.js"
 import { downloadFile, uploadFile, getFileUrl } from "@/common/lib/pinata-proxy"
-import { createGeneticAnalysisOrder } from "@debionetwork/polkadot-provider"
-import { queryGeneticAnalysisOrderByCustomerId } from "@debionetwork/polkadot-provider"
-import { queryGeneticAnalystByAccountId } from "@debionetwork/polkadot-provider"
 import SpinnerLoader from "@bit/joshk.vue-spinners-css.spinner-loader"
 
 export default {
@@ -108,7 +124,8 @@ export default {
     files: [],
     file: "",
     geneticLink: "",
-    isLoading: false
+    isLoading: false,
+    txWeight: "Calculating..."
   }),
 
   components: {
@@ -117,13 +134,12 @@ export default {
 
   props: {
     show: Boolean,
-    service: Object,
     experiences: Array
   },
 
-  mounted() {
-    this.getCustomerPublicKey()
-    this.price = `${this.formatBalance(this.service.priceDetail[0].totalPrice)} ${this.service.priceDetail[0].currency}`
+  async mounted() {
+    await this.getCustomerPublicKey()
+    await this.getTxWeight()
   },
 
   computed: {
@@ -133,16 +149,14 @@ export default {
       web3: (state) => state.metamask.web3,
       mnemonicData: (state) => state.substrate.mnemonicData,
       lastEventData: (state) => state.substrate.lastEventData,
-      selectedGeneticData: (state) => state.geneticData.selectedData
-
+      selectedGeneticData: (state) => state.geneticData.selectedData,
+      service: (state) => state.geneticData.selectedAnalysisSerivice
     }),
 
     computeAvatar() {
       const profile = this.service.analystsInfo.info.profileImage
-
       return profile ? profile : require("@/assets/defaultAvatar.svg")
     }
-
   },
 
   watch: {
@@ -152,21 +166,29 @@ export default {
         if (e.method === "GeneticAnalysisOrderCreated") {
           if (dataEvent[0].customerId === this.wallet.address) {
             this.isLoading = false
-            this.show = false
             this.toCheckoutPage()
           }
         }
       }
     }
-
   },
 
   methods: {
-    ...mapMutations({
-      setSelectedAnalysisService: "geneticData/SET_SELECTED_SERVICE"
-    }),
+    async getTxWeight(){
+      const txWeight = await createGeneticAnalysisOrderFee(
+        this.api,
+        this.wallet,
+        this.selectedGeneticData.id,
+        this.service.serviceId,
+        0,
+        this.publicKey,
+        this.geneticLink
+      )
+      this.txWeight = `${Number(this.web3.utils.fromWei(String(txWeight.partialFee), "ether")).toFixed(4)} DBIO`
+      await this.getPrice()
+    },
 
-    getCustomerPublicKey() {
+    async getCustomerPublicKey() {
       const identity = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
       this.publicKey = u8aToHex(identity.boxKeyPair.publicKey)
       this.privateKey = u8aToHex(identity.boxKeyPair.secretKey)
@@ -177,6 +199,10 @@ export default {
       const analystDetail = await queryGeneticAnalystByAccountId(this.api, id)
       const analystPublicKey = analystDetail.info.boxPublicKey
       return analystPublicKey
+    },
+
+    async getPrice() {
+      this.price = `${this.formatBalance(this.service.priceDetail[0].totalPrice)} ${this.service.priceDetail[0].currency}`
     },
 
     closeDialog() {
@@ -230,10 +256,6 @@ export default {
 
       const dataFile = await this.setupFileReader(this.file)
       
-      console.log("HA:::::")
-      console.log(dataFile)
-      console.log("_____")
-      
       await this.upload({
         encryptedFileChunks: dataFile.chunks,
         fileName: dataFile.fileName,
@@ -253,9 +275,6 @@ export default {
               fileName: file.name
             })
 
-
-            console.log("encrypted.. ==>>", encrypted)
-
             const { chunks, fileName, fileType } = encrypted
             const dataFile = {
               title: "title",
@@ -266,8 +285,6 @@ export default {
               fileType,
               createdAt: new Date().getTime()
             }
-
-            console.log("data file ", dataFile)
 
             res(dataFile)
           } catch (e) {
@@ -357,13 +374,13 @@ export default {
         this.selectedGeneticData.id,
         this.service.serviceId,
         priceIndex,
-        this.publicKey,
-        this.geneticLink
+        this.geneticLink,
+        this.publicKey
       )
     },
 
-    async toCheckoutPage() {                  
-      const lastOrder = await queryGeneticAnalysisOrderByCustomerId(this.api, this.wallet.address)
+    async toCheckoutPage() {
+      const lastOrder = await queryLastGeneticAnalysisOrderByCustomer(this.api, this.wallet.address)
       this.$router.push({name: "customer-request-analysis-payment", params: { id: lastOrder}})
     }
   }
@@ -432,6 +449,16 @@ export default {
       margin-left: 0 !important
       padding: 12px 35px
       @include button-2
+
+    &__tx-weight
+      display: flex
+      align-items: center
+      justify-content: space-between
+      margin-top: 10px
+      padding: 0 35px
+
+    &__data-tx-weight
+      @include tiny-reg
 
     &__profil-experience-list
       margin-left: 0 !important

@@ -16,7 +16,6 @@
         .customer-request-analyst-checkout__cards
           ServiceAnalysisCard
           PaymentCard(
-            :genetic-data="selectedGeneticData"
             @click="showLoading"
           )
 

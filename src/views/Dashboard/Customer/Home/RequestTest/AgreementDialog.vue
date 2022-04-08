@@ -69,7 +69,7 @@
 <script>
 import { mapState } from "vuex"
 import { createRequest } from "@/common/lib/polkadot-provider/command/service-request"
-import { getCreateRequestFee } from "@debionetwork/polkadot-provider"
+import { createRequestFee } from "@debionetwork/polkadot-provider"
 import errorMessage from "@/common/constants/error-messages"
 import {errorHandler} from "@/common/lib/error-handler"
 
@@ -118,7 +118,7 @@ export default {
   },
 
   async mounted () {
-    const txWeight = await getCreateRequestFee(this.api, this.pair, this.country, this.region, this.city, this.category)
+    const txWeight = await createRequestFee(this.api, this.pair, this.country, this.region, this.city, this.category)
     this.txWeight = this.web3.utils.fromWei(String(txWeight.partialFee), "ether")
   },
 

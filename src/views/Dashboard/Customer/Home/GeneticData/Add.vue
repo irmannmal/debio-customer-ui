@@ -33,7 +33,7 @@
           :rules="fileRule"
           :accept="['.txt', '.vcf', '.gz', '.zip', '.rar', '.7zip']"
           label="Upload File"
-          notes="(.vcf.gz, .vcf, .txt - Maximum file size is 200MB) "
+          label-rules="(.vcf.gz, .vcf, .txt - Maximum file size is 200MB)"
           placeholder="Choose File"
           validate-on-blur
         )
@@ -41,8 +41,7 @@
           span.genetic-data-add__tx-weight-text Estimated transaction weight
             v-tooltip.visible(right)
               template(v-slot:activator="{ on, attrs }")
-                v-icon.dialog-confirmation__trans-weight-icon(
-                  style="font-size: 12px;"
+                v-icon.genetic-data-add__trans-weight-icon(
                   color="primary"
                   dark
                   v-bind="attrs"
@@ -105,7 +104,11 @@ import Kilt from "@kiltprotocol/sdk-js"
 import CryptoJS from "crypto-js"
 import cryptWorker from "@/common/lib/ipfs/crypt-worker"
 import { queryGeneticDataById } from "@debionetwork/polkadot-provider"
-import { addGeneticData, getAddGeneticDataFee, updateGeneticData } from "@debionetwork/polkadot-provider"
+import { 
+  addGeneticData, 
+  updateGeneticData, 
+  addGeneticDataFee, 
+  updateGeneticDataFee } from "@debionetwork/polkadot-provider"
 import rulesHandler from "@/common/constants/rules"
 import { validateForms } from "@/common/lib/validate"
 import { generalDebounce } from "@/common/lib/utils"
@@ -406,12 +409,23 @@ export default {
       }
     },
 
-    async getTxWeight() {
-      const txWeight = await getAddGeneticDataFee(this.api, this.wallet, this.document.title, this.document.description)
-      const res = this.web3.utils.fromWei(String(txWeight.partialFee), "ether")
+    formatTxWeight(num) {
+      const res =  this.web3.utils.fromWei(String(num), "ether")
+      return`${(Number(res) + 0.0081 ).toFixed(4)} DBIO`
+    },
 
+    async getTxWeight() {
+      let txWeight
       this.txWeight = "Calculating..."
-      this.txWeight = `${(Number(res) + 0.0081 ).toFixed(4)} DBIO`      
+      if (!this.isEdit) {
+        txWeight = await updateGeneticDataFee(this.api, this.wallet, this.dataId, this.document.title, this.document.description)
+        this.txWeight = this.formatTxWeight(txWeight.partialFee)
+        return
+      }
+
+      txWeight = await addGeneticDataFee(this.api, this.wallet, this.document.title, this.document.description)
+      this.txWeight = this.formatTxWeight(txWeight.partialFee)
+       
     },
 
     closeDialog() {
@@ -473,4 +487,8 @@ export default {
     &__tx-weight-text
       letter-spacing: -0.004em
       @include body-text-3-opensans
+
+    &__trans-weight-icon
+      padding-left: 3px
+      font-size: 12px
 </style>

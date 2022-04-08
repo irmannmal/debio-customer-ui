@@ -22,7 +22,7 @@
             size="75"
             rounded
           )
-  
+
 
         v-col(cols=8).service-analysis-card__analyst-info
           .service-analysis-card__analyst-name {{ analystName }}
@@ -41,9 +41,8 @@
 
 <script>
 import { mapState } from "vuex"
-import { queryGeneticAnalysisOrderById } from "@debionetwork/polkadot-provider"
-import { queryGeneticAnalystServicesByHashId } from "@debionetwork/polkadot-provider"
-import { queryGeneticAnalystByAccountId } from "@debionetwork/polkadot-provider"
+import { queryGeneticAnalysisOrderById } from "@/common/lib/polkadot-provider/query/genetic-analysis-orders"
+import { queryGeneticAnalystByAccountId, queryGeneticAnalystServicesByHashId} from "@debionetwork/polkadot-provider"
 
 
 export default {
@@ -88,7 +87,6 @@ export default {
   },
 
   async mounted() {
-
     if(this.$route.params.id) {
       this.isCreated = true
       this.orderId = this.$route.params.id
@@ -212,7 +210,7 @@ export default {
       margin-bottom: 20px
 
     &__analyst-info
-      margin-left: 8px
+      margin-left: 14px
 
     &__analyst-name
       margin-top: 16px

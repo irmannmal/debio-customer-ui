@@ -79,10 +79,13 @@
 
 import { mapState } from "vuex"
 import { serviceHandlerMixin } from "@/common/lib/polkadot-provider"
-import { queryEthAdressByAccountId } from "@debionetwork/polkadot-provider"
-import { queryLastOrderHashByCustomer, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
-import { createOrder } from "@debionetwork/polkadot-provider"
-import { getCreateOrderFee } from "@debionetwork/polkadot-provider"
+import { 
+  queryEthAdressByAccountId,
+  queryLastOrderHashByCustomer,
+  queryOrderDetailByOrderID,
+  createOrder,
+  getCreateOrderFee
+} from "@debionetwork/polkadot-provider"
 import { startApp, getTransactionReceiptMined } from "@/common/lib/metamask"
 import { getBalanceETH, getBalanceDAI } from "@/common/lib/metamask/wallet.js"
 import { approveDaiStakingAmount, checkAllowance, sendPaymentOrder  } from "@/common/lib/metamask/escrow"
@@ -93,8 +96,6 @@ import { errorHandler } from "@/common/lib/error-handler"
 import SpinnerLoader from "@bit/joshk.vue-spinners-css.spinner-loader"
 import errorMessage from "@/common/constants/error-messages"
 import { postTxHash } from "@/common/lib/api"
-
-
 
 export default {
   name: "PaymentReceiptDialog",

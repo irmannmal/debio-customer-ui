@@ -193,8 +193,7 @@ import cryptWorker from "@/common/lib/ipfs/crypt-worker"
 import { getEMRCategories } from "@/common/lib/api"
 import {
   registerElectronicMedicalRecord,
-  getAddElectronicMedicalRecordFee
-} from "@debionetwork/polkadot-provider"
+  registerElectronicMedicalRecordFee } from "@debionetwork/polkadot-provider"
 import { u8aToHex } from "@polkadot/util"
 import { validateForms } from "@/common/lib/validate"
 import { errorHandler } from "@/common/lib/error-handler"
@@ -291,7 +290,7 @@ export default {
       handler: generalDebounce(async function (val) {
         this.txWeight = "Calculating..."
 
-        const txWeight = await getAddElectronicMedicalRecordFee(this.api, this.wallet, val)
+        const txWeight = await registerElectronicMedicalRecordFee(this.api, this.wallet, val)
         this.txWeight = `${Number(this.web3.utils.fromWei(String(txWeight.partialFee), "ether")).toFixed(4)} DBIO`
       }, 500)
     }

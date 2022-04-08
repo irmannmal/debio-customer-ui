@@ -3,13 +3,13 @@
     .customer-analysis-payment-card__data
       .customer-analysis-payment-card__data-service
         .customer-analysis-payment-card__text-label Genetic Data Name
-        .customer-analysis-payment-card__data-text {{ geneticData.title }}
+        .customer-analysis-payment-card__data-text {{ geneticData.title }} 
 
       .customer-analysis-payment-card__text-label.mt-5 Payment
       div(v-if="orderStatus === 'Unpaid'")
         .customer-analysis-payment-card__amount
           .customer-analysis-payment-card__data-text Account Balance
-          .customer-analysis-payment-card__data-text {{ formatBalance(walletBalance) }} DBIO
+          .customer-analysis-payment-card__data-text {{ walletBalance.toFixed(4) }} DBIO
         .customer-analysis-payment-card__amount
           .customer-analysis-payment-card__data-text Service Price
           .customer-analysis-payment-card__data-text(:style="setStyleColor") {{ orderPrice }} {{ orderCurrency }}
@@ -19,26 +19,12 @@
           a.link(target="_blank" href="https://docs.debio.network/legal/terms-and-condition" ) terms and conditions 
           span for more details.
 
-        .customer-analysis-payment-card__amount
-          .customer-analysis-payment-card__data-tx-weight Estimated transaction weight 
-            v-tooltip.visible(bottom )
-              template(v-slot:activator="{ on, attrs }")
-                v-icon.staking-dialog__trans-weight-icon(
-                  style="font-size: 12px;"
-                  color="primary"
-                  dark
-                  v-bind="attrs"
-                  v-on="on"
-                ) mdi-alert-circle-outline
-              span(style="font-size: 10px;") Total fee paid in DBIO to execute this transaction.
-          .customer-analysis-payment-card__data-tx-weight {{ Number(txWeight).toFixed(4) }} DBIO
-
         .customer-analysis-payment-card__button
           ui-debio-button(
             width="130" 
             color="red" 
             outlined
-            @click="showCancelDialog = true"
+            @click="getCancelOrderFee"
           ) Cancel
 
           ui-debio-button(
@@ -69,7 +55,7 @@
             width="280" 
             color="red" 
             outlined
-            @click="showCancelDialog = true"
+            @click="getCancelOrderFee"
           ) Cancel Request
 
         .customer-analysis-payment-card__button.mt-8(v-if="orderStatus === 'Fulfilled'")
@@ -77,13 +63,12 @@
             width="280" 
             color="secondary" 
             outlined
-            @click="showCancelDialog = true"
           ) View Result
 
       ConfirmationDialog(
         :show="showCancelDialog"
         :txWeight="Number(txWeight).toFixed(4)"
-        :loading="isLoading"
+        :loading="isCancelling"
         title="Cancel"
         btnMessage="Cancel Order"
         message="By cancel this service, your file might not be able to be analyzed, and your balance will be refunded"
@@ -98,15 +83,11 @@
 import { mapState } from "vuex"
 import ConfirmationDialog from "@/views/Dashboard/Customer/Home/MyTest/ConfirmationDialog"
 import { getDbioBalance, setGeneticAnalysisPaid } from "@/common/lib/api"
-import {
-  createGeneticAnalysisOrderFee
-} from "@debionetwork/polkadot-provider"
-import { queryGeneticAnalysisOrderById } from "@debionetwork/polkadot-provider"
-import { queryGeneticAnalysisByGeneticAnalysisTrackingId } from "@debionetwork/polkadot-provider"
-import { queryGeneticDataById } from "@debionetwork/polkadot-provider"
-import {
-  cancelGeneticAnalysisOrder
-} from "@debionetwork/polkadot-provider"
+import { queryGeneticAnalysisOrderById } from "@/common/lib/polkadot-provider/query/genetic-analysis-orders"
+import { queryGeneticDataById, 
+  queryGeneticAnalysisByGeneticAnalysisTrackingId,
+  cancelGeneticAnalysisOrder,
+  cancelGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
 import PaymentDialog from "@/common/components/Dialog/PaymentDialog"
 
 export default {
@@ -127,6 +108,7 @@ export default {
     orderPriceInUsd: null,
     showCancelDialog: false,
     isLoading: false,
+    isCancelling: false,
     trackingId: null,
     isRegistered: true,
     newFile: null,
@@ -167,7 +149,7 @@ export default {
 
         if (e.method === "GeneticAnalysisOrderCancelled") {
           if (dataEvent[0].customerId === this.wallet.address) {
-            this.isLoading = false
+            this.isCanceling = false
             this.showCancelDialog = false
             this.$router.push({ name: "customer-request-analysis-success", params: {id: this.orderId} })
           }
@@ -178,7 +160,6 @@ export default {
 
   async mounted() {
     await this.getUsdRate()
-    await this.getTxWeight()
 
     if (this.$route.params.id) {
       this.isCreated = true
@@ -187,9 +168,10 @@ export default {
       await this.getGeneticAnalysisOrderDetail()
       await this.getGeneticData()
       await this.getAnalysisStatus()
+      await this.getCancelOrderFee()
     }
 
-    if (Number(this.walletBalance) < Number(this.web3.utils.toWei(this.orderPrice))) {
+    if (Number(this.walletBalance) < Number(this.orderPrice)) {
       this.isDeficit = true
     }
   },
@@ -211,7 +193,7 @@ export default {
       this.orderPrice = this.formatBalance(this.geneticOrderDetail.prices[0].value)
       this.orderCurrency = this.geneticOrderDetail.currency
       this.orderPriceInUsd = this.formatPriceInUsd(this.geneticOrderDetail.prices[0].value)
-      this.trackingId = this.geneticOrderDetail.geneticAnalysisTrackingId
+      this.trackingId = this.geneticOrderDetail.geneticAnalysisTrackingId      
     },
 
     formatBalance(val) {
@@ -236,14 +218,16 @@ export default {
       this.rate = await getDbioBalance()
     },
 
-    async getTxWeight() {
-      const txWeight = await createGeneticAnalysisOrderFee(this.api, this.wallet)
-      this.txWeight = this.web3.utils.fromWei(String(txWeight.partialFee), "ether")
+    async cancelOrder() {
+      this.isCanceling = true
+      await cancelGeneticAnalysisOrder(this.api, this.wallet, this.orderId)
     },
 
-    async cancelOrder() {
-      this.isLoading = true
-      await cancelGeneticAnalysisOrder(this.api, this.wallet, this.orderId)
+    async getCancelOrderFee() {
+      const txWeight = await cancelGeneticAnalysisOrderFee(this.api, this.wallet, this.orderId)
+    
+      this.txWeight = this.web3.utils.fromWei(String(txWeight.partialFee), "ether")
+      this.showCancelDialog = true
     },
 
     async getAnalysisStatus() {
@@ -287,7 +271,7 @@ export default {
       @include tiny-reg
 
     &__button
-      margin-top: 16px
+      margin-top: 24px
       display: flex
       align-items: center
       justify-content: space-between
