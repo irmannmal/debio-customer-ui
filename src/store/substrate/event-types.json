@@ -2,7 +2,7 @@
   "role": {
     "customer": {
       "orders": {
-        "OrderCreated": {
+        "OrderPaid": {
           "message": "Congrats! Your requested test ",
           "value": "id",
           "value_message": "id",

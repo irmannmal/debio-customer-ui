@@ -17,9 +17,7 @@ const handler = {
   orders: async (dataEvent, value, valueMessage) => {
     const data = dataEvent[0]
     const id = data[value]
-    const status = {
-      UNPAID: "submitted"
-    }
+    const status = { PAID: "submitted" }
     const computeStatus = `has been ${status[data.status.toUpperCase()]}`
     const params = { id: id }
 
