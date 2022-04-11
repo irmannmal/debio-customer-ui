@@ -203,12 +203,10 @@ export default {
           this.txHash = txDetails.transaction_hash
         } else {
           try {
-            console.log(dataPayment.orderGA.genetic_analysis_tracking_id);
             data = await queryGeneticAnalysisByGeneticAnalysisTrackingId(
               this.api,
               dataPayment.orderGA.genetic_analysis_tracking_id
             )
-            console.log("data", data)
           } catch (error) {
             console.error(error)
           }
