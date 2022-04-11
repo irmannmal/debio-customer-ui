@@ -3,7 +3,7 @@
     "customer": {
       "orders": {
         "OrderPaid": {
-          "message": "Congrats! Your requested test ",
+          "message": "Congrats! You successfully submitted your requested test ",
           "value": "id",
           "value_message": "id",
           "route": "customer-payment-details",
@@ -55,7 +55,7 @@
         "DnaSampleRejected": {
           "message": "",
           "value": "orderId",
-          "value_message": "Your sample has been rejected. See your test details",
+          "value_message": "Your sample from ",
           "route": "order-history-detail",
           "params": "orderId",
           "identity": "ownerId"
@@ -63,7 +63,7 @@
         "DnaSampleResultReady": {
           "message": "",
           "value": "orderId",
-          "value_message": "Congrats! Your test results are out. See your test details.",
+          "value_message": "Congrats! Your test results for ",
           "route": "order-history-detail",
           "params": "orderId",
           "identity": "ownerId"

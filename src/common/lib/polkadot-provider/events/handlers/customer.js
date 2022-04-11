@@ -36,6 +36,7 @@ const handler = {
     const id = data[value]
     const params = { orderId: id }
     const wording = valueMessage
+    
     return { data, id, params, wording }
   },
   balances: async (dataEvent, value, valueMessage) => {
