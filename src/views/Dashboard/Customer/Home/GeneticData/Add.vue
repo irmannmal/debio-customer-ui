@@ -380,7 +380,7 @@ export default {
       }
 
       try{
-        if (this.document.file) return
+        if (!this.document.file) return
         this.isLoading = true
 
         const dataFile = await this.setupFileReader(this.document)
