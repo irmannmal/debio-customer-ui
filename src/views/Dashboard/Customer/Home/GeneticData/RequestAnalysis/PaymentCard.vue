@@ -43,27 +43,26 @@
 
         .customer-analysis-payment-card__amount
           .customer-analysis-payment-card__data-text Status
-          b.customer-analysis-payment-card__data-text.mt-3 {{ orderStatus }}
+          b.customer-analysis-payment-card__data-text.mt-3(:style="setStatusColor") {{ orderStatus }}
 
         .customer-analysis-payment-card__amount
           .customer-analysis-payment-card__data-text Service Price
           b.customer-analysis-payment-card__data-text.mt-3 {{ orderPrice }} {{ orderCurrency }}
         .customer-analysis-payment-card__rate ( {{ orderPriceInUsd }} USD )
 
-        .customer-analysis-payment-card__button.mt-8(v-if="orderStatus === 'Paid'")
-          ui-debio-button(
-            width="280" 
-            color="red" 
-            outlined
-            @click="getCancelOrderFee"
-          ) Cancel Request
-
-        .customer-analysis-payment-card__button.mt-8(v-if="orderStatus === 'Fulfilled'")
-          ui-debio-button(
-            width="280" 
+        .customer-analysis-payment-card__button
+          ui-debio-button.customer-analysis-payment-card__button-text(
+            width="130" 
             color="secondary" 
             outlined
-          ) View Result
+            @click="toDashboard"
+          ) Back to Dashboard
+
+          ui-debio-button.customer-analysis-payment-card__button-text(
+            width="130" 
+            color="secondary" 
+            @click="toPaymentHistory"
+          ) Go To Payment History
 
       ConfirmationDialog(
         :show="showCancelDialog"
@@ -83,8 +82,9 @@
 import { mapState } from "vuex"
 import ConfirmationDialog from "@/views/Dashboard/Customer/Home/MyTest/ConfirmationDialog"
 import { getDbioBalance, setGeneticAnalysisPaid } from "@/common/lib/api"
-import { queryGeneticAnalysisOrderById } from "@/common/lib/polkadot-provider/query/genetic-analysis-orders"
-import { queryGeneticDataById, 
+import { 
+  queryGeneticAnalysisOrderById,
+  queryGeneticDataById, 
   queryGeneticAnalysisByGeneticAnalysisTrackingId,
   cancelGeneticAnalysisOrder,
   cancelGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
@@ -129,10 +129,20 @@ export default {
 
     setStyleColor() {
       if (this.isDeficit) {
-        return "color: red"
-      } else {
-        return "color: black"
+        return "color: #F5222D"
       }
+      return "color: #363636"
+    },
+
+    setStatusColor() {
+      if (this.orderStatus === "Paid") {
+        return "color: #5640A5"
+      }
+
+      if (this.orderStatus === "Cancelled") {
+        return "color: #9B1B37"
+      }
+      return "color: #363636"
     }
   },
 
@@ -168,7 +178,6 @@ export default {
       await this.getGeneticAnalysisOrderDetail()
       await this.getGeneticData()
       await this.getAnalysisStatus()
-      await this.getCancelOrderFee()
     }
 
     if (Number(this.walletBalance) < Number(this.orderPrice)) {
@@ -235,6 +244,14 @@ export default {
       if (details.status !== "Registered") {
         this.isRegistered = false
       }
+    },
+
+    toDashboard() {
+      this.$router.push({ name: "customer-dashboard" })
+    },
+
+    toPaymentHistory() {
+      this.$router.push({ name: "customer-payment-history" })
     }
   }
 }
@@ -275,6 +292,9 @@ export default {
       display: flex
       align-items: center
       justify-content: space-between
+
+    &__button-text
+      font-size: 8px
 
 
     &__amount

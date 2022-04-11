@@ -103,7 +103,7 @@ export default {
       if (analysisOrderDetail) {
         this.orderStatus = analysisOrderDetail.status
         this.geneticOrderAnalysisDetail = analysisOrderDetail
-        this.trackingId = this.geneticOrderAnalysisDetail.geneticAnalysisTrackingId
+        this.trackingId = this.geneticOrderAnalysisDetail.geneticAnalysisdTrackingId
       }
     },
 

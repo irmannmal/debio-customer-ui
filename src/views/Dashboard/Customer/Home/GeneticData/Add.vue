@@ -1,6 +1,13 @@
 <template lang="pug">
   .genetic-data-add
     .genetic-data-add__wrapper
+      ui-debio-error-dialog(
+        :show="!!error"
+        :title="error ? error.title : ''"
+        :message="error ? error.message : ''"
+        @close="error = null"
+      )
+
       .genetic-data-add__title {{ isEdit ? "Edit Genetic Data" : "Add Genetic Data"}}
       .genetic-data-add__forms
         ui-debio-input(
@@ -70,13 +77,6 @@
         @close="closeDialog"
       )
 
-      ui-debio-error-dialog(
-        :show="!!error"
-        :title="error ? error.title : ''"
-        :message="error ? error.message : ''"
-        @close="error = null"
-      )
-
       ui-debio-modal(
         :show="isUpdated"
         :width="289"
@@ -103,8 +103,8 @@ import { u8aToHex } from "@polkadot/util"
 import Kilt from "@kiltprotocol/sdk-js"
 import CryptoJS from "crypto-js"
 import cryptWorker from "@/common/lib/ipfs/crypt-worker"
-import { queryGeneticDataById } from "@debionetwork/polkadot-provider"
 import { 
+  queryGeneticDataById,
   addGeneticData, 
   updateGeneticData, 
   addGeneticDataFee, 
@@ -152,6 +152,7 @@ export default {
     ...mapState({
       api: (state) => state.substrate.api,
       wallet: (state) => state.substrate.wallet,
+      walletBalance: (state) => state.substrate.walletBalance,
       mnemonicData: (state) => state.substrate.mnemonicData,
       lastEventData: (state) => state.substrate.lastEventData,
       web3: (state) => state.metamask.web3
@@ -369,10 +370,18 @@ export default {
     },
 
     async onSubmit() {
-      this.isLoading = true
+
+      const txWeight = Number(this.txWeight.split(" ")[0])
+      if (this.walletBalance < txWeight) {
+        this.error = {
+          title: "Insufficient Balance",
+          message: "Your transaction cannot succeed due to insufficient balance, check your account balance"
+        }
+      }
 
       try{
-        if (!this.document.file) return
+        if (this.document.file) return
+        this.isLoading = true
 
         const dataFile = await this.setupFileReader(this.document)
 

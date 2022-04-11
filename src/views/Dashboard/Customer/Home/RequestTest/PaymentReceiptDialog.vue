@@ -84,7 +84,7 @@ import {
   queryLastOrderHashByCustomer,
   queryOrderDetailByOrderID,
   createOrder,
-  getCreateOrderFee
+  createOrderFee
 } from "@debionetwork/polkadot-provider"
 import { startApp, getTransactionReceiptMined } from "@/common/lib/metamask"
 import { getBalanceETH, getBalanceDAI } from "@/common/lib/metamask/wallet.js"
@@ -168,7 +168,6 @@ export default {
 
   async mounted () {
     await this.getCustomerPublicKey()
-    await this.calculateTxWeight()
 
     if (this.lastEventData) {
       if (this.lastEventData.method === "OrderCreated") {
@@ -190,6 +189,8 @@ export default {
     this.qcPrice = this.formatPrice((this.selectedService.detailPrice.additional_prices[0].value).replaceAll(",", ""))
     this.totalPrice = this.formatPrice((this.selectedService.price).replaceAll(",", ""))
     this.currency = this.selectedService.currency.toUpperCase()
+
+    await this.calculateTxWeight()
   },
 
   methods: {
@@ -200,7 +201,7 @@ export default {
     },
 
     async calculateTxWeight() {
-      const txWeight = await getCreateOrderFee(
+      const txWeight = await createOrderFee(
         this.api,
         this.wallet,
         this.selectedService.serviceId,
@@ -250,7 +251,6 @@ export default {
           this.error = "You don't have enough DAI"
           return
         }
-
 
         // Seller has no ETH address
         this.ethSellerAddress = await queryEthAdressByAccountId(

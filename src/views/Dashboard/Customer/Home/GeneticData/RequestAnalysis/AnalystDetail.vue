@@ -1,5 +1,11 @@
 <template lang="pug">
   v-dialog.analyst-detail(:value="show" width="440" persistent rounded )
+    ui-debio-error-dialog(
+      :show="errorAlert"
+      title="Insufficient Balance"
+      message="Your transaction cannot succeed due to insufficient balance, check your account balance"
+      @close="errorAlert = false"
+    )
     v-card.analyst-detail__card
       .analyst-detail__close
         v-btn.fixed-button(v-if="!isLoading" icon @click="closeDialog")
@@ -95,6 +101,16 @@
               href="https://docs.debio.network/complete-guidelines/user-guideline/upload-and-encrypt-data"
               @click.stop
             )  here’s why
+
+    ui-debio-alert-dialog(
+      :show="showAlert"
+      :width="289"
+      title="Unpaid Order"
+      message="Complete your unpaid order first before requesting a new one. "
+      imgPath="alert-circle-primary.png"
+      btn-message="Go to My Payment"
+      @click="toPaymentHistory"
+      )
 </template>
 
 <script>
@@ -104,7 +120,9 @@ import Kilt from "@kiltprotocol/sdk-js"
 import CryptoJS from "crypto-js"
 import cryptWorker from "@/common/lib/ipfs/crypt-worker"
 import { u8aToHex } from "@polkadot/util"
-import { queryGeneticAnalystByAccountId, 
+import { 
+  queryLastGeneticAnalysisOrderByCustomerId,
+  queryGeneticAnalystByAccountId, 
   createGeneticAnalysisOrder, 
   createGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
 import { queryLastGeneticAnalysisOrderByCustomer } from "@/common/lib/polkadot-provider/query/genetic-analysis-orders.js"
@@ -125,7 +143,9 @@ export default {
     file: "",
     geneticLink: "",
     isLoading: false,
-    txWeight: "Calculating..."
+    txWeight: "Calculating...",
+    showAlert: false,
+    errorAlert: false
   }),
 
   components: {
@@ -138,6 +158,7 @@ export default {
   },
 
   async mounted() {
+    await this.getLastOrderStatus()
     await this.getCustomerPublicKey()
     await this.getTxWeight()
   },
@@ -146,6 +167,7 @@ export default {
     ...mapState({
       api: (state) => state.substrate.api,
       wallet: (state) => state.substrate.wallet,
+      walletBalance: (state) => state.substrate.walletBalance,
       web3: (state) => state.metamask.web3,
       mnemonicData: (state) => state.substrate.mnemonicData,
       lastEventData: (state) => state.substrate.lastEventData,
@@ -174,6 +196,12 @@ export default {
   },
 
   methods: {
+
+    async getLastOrderStatus () {
+      const lastOrderStatus = await queryLastGeneticAnalysisOrderByCustomerId(this.api, this.wallet.address)
+      return lastOrderStatus.status
+    },
+
     async getTxWeight(){
       const txWeight = await createGeneticAnalysisOrderFee(
         this.api,
@@ -214,6 +242,19 @@ export default {
     },
 
     async onSelect() {
+
+      const status = await this.getLastOrderStatus()
+      if (status === "Unpaid") {
+        this.showAlert = true 
+        return
+      }
+
+      const txWeight = Number(this.txWeight.split(" ")[0])
+      if (this.walletBalance < txWeight) {
+        this.errorAlert = true 
+        return
+      }
+
       this.isLoading = true
       this.geneticLink = ""
       this.links = []
@@ -382,6 +423,10 @@ export default {
     async toCheckoutPage() {
       const lastOrder = await queryLastGeneticAnalysisOrderByCustomer(this.api, this.wallet.address)
       this.$router.push({name: "customer-request-analysis-payment", params: { id: lastOrder}})
+    },
+
+    toPaymentHistory() {
+      this.$router.push({ name: "customer-payment-history" })
     }
   }
 }

@@ -53,8 +53,8 @@
 
 import { mapState } from "vuex"
 import { registeredBanner } from "@debionetwork/ui-icons"
-import { queryGeneticAnalysisOrderById } from "@debionetwork/polkadot-provider"
-import { queryGeneticAnalysisByGeneticAnalysisTrackingId } from "@debionetwork/polkadot-provider"
+import { queryGeneticAnalysisOrderById, queryGeneticAnalysisByGeneticAnalysisTrackingId } from "@debionetwork/polkadot-provider"
+
 
 export default {
   name: "StepperStatusCard",
@@ -107,7 +107,7 @@ export default {
   methods: {
     async getStatus() {
       const detail = await queryGeneticAnalysisOrderById(this.api, this.orderId)
-      const trackingId = detail.geneticAnalysisTrackingId
+      const trackingId = detail.geneticAnalysisdTrackingId
       const data = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, trackingId)
       this.orderStatus = data.status
       this.status = this.orderDetail[this.orderStatus].status

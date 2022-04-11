@@ -131,9 +131,14 @@ export default {
 
     handleDetails(item) {
       let id = ""
-
       if (item.id) id = item.id
       else id = item.orderId
+
+      if (item["genetic_data_id"]) {
+        if (item.status === "Unpaid") this.$router.push({ name: "customer-request-analysis-payment", params: { id }})
+        else this.$router.push({ name: "customer-payment-details", params: { id }})
+        return
+      }
 
       if (item.status === "Unpaid") this.$router.push({ name: "customer-request-test-checkout", params: { id } })
       else this.$router.push({ name: "customer-payment-details", params: { id } })

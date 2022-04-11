@@ -34,8 +34,7 @@ import ServiceCard from "./ServiceCard"
 import StepperStatusCard from "./StepperStatusCard"
 import ReasonOfRejection from "./ReasonOfRejection"
 import ConfirmationDialog from "@/views/Dashboard/Customer/Home/MyTest/ConfirmationDialog"
-import { cancelGeneticAnalysisOrder } from "@debionetwork/polkadot-provider"
-import { cancelGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
+import { cancelGeneticAnalysisOrder, cancelGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
 
 export default {
   name: "GAOrderDetail",
