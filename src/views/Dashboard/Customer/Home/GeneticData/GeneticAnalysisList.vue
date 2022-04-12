@@ -10,9 +10,17 @@
         .d-flex.flex-column.genetic-analysis-list__service
           span {{ item.serviceName }}
 
-      template(v-slot:[`item.fullName`]="{ item }")
+      template(v-slot:[`item.analystName`]="{ item }")
         .d-flex.flex-column.genetic-analysis-list__name
-          span {{ item.fullName }}
+          span {{ item.analystName }}
+
+      template(v-slot:[`item.createdAt`]="{ item }")
+        .d-flex.flex-column.genetic-analysis-list__createdDate
+          span {{ item.createdAt }}
+
+      template(v-slot:[`item.updatedAt`]="{ item }")
+        .d-flex.flex-column.genetic-analysis-list__updatedDate
+          span {{ item.updatedAt }}
 
       template(v-slot:[`item.status`]="{ item }")
         .d-flex.flex-column.genetic-analysis-list__status
@@ -21,7 +29,7 @@
       template(v-slot:[`item.actions`]="{ item }")
         .genetic-analysis-list__actions
           ui-debio-icon( :icon="eyeIcon" size="16" role="button" stroke @click="toDetail(item)")
-          ui-debio-icon(v-show="item.status === 'ResultReady'" :icon="downloadIcon" size="16" role="button" stroke @click="toDownload(item)")
+          ui-debio-icon(v-show="item.status === 'Done'" :icon="downloadIcon" size="16" role="button" stroke @click="toDownload(item)")
 
 </template>
 
@@ -29,12 +37,12 @@
 
 import { mapState } from "vuex"
 import { eyeIcon, downloadIcon } from "@debionetwork/ui-icons"
-import { queryGeneticAnalysisById } from "@debionetwork/polkadot-provider"
-import { queryGeneticAnalysisOrderById } from "@debionetwork/polkadot-provider"
-import { queryGeneticAnalystByAccountId } from "@debionetwork/polkadot-provider"
-import { queryGeneticAnalysisByOwnerId } from "@debionetwork/polkadot-provider"
-import { queryGeneticAnalysisByGeneticAnalysisTrackingId } from "@debionetwork/polkadot-provider"
-import { queryGeneticAnalystServices } from "@debionetwork/polkadot-provider"
+import { 
+  queryGeneticAnalysisOrderByCustomerId,
+  queryGeneticAnalystByAccountId,
+  queryGeneticAnalystServicesByHashId,
+  queryGeneticAnalysisByGeneticAnalysisTrackingId
+} from "@debionetwork/polkadot-provider"
 import { downloadFile, decryptFile, downloadDocumentFile } from "@/common/lib/pinata-proxy"
 import Kilt from "@kiltprotocol/sdk-js"
 import { u8aToHex } from "@polkadot/util"
@@ -129,57 +137,37 @@ export default {
 
     async fetchGeneticAnalysisData() {
       this.items = []
-      const accountId = this.wallet.address
-      const trackingId = await queryGeneticAnalysisByOwnerId(this.api, accountId)
+      const orderList = await queryGeneticAnalysisOrderByCustomerId(this.api, this.wallet.address)
+      const paidOrder = []
 
-      for (let i = 0; i < trackingId.length; i++) {
-        const geneticAnalysis = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, trackingId[i])
-        const { sellerId } = await queryGeneticAnalysisOrderById(this.api, geneticAnalysis.geneticAnalysisOrderId)
-        const { info: analystInfo } = await queryGeneticAnalystByAccountId(this.api, sellerId)
-
-        const dateCreated = new Date(parseInt(geneticAnalysis.createdAt.replace(/,/g, "")))
-        const dateUpdated = new Date(parseInt(geneticAnalysis.updatedAt.replace(/,/g, "")))
-        const timestamp = geneticAnalysis.updatedAt
-
-        const updatedAt = dateUpdated.toLocaleString("en-GB", {
-          day: "numeric", // numeric, 2-digit
-          year: "numeric", // numeric, 2-digit
-          month: "short" // numeric, 2-digit, long, short, narrow
-        })
-
-        const createdAt = dateCreated.toLocaleString("en-GB", {
-          day: "numeric", // numeric, 2-digit
-          year: "numeric", // numeric, 2-digit
-          month: "short" // numeric, 2-digit, long, short, narrow
-        })
-
-        const geneticAnalysisTrackingId = geneticAnalysis.geneticAnalystId
-
-        const geneticAnalystsData = await queryGeneticAnalysisById(this.api, geneticAnalysisTrackingId)
-        const fullName = (geneticAnalystsData.info.firstName + " " + geneticAnalystsData.info.lastName)
-
-        const orderId = geneticAnalysis.geneticAnalysisOrderId
-        const geneticAnalysisOrdersData = await queryGeneticAnalysisOrderById(this.api, orderId)
-
-        const serviceId = geneticAnalysisOrdersData.serviceId
-        const geneticAnalystServicesData = await queryGeneticAnalystServices(this.api, serviceId)
-
-        if (geneticAnalysisOrdersData.status !== "Unpaid") {
-          const dataResult = {
-            trackingId: trackingId[i],
-            serviceName: geneticAnalystServicesData.info.name,
-            analystName: fullName,
-            analystInfo,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
-            status: geneticAnalysis.status,
-            ipfsLink: geneticAnalysis.reportLink,
-            timestamp,
-            orderId
-          }
-          this.items.push(dataResult)
+      orderList.forEach( order => {
+        const status = order.status
+        if (status === "Paid") {
+          paidOrder.push(order)
         }
-      }
+      })
+
+      paidOrder.forEach( async order => {
+        const { geneticAnalysisdTrackingId, sellerId, serviceId, id, createdAt, updatedAt} = order
+        const geneticAnalysis = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, geneticAnalysisdTrackingId)
+        const analystInfo = await queryGeneticAnalystByAccountId(this.api, sellerId)
+        const geneticAnalysisService = await queryGeneticAnalystServicesByHashId(this.api, serviceId)
+        const timestamp = geneticAnalysis.createdAt
+
+        const data = {
+          trackingId: geneticAnalysisdTrackingId,
+          orderId: id,
+          serviceName: geneticAnalysisService.info.name,
+          analystName: `${analystInfo.info.firstName} ${analystInfo.info.lastName}`,
+          analystInfo,
+          createdAt: this.formatDate(createdAt),
+          updatedAt: this.formatDate(updatedAt),
+          status: this.getStatus(geneticAnalysis.status),
+          ipfsLink:  geneticAnalysis.reportLink,
+          timestamp
+        }
+        this.items.push(data)
+      })
     },
 
     toDetail(item) {
@@ -191,12 +179,30 @@ export default {
       })
     },
 
-    async toDownload(item){
-      if (item.status !== "ResultReady") return
+    formatDate(date) {
+      const formattedDate = new Date(parseInt(date.replace(/,/g, ""))).toLocaleDateString("en-GB", {
+        day: "numeric", month: "short", year: "numeric"
+      })
+      return formattedDate
+    },
 
+    getStatus(status) {
+      if (status === "Registered") {
+        return "Open"
+      }
+
+      if (status === "InProgress") {
+        return "Inprogress"
+      }
+
+      if (status === "ResultReady") {
+        return "Done"
+      }
+    },
+
+    async toDownload(item){
       const pair = { publicKey: item.analystInfo.boxPublicKey, secretKey: this.secretKey }
       const type = "application/pdf"
-
       const { data } = await downloadFile(item.ipfsLink)
       const decryptedFile = decryptFile(data, pair, type)
       await downloadDocumentFile(decryptedFile, item.ipfsLink.split("/").pop(), type)
@@ -214,16 +220,22 @@ export default {
 
 
     &__service
-      width: 117px
+      width: 108px
 
-    &__fullName
-      width: 480px
+    &__name
+      width: 140px
+
+    &__createdDate
+      width: 70px
+
+    &__updatedDate
+      width: 70px
 
     &__status
       width: 80px
 
     &__actions
-      width: 45px
+      width: 80px
       display: flex
       align-items: center
       justify-content: center
