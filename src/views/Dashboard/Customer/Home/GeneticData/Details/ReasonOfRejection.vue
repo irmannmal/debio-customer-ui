@@ -9,7 +9,7 @@
           .reason-of-rejection__text.mb-10 {{ title }}
 
           b.reason-of-rejection__textReason of Rejection
-          .reason-of-rejection__text {{ reason }}
+          .reason-of-rejection__text {{ message }}
 
       .reason-of-rejection__button
         ui-debio-button(
@@ -24,32 +24,16 @@
 
 
 <script>
-import { mapState } from "vuex"
-import { queryGeneticAnalysisOrder, queryGeneticAnalysisByGeneticAnalysisTrackingId } from "@debionetwork/polkadot-provider"
 
 export default {
   name: "ReasonOfRejection",
 
   props: {
-    show: Boolean
+    show: Boolean,
+    title: String,
+    message: String
   },
 
-  data: () => ({
-    title: "",
-    reason: "",
-    trackingId: null
-  }),
-
-  computed: {
-    ...mapState({
-      api: (state) => state.substrate.api,
-      wallet: (state) => state.substrate.wallet
-    })
-  },
-
-  async mounted() {
-    await this.getGAOrderDetail()
-  },
 
   methods: {
     closeDialog() {
@@ -58,20 +42,6 @@ export default {
 
     onSubmit() {
       this.$emit("click")
-    },
-
-    async getGAOrderDetail() {
-      const analysisOrderId = this.$route.params.id
-      const analysisOrderDetail = await queryGeneticAnalysisOrder(this.api, analysisOrderId)
-
-      if (analysisOrderDetail) {
-        this.trackingId = analysisOrderDetail.geneticAnalysisdTrackingId
-      }
-      
-      const GAStorage = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, this.trackingId)
-
-      this.title = GAStorage.rejectedTitle
-      this.reason = GAStorage.rejectedDescription
     }
   }
 }

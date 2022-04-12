@@ -22,6 +22,8 @@
 
     ReasonOfRejection(
       :show="reasonOfRejection"
+      :title="title"
+      :message="message"
       @close="reasonOfRejection = false"
     )
   
@@ -35,6 +37,8 @@ import StepperStatusCard from "./StepperStatusCard"
 import ReasonOfRejection from "./ReasonOfRejection"
 import ConfirmationDialog from "@/views/Dashboard/Customer/Home/MyTest/ConfirmationDialog"
 import { cancelGeneticAnalysisOrder, cancelGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
+import { queryGeneticAnalysisByGeneticAnalysisTrackingId } from "@debionetwork/polkadot-provider"
+
 
 export default {
   name: "GAOrderDetail",
@@ -63,6 +67,7 @@ export default {
           if (dataEvent[0].customerId === this.wallet.address) {
             this.isLoading = false
             this.showCancelDialog = false
+            this.toPaymentHistory()
           }
         }
       }
@@ -75,7 +80,10 @@ export default {
     orderId: null,
     isLoading: false,
     txWeight: "Calculating...",
-    reasonOfRejection: false
+    reasonOfRejection: false,
+    trackingId: "",
+    title: "",
+    message: ""
   }),
 
   async mounted() {
@@ -86,7 +94,6 @@ export default {
     }
 
     await this.getCancelFee()
-
   },
 
   methods: {
@@ -99,13 +106,25 @@ export default {
       this.txWeight = this.web3.utils.fromWei(String(txWeight.partialFee), "ether")
     },
 
+    async getDetail() {
+      const data = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, this.trackingId)
+      this.title = data.rejectedTitle
+      this.message = data.rejectedDescription
+    },
+
     async cancelOrder() {
       this.isLoading = true
       await cancelGeneticAnalysisOrder(this.api, this.wallet, this.orderId)
     },
 
-    showReasonOfRejection() {
+    showReasonOfRejection(val) {
+      this.trackingId = val
+      this.getDetail()
       this.reasonOfRejection = true
+    },
+
+    toPaymentHistory() {
+      this.$router.push({ name: "customer-payment-history" })
     }
   }
 

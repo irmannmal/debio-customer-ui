@@ -26,7 +26,7 @@
         .status-card__step
           div(:class="setClass(3)")
             v-icon.icon mdi-check
-          small Quality Control
+          small Result Ready
     .status-card__button
       ui-debio-button(
         v-if="orderStatus === 'Registered'"
@@ -38,13 +38,19 @@
       ) Cancel Request
 
       ui-debio-button(
-        v-else
-        :disabled="orderStatus === 'InProgress' || orderStatus === 'Cancelled'"
+        v-if="orderStatus === 'Rejected'"
+        width="100%" 
+        color="primary"
+        @click="viewResult"
+      ) View Reason
+
+      ui-debio-button(
+        v-if="orderStatus === 'InProgress' || orderStatus === 'ResultReady'"
+        :disabled="orderStatus === 'InProgress'"
         width="100%" 
         color="primary"
         @click="viewResult"
       ) View Result
-
 
 </template>
 
@@ -53,7 +59,11 @@
 
 import { mapState } from "vuex"
 import { registeredBanner } from "@debionetwork/ui-icons"
-import { queryGeneticAnalysisOrderById, queryGeneticAnalysisByGeneticAnalysisTrackingId } from "@debionetwork/polkadot-provider"
+import { queryGeneticAnalysisOrderById, queryGeneticAnalysisByGeneticAnalysisTrackingId, queryGeneticAnalystByAccountId } from "@debionetwork/polkadot-provider"
+import Kilt from "@kiltprotocol/sdk-js"
+import { u8aToHex } from "@polkadot/util"
+import CryptoJS from "crypto-js"
+import { downloadFile, decryptFile, downloadDocumentFile } from "@/common/lib/pinata-proxy"
 
 
 export default {
@@ -89,13 +99,19 @@ export default {
       }
     },
     orderStatus: null,
-    stepper: ["Order Confirmation", "Analyzed", "QualityControl"]
+    stepper: ["Order Confirmation", "Analyzed", "Result Ready"],
+    trackingId: "",
+    publicKey: null,
+    secretKey: null,
+    analystInfo: null,
+    analysisDetail: null
   }),
 
   computed: {
     ...mapState({
       api: (state) => state.substrate.api,
-      wallet: (state) => state.substrate.wallet
+      wallet: (state) => state.substrate.wallet,
+      mnemonicData: (state) => state.substrate.mnemonicData
     })
   },
 
@@ -104,15 +120,24 @@ export default {
     await this.getStatus()
   },
 
+  watch: {
+    mnemonicData(val) {
+      if (val) this.initialData()
+    }
+  },
+
   methods: {
     async getStatus() {
       const detail = await queryGeneticAnalysisOrderById(this.api, this.orderId)
-      const trackingId = detail.geneticAnalysisdTrackingId
-      const data = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, trackingId)
-      this.orderStatus = data.status
+      this.trackingId = detail.geneticAnalysisdTrackingId
+      const analysisDetail = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, this.trackingId)
+      this.analystInfo = await queryGeneticAnalystByAccountId(this.api, detail.sellerId)
+
+      this.orderStatus = analysisDetail.status
       this.status = this.orderDetail[this.orderStatus].status
       this.message = this.orderDetail[this.orderStatus].message
       this.activeStep = this.orderDetail[this.orderStatus].active
+      this.reportLink = analysisDetail.reportLink
     },
 
     setClass(step) {
@@ -133,10 +158,22 @@ export default {
 
     async viewResult() {
       if (this.orderStatus === "Rejected") {
-        this.$emit("reject")
+        this.$emit("reject", this.trackingId)
+        return
       }
-    }
 
+      const pair = { publicKey: this.analystInfo.info.boxPublicKey, secretKey: this.secretKey }
+      const type = "application/pdf"
+      const { data } = await downloadFile(this.reportLink)
+      const decryptedFile = decryptFile(data, pair, type)
+      await downloadDocumentFile(decryptedFile, this.reportLink.split("/").pop(), type)
+    },
+
+    async initialData(){
+      const cred = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
+      this.publicKey = u8aToHex(cred.boxKeyPair.publicKey)
+      this.secretKey = u8aToHex(cred.boxKeyPair.secretKey)
+    }
   }
 }
 </script>

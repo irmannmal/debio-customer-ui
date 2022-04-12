@@ -142,7 +142,7 @@ export default {
 
       orderList.forEach( order => {
         const status = order.status
-        if (status === "Paid") {
+        if (status === "Paid" || status === "Refunded" || status === "Fulfilled") {
           paidOrder.push(order)
         }
       })
@@ -192,12 +192,13 @@ export default {
       }
 
       if (status === "InProgress") {
-        return "Inprogress"
+        return "In Progress"
       }
 
       if (status === "ResultReady") {
         return "Done"
       }
+      return "Rejected"
     },
 
     async toDownload(item){
