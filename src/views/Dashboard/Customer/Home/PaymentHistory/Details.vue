@@ -190,12 +190,20 @@ export default {
           QUALITYCONTROLLED: "info--text"
         })
 
-        if (Object.keys(dataPayment.order).length) {
+        const parseDate = (date) => {
+          return new Date(parseInt(date.replaceAll(",", ""))).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric"
+          })
+        }
+
+        if (!Object.hasOwnProperty.call(dataPayment, "genetic_analysis_tracking_id")) {
           try {
             isNotGAOrders = true
-            rating = await getRatingService(dataPayment.order.service_id)
-            txDetails = await this.metamaskDispatchAction(fetchTxHashOrder, dataPayment.order.id)
-            data = await queryDnaSamples(this.api, dataPayment.order.dna_sample_tracking_id)
+            rating = await getRatingService(dataPayment.service_id)
+            txDetails = await this.metamaskDispatchAction(fetchTxHashOrder, dataPayment.id)
+            data = await queryDnaSamples(this.api, dataPayment.dna_sample_tracking_id)
           } catch (error) {
             console.error(error)
           }
@@ -205,7 +213,7 @@ export default {
           try {
             data = await queryGeneticAnalysisByGeneticAnalysisTrackingId(
               this.api,
-              dataPayment.orderGA.genetic_analysis_tracking_id
+              dataPayment.genetic_analysis_tracking_id
             )
           } catch (error) {
             console.error(error)
@@ -214,35 +222,27 @@ export default {
 
         this.payment = isNotGAOrders
           ? {
-            ...dataPayment.order,
+            ...dataPayment,
             section: "order",
-            formated_id: `${dataPayment.order.id.substr(0, 3)}...${dataPayment.order.id.substr(dataPayment.order.id.length - 4)}`,
+            formated_id: `${dataPayment.id.substr(0, 3)}...${dataPayment.id.substr(dataPayment.id.length - 4)}`,
             test_status: data?.status.replace(/([A-Z]+)/g, " $1").trim(),
             test_status_class: classes[data?.status.toUpperCase()],
             rating,
-            status_class: classes[dataPayment.order.status.toUpperCase()],
-            created_at: new Date(parseInt(dataPayment.order.created_at.replaceAll(",", ""))).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric"
-            })
+            status_class: classes[dataPayment.status.toUpperCase()],
+            created_at: parseDate(dataPayment.created_at)
           }
           : {
-            ...dataPayment.orderGA,
-            formated_id: `${dataPayment.orderGA.id.substr(0, 3)}...${dataPayment.orderGA.id.substr(dataPayment.orderGA.id.length - 4)}`,
-            status_class: classes[dataPayment.orderGA.status.toUpperCase()],
+            ...dataPayment,
+            formated_id: `${dataPayment.id.substr(0, 3)}...${dataPayment.id.substr(dataPayment.id.length - 4)}`,
+            status_class: classes[dataPayment.status.toUpperCase()],
             test_status: data?.status.replace(/([A-Z]+)/g, " $1").trim(),
             test_status_class: classes[data?.status.toUpperCase()],
             genetic_analyst_info: {
-              ...dataPayment.orderGA.genetic_analyst_info,
-              name: `${dataPayment.orderGA.genetic_analyst_info.first_name} ${dataPayment.orderGA.genetic_analyst_info.last_name}`
+              ...dataPayment.genetic_analyst_info,
+              name: `${dataPayment.genetic_analyst_info.first_name} ${dataPayment.genetic_analyst_info.last_name}`
             },
             section: "orderGA",
-            created_at: new Date(parseInt(dataPayment.orderGA.created_at.replaceAll(",", ""))).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric"
-            })
+            created_at: parseDate(dataPayment.created_at)
           }
       } catch(e) {
         if (e.response.status === 404)

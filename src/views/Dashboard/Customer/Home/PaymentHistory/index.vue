@@ -111,7 +111,7 @@ export default {
         if (b.status === "Unpaid") return
         else return b.timestamp - a.timestamp
       })
-    }, 1000),
+    }, 250),
 
     setButtonBackground(status) {
       const colors = Object.freeze({
