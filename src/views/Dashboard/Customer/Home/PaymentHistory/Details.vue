@@ -66,7 +66,7 @@
                   .price__value
                     | {{ formatPrice(payment.prices[0].value) }}
                     | {{ payment.currency }}
-                .price__block
+                .price__block(v-if="payment.section === 'order'")
                   .price__label QC Price
                   .price__value
                     | {{ payment.additional_prices.length ? formatPrice(payment.additional_prices[0].value) : "0" }}
@@ -77,7 +77,7 @@
                 .price__block
                   .price__label Refund Amount
                   .price__value.primary--text
-                    | 0 {{ payment.currency }}
+                    | {{ computeRefundedValue }}
 
                 ui-debio-button.payment-details__etherscan-link(
                   color="secondary"
@@ -157,6 +157,12 @@ export default {
     computeTotalPrices() {
       if (!this.payment?.additional_prices?.length) return this.formatPrice(this.payment?.prices[0].value)
       return this.formatPrice(this.payment?.prices[0].value) + this.formatPrice(this.payment?.additional_prices[0].value)
+    },
+
+    computeRefundedValue() {
+      return this.payment?.status === "Refunded"
+        ? `${this.computeTotalPrices} ${this.payment?.currency}`
+        : "-"
     }
   },
 
