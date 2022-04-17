@@ -25,7 +25,7 @@
         v-if="!success"
         :error="!!error"
         autofocus
-        :errorMessages="!!error ? error.message : null"
+        :errorMessages="!!error ? error : null"
         :rules="$options.rules.password"
         :type="showPassword ? 'text' : 'password'"
         variant="small"
@@ -301,7 +301,10 @@ export default {
           this.showModalPassword = false
         }, 1300)
       } catch (e) {
-        this.error = e
+        if (e.message === "Unable to decode using the supplied passphrase") {
+          return this.error = errorMessage.INCORRECT("Password")
+        }
+        this.error = e.message
       }
     },
 
