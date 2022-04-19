@@ -157,10 +157,11 @@ export default {
     experiences: Array
   },
 
-  async mounted() {
-    await this.getLastOrderStatus()
-    await this.getCustomerPublicKey()
-    await this.getTxWeight()
+  async created() {
+    if (this.mnemonicData) {
+      await this.getCustomerPublicKey() 
+      await this.getTxWeight()
+    } 
   },
 
   computed: {
@@ -196,10 +197,15 @@ export default {
   },
 
   methods: {
-
     async getLastOrderStatus () {
-      const lastOrderStatus = await queryLastGeneticAnalysisOrderByCustomerId(this.api, this.wallet.address)
-      return lastOrderStatus.status
+      let lastOrder 
+      try {
+        lastOrder = await queryLastGeneticAnalysisOrderByCustomerId(this.api, this.wallet.address)
+        return lastOrder.status
+      } catch (error) {
+        lastOrder = null
+        return lastOrder
+      }
     },
 
     async getTxWeight(){
@@ -242,7 +248,6 @@ export default {
     },
 
     async onSelect() {
-
       const status = await this.getLastOrderStatus()
       if (status === "Unpaid") {
         this.showAlert = true 

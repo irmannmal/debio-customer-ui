@@ -94,32 +94,36 @@ export default {
     async fetchGeneticData() {
       this.items = []
       const accountId = this.wallet.address
-      const dataList = await queryGeneticDataByOwnerId(this.api, accountId)
+      let dataList
 
-      if (!dataList) return this.isEmpty = true
+      try {
+        dataList = await queryGeneticDataByOwnerId(this.api, accountId)
 
-      for (const { id, owenerId, reportLink, title, description, createdAt, updatedAt } of dataList ) {
+        for (const { id, owenerId, reportLink, title, description, createdAt, updatedAt } of dataList ) {
 
-        let uploadAt
-        if (updatedAt !== "0") {
-          uploadAt = this.formatDate(updatedAt)
-        } else {
-          uploadAt = this.formatDate(createdAt)
+          let uploadAt
+          if (updatedAt !== "0") {
+            uploadAt = this.formatDate(updatedAt)
+          } else {
+            uploadAt = this.formatDate(createdAt)
+          }
+
+          const item = { id, owenerId, reportLink, title, description, uploadAt }
+          this.items.push(item)        
         }
 
-        const item = { id, owenerId, reportLink, title, description, uploadAt }
-        this.items.push(item)        
+        this.items.sort((a, b) => {
+          if(new Date(a.uploadAt) < new Date(b.uploadAt)) {
+            return 1
+          } 
+          if  (new Date(a.uploadAt) > new Date(b.uploadAt)) {
+            return -1
+          } 
+          return 0
+        })
+      } catch (error) {
+        this.isEmpty = true
       }
-
-      this.items.sort((a, b) => {
-        if(new Date(a.uploadAt) < new Date(b.uploadAt)) {
-          return 1
-        } 
-        if  (new Date(a.uploadAt) > new Date(b.uploadAt)) {
-          return -1
-        } 
-        return 0
-      })
     },
 
     selectData(item){
