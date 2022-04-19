@@ -202,7 +202,7 @@ export default {
       this.orderPrice = this.formatBalance(this.geneticOrderDetail.prices[0].value)
       this.orderCurrency = this.geneticOrderDetail.currency
       this.orderPriceInUsd = this.formatPriceInUsd(this.geneticOrderDetail.prices[0].value)
-      this.trackingId = this.geneticOrderDetail.geneticAnalysisTrackingId      
+      this.trackingId = this.geneticOrderDetail.geneticAnalysisdTrackingId      
     },
 
     formatBalance(val) {
