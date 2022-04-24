@@ -135,9 +135,15 @@ import { u8aToHex } from "@polkadot/util"
 import { syncDecryptedFromIPFS } from "@/common/lib/ipfs"
 import { createSyncEvent } from "@/common/lib/api"
 import { getCategories } from "@/common/lib/api"
-import { queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
-import { queryLabById } from "@debionetwork/polkadot-provider"
-import { queryServiceById } from "@debionetwork/polkadot-provider"
+import { 
+  queryOrdersByCustomer, 
+  queryLabById, 
+  queryServiceById, 
+  queryDnaSamples, 
+  queryDnaTestResults,
+  unstakeRequest,
+  unstakeRequestFee
+} from "@debionetwork/polkadot-provider"
 import {
   COVID_19,
   DRIED_BLOOD,
@@ -149,9 +155,6 @@ import {
 import metamaskServiceHandler from "@/common/lib/metamask/mixins/metamaskServiceHandler"
 import ConfirmationDialog from "./ConfirmationDialog.vue"
 
-import { queryDnaSamples, queryDnaTestResults } from "@debionetwork/polkadot-provider"
-import { unstakeRequest, unstakeRequestFee } from "@debionetwork/polkadot-provider"
-import { ordersByCustomer } from "@debionetwork/polkadot-provider"
 
 
 
@@ -323,17 +326,20 @@ export default {
       try {
         this.testResult = []
         const address = this.wallet.address
-        const orders = await ordersByCustomer(this.api, address)
+        const orders = await queryOrdersByCustomer(this.api, address)
         if (orders != null) {
           orders.reverse()
-          for (let i = 0; i < orders.length; i++) {
-            const detailOrder = await queryOrderDetailByOrderID(this.api, orders[i])
-            const dnaTestResults = await queryDnaTestResults(this.api, detailOrder.dnaSampleTrackingId)
-            if (detailOrder.status != "Cancelled" && detailOrder.status != "Unpaid") {
-              const dnaSample = await queryDnaSamples(this.api, detailOrder.dnaSampleTrackingId)
-              const detailLab = await queryLabById(this.api, dnaSample.labId)
-              const detailService = await queryServiceById(this.api, detailOrder.serviceId)
-              this.prepareTestResult(dnaTestResults, detailOrder, dnaSample, detailLab, detailService)
+          for (let i = 0; i < orders.length; i++) { 
+            if (orders[i].status !== "Cancelled" && orders[i].status != "Unpaid") {
+              const dnaSample = await queryDnaSamples(this.api, orders[i].dnaSampleTrackingId)
+              const detailLab = await queryLabById(this.api, orders[i].sellerId)
+              const detailService = await queryServiceById(this.api, orders[i].serviceId)
+              let dnaTestResults
+              
+              if (orders[i].status === "Fulfilled") {
+                dnaTestResults = await queryDnaTestResults(this.api, orders[i].dnaSampleTrackingId)
+              }
+              this.prepareTestResult(dnaTestResults, orders[i], dnaSample, detailLab, detailService)
             }
           }
         }

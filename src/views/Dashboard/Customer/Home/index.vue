@@ -137,14 +137,7 @@
 
 <script>
 import { creditCardIcon, layersIcon, labIllustration, doctorDashboardIllustrator, eyeIcon } from "@debionetwork/ui-icons"
-
-import {
-  queryOrdersByCustomer,
-  queryOrderDetailByOrderID
-} from "@debionetwork/polkadot-provider"
-import { queryDnaSamples } from "@debionetwork/polkadot-provider"
-import { queryLabById } from "@debionetwork/polkadot-provider"
-import { queryServiceById } from "@debionetwork/polkadot-provider"
+import { queryOrdersByCustomer, queryDnaSamples, queryLabById, queryServiceById } from "@debionetwork/polkadot-provider"
 import localStorage from "@/common/lib/local-storage"
 import { mapState } from "vuex"
 import {
@@ -214,12 +207,11 @@ export default {
             maxResults = orders.length;
           }
           for (let i = 0; i < orders.length; i++) {
-            const detailOrder = await queryOrderDetailByOrderID(this.api, orders[i])
-            if (detailOrder.status != "Cancelled" && detailOrder.status != "Unpaid") {
-              const dnaSample = await queryDnaSamples(this.api, detailOrder.dnaSampleTrackingId)
+            if (orders[i].status != "Cancelled" && orders[i].status != "Unpaid") {
+              const dnaSample = await queryDnaSamples(this.api, orders[i].dnaSampleTrackingId)
               const detailLab = await queryLabById(this.api, dnaSample.labId)
-              const detailService = await queryServiceById(this.api, detailOrder.serviceId)
-              this.prepareTestResult(detailOrder, dnaSample, detailLab, detailService)
+              const detailService = await queryServiceById(this.api, orders[i].serviceId)
+              this.prepareTestResult(orders[i], dnaSample, detailLab, detailService)
             }
           }
         }
@@ -242,11 +234,9 @@ export default {
           maxResults = listOrderId.length
         }
         for (let i = 0; i < maxResults; i++) {
-          const detailOrder = await queryOrderDetailByOrderID(this.api, listOrderId[i])
-          const detaillab = await queryLabById(this.api, detailOrder.sellerId)
-          const detailService = await queryServiceById(this.api, detailOrder.serviceId);
-          
-          this.preparePaymentData(detailOrder, detaillab, detailService)
+          const detailLab = await queryLabById(this.api, listOrderId[i].sellerId)
+          const detailService = await queryServiceById(this.api, listOrderId[i].serviceId);
+          this.preparePaymentData(listOrderId[i], detailLab, detailService)
         }
 
         this.paymentHistory.sort(
@@ -261,7 +251,7 @@ export default {
       }
     },
 
-    preparePaymentData(detailOrder, detaillab, detailService) {
+    preparePaymentData(detailOrder, detailLab, detailService) {
       const orderId = detailOrder.id
       const title = detailService.info.name
       const description = detailService.info.description
@@ -283,10 +273,10 @@ export default {
         dnaCollectionProcess: dnaCollectionProcess
       }
 
-      const labName = detaillab.info.name
-      const address = detaillab.info.address
-      const labImage = detaillab.info.profileImage
-      const labId = detaillab.info.boxPublicKey 
+      const labName = detailLab.info.name
+      const address = detailLab.info.address
+      const labImage = detailLab.info.profileImage
+      const labId = detailLab.info.boxPublicKey 
       const labInfo = { 
         name: labName,
         address: address,
