@@ -11,7 +11,7 @@
       .genetic-data-add__title {{ isEdit ? "Edit Genetic Data" : "Add Genetic Data"}}
       .genetic-data-add__forms
         ui-debio-input(
-          :rules="titleRule"
+          :rules="$options.rules.document.title"
           v-model="document.title"
           variant="small"
           label="Title"
@@ -22,7 +22,7 @@
         )
 
         ui-debio-textarea(
-          :rules="descriptionRule"
+          :rules="$options.rules.document.description"
           v-model="document.description"
           variant="small"
           label="Description"
@@ -37,7 +37,7 @@
           tooltipDesc="To upload file that bigger than 200 MB, you may compress the file into a .zip, .rar, .7zip file"
           v-model="document.file"
           variant="small"
-          :rules="fileRule"
+          :rules="$options.rules.document.file"
           :accept="['.txt', '.vcf', '.gz', '.zip', '.rar', '.7zip']"
           label="Upload File"
           label-rules="(.vcf.gz, .vcf, .txt - Maximum file size is 200MB)"
@@ -161,31 +161,28 @@ export default {
     disable() {
       const { title, description, file } = this.document
       return !title, description, file
-    },
+    }
+  },
 
-    titleRule() {
-      return[
+  rules: {
+    document: {
+      title: [
         rulesHandler.FIELD_REQUIRED,
         rulesHandler.ENGLISH_ALPHABET,
         rulesHandler.MAX_CHARACTER(50)
-      ]
-    },
-
-    descriptionRule() {
-      return[
+      ],
+      description: [
         rulesHandler.FIELD_REQUIRED,
         rulesHandler.ENGLISH_ALPHABET,
         rulesHandler.MAX_CHARACTER(255)
-      ]
-    },
-
-    fileRule() {
-      return[
+      ],
+      file: [
         rulesHandler.FIELD_REQUIRED,
         rulesHandler.FILE_SIZE(200000000)
       ]
     }
   },
+
 
   async created() {
     if (this.mnemonicData) this.initialDataKey()
@@ -364,12 +361,13 @@ export default {
 
     },
 
-    getFileIpfsUrl(file) {
-      const path = `${file.collection.data.ipfsFilePath}/${file.fileName}`
-      return `https://ipfs.io/ipfs/${path}`
-    },
-
     async onSubmit() {
+      this._touchForms("document")
+      const isDocumentValid = Object.values(this.isDirty?.document).every(v => v !== null && v === false)
+
+      if (!isDocumentValid) {
+        return
+      }
 
       const txWeight = Number(this.txWeight.split(" ")[0])
       if (this.walletBalance < txWeight) {
