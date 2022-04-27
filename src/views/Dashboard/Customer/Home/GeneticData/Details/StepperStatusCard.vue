@@ -162,6 +162,11 @@ export default {
         return
       }
 
+      this.$router.push({
+        name: "customer-genetic-analysis-result",
+        params: { id: this.$route.params.id }
+      })
+
       const pair = { publicKey: this.analystInfo.info.boxPublicKey, secretKey: this.secretKey }
       const type = "application/pdf"
       const { data } = await downloadFile(this.reportLink)

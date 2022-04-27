@@ -9,7 +9,7 @@
       div(v-if="orderStatus === 'Unpaid'")
         .customer-analysis-payment-card__amount
           .customer-analysis-payment-card__data-text Account Balance
-          .customer-analysis-payment-card__data-text {{ walletBalance.toFixed(4) }} DBIO
+          .customer-analysis-payment-card__data-text {{ walletBalance }} DBIO
         .customer-analysis-payment-card__amount
           .customer-analysis-payment-card__data-text Service Price
           .customer-analysis-payment-card__data-text(:style="setStyleColor") {{ orderPrice }} {{ orderCurrency }}

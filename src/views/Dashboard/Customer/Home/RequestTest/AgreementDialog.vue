@@ -105,8 +105,7 @@ export default {
       city: state => state.lab.city,
       category: state => state.lab.category,
       lastEventData: (state) => state.substrate.lastEventData,
-      web3: (state) => state.metamask.web3,
-      walletBalance: (state) => state.substrate.walletBalance
+      web3: (state) => state.metamask.web3
     }),
 
     amountRules() {

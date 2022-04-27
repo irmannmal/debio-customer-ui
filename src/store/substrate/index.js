@@ -79,7 +79,7 @@ export default {
       state.isLoadingWallet = isLoadingWallet
     },
     SET_WALLET_BALANCE(state, balance) {
-      state.walletBalance = balance
+      state.walletBalance = Number(balance).toFixed(4)
     },
     SET_WALLET_PUBLIC_KEY(state, publicKey) {
       state.walletPublicKey = publicKey

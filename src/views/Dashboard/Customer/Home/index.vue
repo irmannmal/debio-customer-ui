@@ -290,10 +290,10 @@ export default {
 
       const number = detailOrder.id
       const dateSet = new Date(
-        parseInt(detailOrder.createdAt.replace(",", ""))
+        parseInt(detailOrder.createdAt.replaceAll(",", ""))
       )
       const dateUpdate = new Date(
-        parseInt(detailOrder.updatedAt.replace(",", ""))
+        parseInt(detailOrder.updatedAt.replaceAll(",", ""))
       )
       const timestamp = dateSet.getTime().toString();
       const orderDate = dateSet.toLocaleString("en-GB", {
@@ -376,10 +376,10 @@ export default {
       }
 
       const dateSet = new Date(
-        parseInt(dnaSample.createdAt.replace(/,/g, ""))
+        parseInt(dnaSample.createdAt.replaceAll(",", ""))
       )
       const dateUpdate = new Date(
-        parseInt(dnaSample.updatedAt.replace(/,/g, ""))
+        parseInt(dnaSample.updatedAt.replaceAll(",", ""))
       )
       const timestamp = dateSet.getTime().toString();
       const orderDate = dateSet.toLocaleString("en-GB", {
@@ -468,10 +468,8 @@ export default {
 
   computed: {
     ...mapState({
-      walletBalance: (state) => state.substrate.walletBalance,
       api: (state) => state.substrate.api,
-      wallet: (state) => state.substrate.wallet,
-      lastEventData: (state) => state.substrate.lastEventData
+      wallet: (state) => state.substrate.wallet
     })
   }
 }
