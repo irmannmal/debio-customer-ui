@@ -126,21 +126,21 @@
                   ctaTitle="OK"
                 )
                   .content
-                    p {{ myTest.rejectedTitle || 'Title'}}
-                    p {{ myTest.rejectedDescription || 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'}}
+                    p {{ myTest.feedback.rejectedTitle }}
+                    p {{ myTest.feedback.rejectedDescription }}
                   .content-detail
                     .border-bottom.ph15
                       p Details:
                     .border-bottom.mt10.ph15
                       .flex
                         p Service Price
-                        p {{ myTest.serviceInfo.pricesByCurrency[0].priceComponents[0].value }} {{ myTest.serviceInfo.pricesByCurrency[0].currency.toUpperCase() }}
+                        p {{ formatPrice(myTest.serviceInfo.pricesByCurrency[0].totalPrice) }} {{ myTest.serviceInfo.pricesByCurrency[0].currency.toUpperCase() }}
                       .flex
                         p Quality Control Price
-                        p {{ myTest.serviceInfo.pricesByCurrency[0].additionalPrices[0].value }} {{ myTest.serviceInfo.pricesByCurrency[0].currency.toUpperCase() }}
+                        p {{ formatPrice(myTest.serviceInfo.pricesByCurrency[0].additionalPrices[0].value) }} {{ myTest.serviceInfo.pricesByCurrency[0].currency.toUpperCase() }}
                     .mt10.ph15.flex
                       p Amount to refund
-                      p {{ myTest.serviceInfo.pricesByCurrency[0].priceComponents[0].value - myTest.serviceInfo.pricesByCurrency[0].additionalPrices[0].value }} {{ myTest.serviceInfo.pricesByCurrency[0].currency.toUpperCase() }}
+                      p {{ formatPrice(myTest.serviceInfo.pricesByCurrency[0].totalPrice) - formatPrice(myTest.serviceInfo.pricesByCurrency[0].additionalPrices[0].value) }} {{ myTest.serviceInfo.pricesByCurrency[0].currency.toUpperCase() }}
 </template>
 
 <script>
@@ -161,6 +161,7 @@ import {
   qualityControlBanner, //"-20 0 300 125" size 295
   rejectedQCBanner
 } from "@debionetwork/ui-icons";
+import { mapState } from "vuex";
 export default {
   name: "OrderHistoryDetail",
   data: () => ({
@@ -244,13 +245,19 @@ export default {
     this.checkOrderDetail()
     this.iconSwitcher()
   },
+
   computed: {
+    ...mapState({
+      web3: (state) => state.metamask.web3
+    }),
+
     setDetail() {
       const detail = `Your sample has failed quality control. Your service fee of ${this.myTest.serviceInfo.pricesByCurrency[0].priceComponents[0].value - this.myTest.serviceInfo.pricesByCurrency[0].additionalPrices[0].value} ${this.myTest.serviceInfo.pricesByCurrency[0].currency} will be refunded to your account.`
       if (this.status.status === "Rejected") return detail
       return this.status.detail
     }
   },
+
   methods: {
     handleAction() {
       window.open(this.link, "_blank")
@@ -290,6 +297,10 @@ export default {
         this.selectedIcon = weightLifterIcon;
         break;
       }
+    },
+
+    formatPrice(price) {
+      return this.web3.utils.fromWei(String(price.replaceAll(",", "")), "ether")
     },
     
     checkOrderDetail() {
