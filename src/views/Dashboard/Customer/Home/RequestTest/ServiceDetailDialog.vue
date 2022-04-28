@@ -6,8 +6,7 @@
           v-icon mdi-close
 
       div.dialog-service__service-image
-        v-img(v-if="!selectedService.serviceImage" :src="debioLogo" width="120" height="120" srounded contain)
-        ui-debio-avatar(v-else :src="selectedService.serviceImage" size="120" rounded)
+        ui-debio-avatar( :src="computeAvatar" size="120" rounded)
         
       div.dialog-service__service-name
         .dialog-service__title {{ selectedService.serviceName }}
@@ -58,21 +57,12 @@
 <script>
 
 import { mapState } from "vuex"
-import { downloadDecryptedFromIPFS } from "@/common/lib/ipfs"
 import { getLocations } from "@/common/lib/api"
-import Kilt from "@kiltprotocol/sdk-js"
-import CryptoJS from "crypto-js"
-import { u8aToHex } from "@polkadot/util"
-
-
-
 
 export default {
   name: "ServiceDetailDialog",
   
   data: () => ({
-    formatedDurationType: "",
-    avatar: "",
     countries: []
   }),
 
@@ -84,13 +74,14 @@ export default {
     show: Boolean
   },
 
-  
-
   computed: {
     ...mapState({
-      mnemonicData: (state) => state.substrate.mnemonicData,
       selectedService: (state) => state.testRequest.products
-    })
+    }),
+
+    computeAvatar() {
+      return this.selectedService.serviceImage ? this.selectedService.serviceImage : require("@/assets/debio-logo.png")
+    }
   },
 
   methods: {
@@ -115,22 +106,8 @@ export default {
       }
     },
 
-    async downloadFile () {
-
-      const cred = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
-
-      const publicKey = u8aToHex(cred.boxKeyPair.publicKey)
-      const privateKey = u8aToHex(cred.boxKeyPair.secretKey)
-      const arr = this.selectedService.resultSample.split("/")
-      const path = arr[arr.length-1]
-
-      await downloadDecryptedFromIPFS(
-        path,
-        privateKey,
-        publicKey,
-        `${this.selectedService.serviceId}.pdf`,
-        "application/pdf"
-      )
+    downloadFile () {
+      window.open(this.selectedService.resultSample)
     }
   }
 }
