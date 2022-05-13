@@ -138,6 +138,7 @@ export default {
             ]
           },
           verification_status:  verificationStatus,
+          stake_status: stakeStatus,
           service_flow: serviceFlow
         } = this.services[i]
 
@@ -178,14 +179,16 @@ export default {
           duration,
           durationType,
           verificationStatus,
+          stakeStatus,
           indexPrice: 0,
           dnaCollectionProcess,
           resultSample,
           serviceFlow
         }
-
         if (service.verificationStatus === "Verified") {
-          this.serviceList.push(service)
+          if (service.stakeStatus === "Staked") {
+            this.serviceList.push(service)
+          }
         }
       }
 
