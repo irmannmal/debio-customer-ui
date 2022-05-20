@@ -1,101 +1,101 @@
 <template lang="pug">
-  div
-    v-container
-      ui-debio-card(width="100%")
-        v-row.resultBody
-          v-col(cols="12" md="9")
-            .test-result__viewer
-              .test-result__viewer-wrapper(
-                :class="{ 'test-result__viewer-wrapper--animated': resultLoading }"
-              )
-                h3.test-result__viewer-loading.text-center(v-if="resultLoading") {{ message }}
-                embed.test-result__viewer-content(
-                  v-if="!resultLoading && result"
-                  :src="`${result}#toolbar=0&navpanes=0&scrollbar=0`"
-                  type="application/pdf"
-                )
-          v-col(cols="12" md="3")
-            div.buttonSection(v-for="file in files" :key="file.name")
-              ui-debio-card(
-                :title="file.fileTitle"
-                :sub-title="file.fileSubTitle"
-                tiny-card
-                with-icon
-                role="button"
-                @click="actionDownload(file.fileLink)"
-              )
-                ui-debio-icon(
-                  slot="icon"
-                  size="33"
-                  :icon="downloadIcon"
-                  stroke
-                  color="#c400a5"
-                )
-
-            ui-debio-card(
-              v-if="!ratingTestResult"
-              class="mt-2"
-              tiny-card
-              with-icon
-              title="Rating"
-              sub-title="Help us improve your test experience by rating this service"
-              @click="actionRating"
-              )
-                ui-debio-icon(
-                  size="33"
-                  slot="icon"
-                  :icon="starIcon"
-                  stroke
-                  color="#c400a5"
-                )
-            ui-debio-card(
-              v-else
-              class="mt-2"
-              tiny-card
-              with-icon
-              :title="ratingTitle"
-              :sub-title="ratingSubTitle"
-              )
-                ui-debio-rating(
-                  :size="33"
-                  :total-rating="ratingTestResult"
-                  :with-reviewers="false"
-                )
-
-      ui-debio-modal(
-        :show="showModalRating"
-        :cta-action="submitRating"
-        title="Please tell us about your experience!"
-        cta-title="Submit"
-        @onClose="showModalRating = false"
-      )
-        template
-          ui-debio-rating(
-            :size="33"
-            :total-rating="5"
-            :with-reviewers="false"
-            interactive
-            @input="getRating"
+v-container
+  ui-debio-card(width="100%")
+    v-row.resultBody
+      v-col(cols="12" md="9")
+        .test-result__viewer
+          .test-result__viewer-wrapper(
+            :class="{ 'test-result__viewer-wrapper--animated': resultLoading }"
           )
-          ui-debio-textarea(
-            :rules="$options.rules.review"
-            variant="small"
-            label="Write a review"
-            placeholder="Write a review"
-            v-model="review"
-            validate-on-blur
-            outlined
-            block
-          )
+            h3.test-result__viewer-loading.text-center(v-if="resultLoading") {{ message }}
+            embed.test-result__viewer-content(
+              v-if="!resultLoading && result"
+              :src="`${result}#toolbar=0&navpanes=0&scrollbar=0`"
+              type="application/pdf"
+            )
 
-      ui-debio-modal(
-        :show="showModal"
-        :icon="checkCircleIcon"
-        :cta-action="closeModal"
-        :title="modalTitle"
-        cta-title="OK"
-        @onClose="showModal = false"
+      v-col(cols="12" md="3")
+        div.buttonSection(v-for="file in files" :key="file.name")
+          ui-debio-card(
+            :title="file.fileTitle"
+            :sub-title="file.fileSubTitle"
+            tiny-card
+            with-icon
+            role="button"
+            @click="actionDownload(file.fileLink)"
+          )
+            ui-debio-icon(
+              slot="icon"
+              size="33"
+              :icon="downloadIcon"
+              stroke
+              color="#c400a5"
+            )
+
+        ui-debio-card(
+          v-if="!ratingTestResult"
+          class="mt-2"
+          tiny-card
+          with-icon
+          title="Rating"
+          sub-title="Help us improve your test experience by rating this service"
+          @click="actionRating"
+          )
+            ui-debio-icon(
+              size="33"
+              slot="icon"
+              :icon="starIcon"
+              stroke
+              color="#c400a5"
+            )
+        ui-debio-card(
+          v-else
+          class="mt-2"
+          tiny-card
+          with-icon
+          :title="ratingTitle"
+          :sub-title="ratingSubTitle"
+          )
+            ui-debio-rating(
+              :size="33"
+              :total-rating="ratingTestResult"
+              :with-reviewers="false"
+            )
+
+  ui-debio-modal(
+    :show="showModalRating"
+    :cta-action="submitRating"
+    title="Please tell us about your experience!"
+    cta-title="Submit"
+    @onClose="showModalRating = false"
+  )
+    template
+      ui-debio-rating(
+        :size="33"
+        :total-rating="5"
+        :with-reviewers="false"
+        interactive
+        @input="getRating"
       )
+      ui-debio-textarea(
+        :rules="$options.rules.review"
+        variant="small"
+        label="Write a review"
+        placeholder="Write a review"
+        v-model="review"
+        validate-on-blur
+        outlined
+        block
+      )
+
+  ui-debio-modal(
+    :show="showModal"
+    :icon="checkCircleIcon"
+    :cta-action="closeModal"
+    :title="modalTitle"
+    cta-title="OK"
+    @onClose="showModal = false"
+  )
 
 </template>
 
@@ -147,7 +147,7 @@ export default {
     files: []
   }),
 
-  async mounted() {
+  async created() {
     this.resultLoading = true
     this.idOrder = this.$route.params.idOrder
     const cred = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))

@@ -45,8 +45,7 @@
             .product-section
               div
                 p.product-detail__title Service Provider
-                .product-detail__provider(v-if="payment.section === 'order'") {{ payment.lab_info.name }}
-                .product-detail__provider(v-else) {{ payment.genetic_analyst_info.name }}
+                .product-detail__provider {{ computeProviderName }}
               div
                 p.product-detail__title Service Name
                 .product-detail__provider {{ payment.service_info.name }}
@@ -143,6 +142,12 @@ export default {
       rating: (state) => state.rating.rate,
       web3: (state) => state.metamask.web3
     }),
+
+    computeProviderName() {
+      return this.payment.section === "order"
+        ? this.payment?.lab_info?.name ?? "Unknown Provider"
+        : this.payment?.genetic_analyst_info?.name ?? "Unknown Provider"
+    },
 
     computeDetailsTitle() {
       return this.payment?.status === "Paid"

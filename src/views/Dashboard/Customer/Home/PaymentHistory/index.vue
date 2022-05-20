@@ -92,19 +92,30 @@ export default {
       const { orders, ordersGA } = await fetchPaymentHistories(val)
       const results = [...orders.data, ...ordersGA.data]
 
-      this.payments = results.map(result => ({
-        ...result._source,
-        id: result._id,
-        provider: result._index === "orders"
-          ? result._source.lab_info.name
-          : `${result._source.genetic_analyst_info.first_name} ${result._source.genetic_analyst_info.last_name}`,
-        timestamp: parseInt(result._source.created_at.replaceAll(",", "")),
-        created_at: new Date(parseInt(result._source.created_at.replaceAll(",", ""))).toLocaleDateString("en-GB", {
-          day: "numeric",
-          month: "short",
-          year: "numeric"
-        })
-      }))
+      this.payments = results.map(result => {
+        const analystName = `
+          ${result._source?.genetic_analyst_info?.first_name ?? ""} 
+          ${result?._source?.genetic_analyst_info?.last_name ?? ""}
+        `
+
+        const computeAnalystName = !/^\s*$/.test(analystName)
+          ? analystName
+          : "Unknown Analyst Provider"
+
+        return {
+          ...result._source,
+          id: result._id,
+          provider: result._index === "orders"
+            ? result._source?.lab_info?.name ?? "Unknown Lab Provider"
+            : computeAnalystName,
+          timestamp: parseInt(result._source.created_at.replaceAll(",", "")),
+          created_at: new Date(parseInt(result._source.created_at.replaceAll(",", ""))).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric"
+          })
+        }
+      })
 
       // NOTE: Set unpaid status to always be in the top position
       this.payments.sort((a, b) => {
