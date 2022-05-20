@@ -102,7 +102,8 @@ import {
   queryElectronicMedicalRecordByOwnerId,
   queryElectronicMedicalRecordFileById,
   deregisterElectronicMedicalRecord,
-  deregisterElectronicMedicalRecordFee } from "@debionetwork/polkadot-provider"
+  deregisterElectronicMedicalRecordFee
+} from "@debionetwork/polkadot-provider"
 import CryptoJS from "crypto-js"
 import Kilt from "@kiltprotocol/sdk-js"
 import { u8aToHex } from "@polkadot/util"
@@ -220,22 +221,29 @@ export default {
 
     async getEMRHistory() {
       this.showModal = false
+      this.isLoading = true
       this.emrDocuments = []
 
-      const dataEMR = await this.metamaskDispatchAction(queryElectronicMedicalRecordByOwnerId, this.api, this.wallet.address)
+      try {
+        const dataEMR = await queryElectronicMedicalRecordByOwnerId(this.api, this.wallet.address)
 
-      if (dataEMR !== null) {
-        const listEMR = dataEMR.reduce((filtered, current) => {
-          if (filtered.every(v => v !== current)) filtered.push(current)
+        if (dataEMR !== null || !dataEMR.length) {
+          const listEMR = dataEMR.reduce((filtered, current) => {
+            if (filtered.every(v => v.id !== current.id)) filtered.push(current)
 
-          return filtered
-        }, [])
+            return filtered
+          }, [])
 
-        listEMR.reverse()
+          listEMR.reverse()
 
-        for (const emrDetail of listEMR) {
-          await this.prepareEMRData(emrDetail)
+          for (const emrDetail of listEMR) {
+            await this.prepareEMRData(emrDetail)
+          }
         }
+        this.isLoading = false
+      } catch (error) {
+        this.isLoading = false
+        console.error(error);
       }
     },
 

@@ -131,8 +131,8 @@
                       @click="onDelete(item.createdAt)"
                     ) Yes
 
-                .customer-create-emr__file-title {{ item.title }}
-                .customer-create-emr__file-description {{ item.description }}
+                .customer-create-emr__file-title(:title="`Title: ${item.title}`") {{ item.title }}
+                .customer-create-emr__file-description(:title="`Description: ${item.description}`") {{ item.description }}
                 .customer-create-emr__file-details
                   .customer-create-emr__file-details--left
                     ui-debio-icon.customer-create-emr__file-icon(
@@ -141,7 +141,7 @@
                       color="#D3C9D1"
                       fill
                     )
-                    .customer-create-emr__file-name(v-if="item.file") {{ item.file.name }}
+                    .customer-create-emr__file-name(v-if="item.file" :title="`File: ${item.file.name}`") {{ item.file.name }}
 
                   .customer-create-emr__file-details--right
                     ui-debio-icon.customer-create-emr__file-edit(

@@ -131,8 +131,8 @@
                       @click="onDelete(item.id)"
                     ) Yes
 
-                .customer-create-emr__file-title {{ item.title }}
-                .customer-create-emr__file-description {{ item.description }}
+                .customer-create-emr__file-title(:title="`Title: ${item.title}`") {{ item.title }}
+                .customer-create-emr__file-description(:title="`Description: ${item.description}`") {{ item.description }}
                 .customer-create-emr__file-details
                   .customer-create-emr__file-details--left
                     ui-debio-icon.customer-create-emr__file-icon(
@@ -141,7 +141,7 @@
                       color="#D3C9D1"
                       fill
                     )
-                    .customer-create-emr__file-name(v-if="item.file") {{ item.file.name }}
+                    .customer-create-emr__file-name(v-if="item.file" :title="`File: ${item.file.name}`") {{ item.file.name }}
 
                   .customer-create-emr__file-details--right
                     ui-debio-icon.customer-create-emr__file-edit(
@@ -188,14 +188,16 @@ import { mapState } from "vuex"
 
 import Kilt from "@kiltprotocol/sdk-js"
 import CryptoJS from "crypto-js"
-import ipfsWorker from "@/common/lib/ipfs/ipfs-worker"
 import cryptWorker from "@/common/lib/ipfs/crypt-worker"
 import { getEMRCategories } from "@/common/lib/api"
 import {
   queryElectronicMedicalRecordById,
   queryElectronicMedicalRecordFileById,
   updateElectronicMedicalRecord,
-  registerElectronicMedicalRecordFee } from "@debionetwork/polkadot-provider"
+  registerElectronicMedicalRecordFee
+} from "@debionetwork/polkadot-provider"
+
+import { uploadFile, getFileUrl, getIpfsMetaData, downloadFile, decryptFile } from "@/common/lib/pinata-proxy"
 import { u8aToHex } from "@polkadot/util"
 import { generalDebounce } from "@/common/lib/utils"
 import { validateForms } from "@/common/lib/validate"
@@ -282,7 +284,7 @@ export default {
     },
 
     mnemonicData(val) {
-      if (val) this.initialDataKey()
+      if (val) this.initialData()
     },
 
     emr: {
@@ -326,8 +328,7 @@ export default {
   async created() {
     this.fetchCategories()
     if (this.mnemonicData) {
-      this.initialData()
-      this.initialDataKey()
+      await this.initialData()
       this.calculateTxWeight()
     }
   },
@@ -363,18 +364,26 @@ export default {
         files.push(dataFile)
       }
 
-      this.emr.files = files.map(file => ({
-        ...file,
-        file: new File([], file.recordLink.split("/").pop(), {type: "application/pdf"}),
-        oldFile: new File([], file.recordLink.split("/").pop(), {type: "application/pdf"}),
-        recordLink: file.recordLink
-      }))
-    },
-    initialDataKey() {
-      const cred = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
+      let completeFiles = []
 
-      this.publicKey = u8aToHex(cred.boxKeyPair.publicKey)
-      this.secretKey = u8aToHex(cred.boxKeyPair.secretKey)
+      for (const file of files) {
+        const details = await getIpfsMetaData(file.recordLink.split("/").pop())
+        const pair = { publicKey: this.publicKey, secretKey: this.secretKey }
+        const { type, data } = await downloadFile(file.recordLink, true)
+
+        const decryptedFile = decryptFile(data, pair, type)
+
+        const blobData = new Blob([decryptedFile], { type })
+
+        completeFiles.push({
+          ...file,
+          file: new File([blobData], details.rows[0].metadata.name, {type: "application/pdf"}),
+          oldFile: new File([blobData], details.rows[0].metadata.name, {type: "application/pdf"}),
+          recordLink: file.recordLink
+        })
+      }
+
+      this.emr.files = completeFiles
     },
 
     async fetchCategories() {
@@ -388,11 +397,6 @@ export default {
       this.password = ""
     },
 
-    getFileIpfsUrl(file) {
-      const path = file.ipfsPath.data.path
-      return `https://ipfs.io/ipfs/${path}`
-    },
-    
     handleNewFile() {
       this._touchForms("document")
       const { title: docTitle, description: docDescription, file: docFile } = this.isDirty?.document
@@ -420,7 +424,6 @@ export default {
             chunks,
             fileName,
             fileType,
-            fileIsEdited: true,
             createdAt: new Date().getTime()
           }
 
@@ -440,29 +443,7 @@ export default {
         }
       }
 
-      if(file != this.document.oldFile) {
-        fr.readAsArrayBuffer(file)
-        this.onCloseModalDocument()
-        return
-      }
-
-      const dataFile = {
-        title,
-        description,
-        file,
-        fileIsEdited: false,
-        createdAt: new Date().getTime()
-      }
-
-      if (context.isEdit) {
-        const index = context.emr.files.findIndex(file => file.createdAt === createdAt)
-
-        context.emr.files[index] = dataFile
-
-        context.emr.files = context.emr.files.map(file => file)
-        context.isEdit = false
-      }
-
+      fr.readAsArrayBuffer(file)
       this.onCloseModalDocument()
     },
 
@@ -534,7 +515,6 @@ export default {
         if (this.emr.files.length === 0) return
 
         for await (let [index, value] of this.emr.files.entries()) {
-          if(!value.fileIsEdited) continue
           const dataFile = await this.setupFileReader({ value })
           await this.upload({
             encryptedFileChunks: dataFile.chunks,
@@ -607,40 +587,16 @@ export default {
     },
 
     async upload({ encryptedFileChunks, fileName, index, fileType }) {
-      const chunkSize = 30 * 1024 * 1024 // 30 MB
-      let offset = 0
       const data = JSON.stringify(encryptedFileChunks)
       const blob = new Blob([data], { type: fileType })
-      const uploaded = await new Promise((resolve, reject) => {
-        try {
-          const fileSize = blob.size
-          do {
-            let chunk = blob.slice(offset, chunkSize + offset)
-            ipfsWorker.workerUpload.postMessage({
-              seed: chunk.seed,
-              file: blob
-            })
-            offset += chunkSize
-          } while (chunkSize + offset < fileSize)
 
-          let uploadSize = 0
-          ipfsWorker.workerUpload.onmessage = async (event) => {
-            uploadSize += event.data.data.size
-
-            if (uploadSize >= fileSize) {
-              resolve({
-                fileName: fileName,
-                fileType: fileType,
-                ipfsPath: event.data
-              })
-            }
-          }
-        } catch (err) {
-          reject(new Error(err.message))
-        }
+      const result = await uploadFile({
+        title: fileName,
+        type: fileType,
+        file: blob
       })
 
-      const link = this.getFileIpfsUrl(uploaded)
+      const link = getFileUrl(result.IpfsHash)
 
       this.emr.files[index].recordLink = link
     },
