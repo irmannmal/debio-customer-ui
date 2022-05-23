@@ -84,7 +84,6 @@ export default {
     async initialData() {
       const cred = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
 
-      this.publicKey = u8aToHex(cred.boxKeyPair.publicKey)
       this.secretKey = u8aToHex(cred.boxKeyPair.secretKey)
 
       if (cred) await this.prepareData()
@@ -116,6 +115,8 @@ export default {
         analyst: analyst.info,
         geneticData: { ...geneticData, lastUpdate: parseDate(geneticData.updatedAt) }
       }
+
+      this.publicKey = this.details?.analyst?.boxPublicKey
 
       this.parseResult(geneticData.reportLink)
     },
