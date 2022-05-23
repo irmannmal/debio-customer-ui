@@ -4,7 +4,6 @@ import store from "@/store"
 import {
   getIpfsMetaData as pinataIpfsGetIpfsMetadata,
   uploadFile as pinataIpfsUploadFile,
-  downloadDocumentFileInBrowser,
   downloadJson
 } from "@debionetwork/pinata-ipfs"
 
@@ -84,11 +83,13 @@ export const decryptFile = (obj, pair) => {
 
 export const downloadDocumentFile = (data, fileName, type) => {
   try {
-    downloadDocumentFileInBrowser(
-      data,
-      fileName,
-      type
-    )
+    const blob = new Blob([data], { type });
+    const a = document.createElement("a");
+
+    a.download = fileName;
+    a.href = window.URL.createObjectURL(blob);
+    a.dataset.downloadurl = ["text/json", a.download, a.href].join(":");
+    a.click()
   } catch (error) {
     console.error(error)
   }
