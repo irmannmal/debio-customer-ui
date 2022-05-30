@@ -62,18 +62,18 @@ export default [
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/MyTest")
       },
       {
-        path: "order-history-detail",
+        path: "order-history-detail/:id",
         name: "order-history-detail",
         meta: {
           pageHeader: "Order History Detail",
-          parent: "customer-test"
+          parent: "my-test"
         },
         component: () => import( /* webpackChunkName */ "@/views/Dashboard/Customer/Home/MyTest/OrderHistoryDetail")
       },
       {
         path: "test-result",
         name: "test-result",
-        meta: { pageHeader: "Test Result", parent: "customer-test" },
+        meta: { pageHeader: "Test Result", parent: "my-test" },
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/MyTest/TestResult")
       },
       {

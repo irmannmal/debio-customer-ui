@@ -78,7 +78,7 @@
                       width="50%"
                       dark
                       color="primary"
-                      :to="{ name: 'order-history-detail', params: item}"
+                      :to="{ name: 'order-history-detail', params: { id: item.orderId }}"
                     ) Details
                     
                     ui-debio-button(
