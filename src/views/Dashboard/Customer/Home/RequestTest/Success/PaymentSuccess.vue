@@ -6,13 +6,19 @@
 
     template
       v-row.customer-payment-success__row
-        LabDetailCard
-        PaymentDetailCard
+        LabDetailCard(
+          :serviceDetail="selectedService"
+        )
+        PaymentDetailCard(
+          :serviceDetail="selectedService"
+          :orderDetail="detailOrder"
+        )
 
   
 </template>
 <script>
 
+import { mapState } from "vuex"
 import LabDetailCard from "../LabDetailCard.vue"
 import PaymentDetailCard from "../PaymentDetailCard.vue"
 
@@ -24,17 +30,12 @@ export default {
     PaymentDetailCard
   },
 
-  data: () => ({
-    isSuccess: true
-  }),
-
-  methods: {
-    onContinue () {
-      this.$emit("onContinue")
-    }
+  computed: {
+    ...mapState({
+      selectedService: (state) => state.testRequest.products,
+      detailOrder: (state) => state.testRequest.order
+    })
   }
-
-
 }
 </script>
 

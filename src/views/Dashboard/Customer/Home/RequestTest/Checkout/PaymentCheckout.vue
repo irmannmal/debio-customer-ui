@@ -5,21 +5,24 @@
 
     template
       v-row.customer-payment-checkout__row
-        LabDetailCard
+        LabDetailCard(
+          :serviceDetail="service"
+        )
         PaymentDetailCard(
+          :serviceDetail="service"
+          :orderDetail="detailOrder"
+          :loading="isLoading"
           @cancel="isCancelled = true"
           @onContinue="onContinue"
         )
-
-
 </template>
 
 <script>
 
-import { mapState } from "vuex"
+import { mapState, mapMutations } from "vuex"
 import LabDetailCard from "../LabDetailCard.vue"
 import PaymentDetailCard from "../PaymentDetailCard.vue"
-import { queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
+import { queryLabById, queryOrderDetailByOrderID, queryServiceById } from "@debionetwork/polkadot-provider"
 
 
 export default {
@@ -32,30 +35,128 @@ export default {
 
   computed: {
     ...mapState({
-      api: (state) => state.substrate.api
+      api: (state) => state.substrate.api,
+      web3: (state) => state.metamask.web3,
+      dataService: (state) => state.testRequest.products
     })
   },
 
   data: () => ({
-    isCancelled: false
+    isCancelled: false,
+    isLoading: false,
+    detailOrder: {},
+    service: {}
   }),
 
   async mounted () {
+    if (!this.$route.params.id) {
+      this.service = this.dataService
+    }
+
     if (this.$route.params.id) {
-      const detailOrder = await queryOrderDetailByOrderID(this.api, this.$route.params.id)
-      if (detailOrder.status === "Cancelled") {
+      this.detailOrder = await queryOrderDetailByOrderID(this.api, this.$route.params.id)
+
+      this.setOrderDetail(this.detailOrder)
+
+      if (this.detailOrder.status === "Cancelled") {
         this.isCancelled = true
       }
+      await this.getServiceDetail()
     }
   },
 
   methods: {
+    ...mapMutations({
+      setProductsToRequest: "testRequest/SET_PRODUCTS",
+      setOrderDetail: "testRequest/SET_ORDER"
+    }),
+
     onContinue () {
       this.$router.push({ name: "customer-request-test-service"})
+    },
+
+    async getServiceDetail() {
+      this.isLoading = true
+      const labDetail = await queryLabById(this.api, this.detailOrder.sellerId)
+      const serviceDetail = await queryServiceById(this.api, this.detailOrder.serviceId)
+
+      let {
+        accountId: labId,
+        info: {
+          name: labName,
+          address: labAddress,
+          city,
+          region,
+          country,
+          profileImage: labImage
+        },
+        verificationStatus,
+        stakeStatus
+      } = labDetail
+
+      let {
+        id: serviceId,
+        info: {
+          name: serviceName,
+          category: serviceCategory,
+          description: serviceDescription,
+          longDescription,
+          image: serviceImage,
+          dnaCollectionProcess,
+          testResultSample: resultSample,
+          expectedDuration: {
+            duration,
+            durationType
+          },
+          pricesByCurrency
+        },
+        serviceFlow
+      } = serviceDetail
+
+      const labRateData = await this.$store.dispatch("rating/getLabRate", labId)
+      const serviceData = await this.$store.dispatch("rating/getServiceRate", serviceId)
+      const detailPrice = pricesByCurrency[0]
+      
+      this.service = {
+        serviceId, 
+        serviceName, 
+        serviceRate: serviceData.rating_service,
+        serviceImage, 
+        serviceCategory, 
+        serviceDescription, 
+        longDescription, 
+        labId,
+        labName,
+        labRate: labRateData.rating,
+        labAddress,
+        labImage,
+        totalPrice: this.formatPrice(detailPrice.totalPrice.replaceAll(",", "")),
+        servicePrice: this.formatPrice(detailPrice.priceComponents[0].value.replaceAll(",","")),
+        qcPrice: this.formatPrice(detailPrice.additionalPrices[0].value.replaceAll(",","")),
+        currency: detailPrice.currency.toUpperCase(),
+        city,
+        country,
+        region,
+        countRateLab: labRateData.count,
+        countServiceRate: serviceData.count_rating_service,
+        duration, 
+        durationType,
+        verificationStatus,
+        stakeStatus,
+        indexPrice: 0,
+        dnaCollectionProcess, 
+        resultSample,
+        serviceFlow
+      }
+
+      this.setProductsToRequest(this.service)
+      this.isLoading = false
+    },
+
+    formatPrice(price) {
+      return this.web3.utils.fromWei(price, "ether")
     }
   }
-
-
 }
 </script>
 

@@ -1,34 +1,32 @@
 <template lang="pug">
   v-container.container-card
-    v-card.menu-card
+    v-skeleton-loader(
+      v-if="loading" 
+      type="card"
+      width="300"
+    )
+    v-card.menu-card(v-if="!loading")
       .menu-card__title Order Summary
-
       .menu-card__sub-title-medium Details
-
       hr.menu-card__line
-
       .menu-card__details
         .menu-card__sub-title Service Price
         .menu-card__price 
-          | {{ servicePrice }}
-          | {{ currency }}
-    
-
+          | {{ serviceDetail.servicePrice }}
+          | {{ serviceDetail.currency}}
       .menu-card__details
         .menu-card__sub-title Quality Control Price
-        .menu-card__price 
-          | {{ qcPrice }} 
-          | {{ currency }}
+        .menu-card__price
+          | {{ serviceDetail.qcPrice }} 
+          | {{ serviceDetail.currency }}
 
       .menu-card__operation +
       hr.menu-card__line
-
       .menu-card__details
         .menu-card__sub-title-medium Total Price
         .menu-card__price-medium
-          | {{ totalPrice }} 
-          | {{ currency}}
-
+          | {{ serviceDetail.totalPrice }} 
+          | {{ serviceDetail.currency}}
 
       .menu-card__details(v-if="stakingFlow")
         .menu-card__sub-title Staking Amount
@@ -60,7 +58,7 @@
       
 
       div(class="text-center" v-if="!isCancelled")
-        div(v-if="!success" class="mt-3 d-flex justify-center align-center")
+        div(v-if="!success && !orderCreated" class="mt-3 d-flex justify-center align-center")
           ui-debio-button(
             :class="setMargin"
             color="secondary"
@@ -69,12 +67,12 @@
             @click="onSubmit"
             ) Submit Order
 
-        div(v-if="success && status === 'Paid'" class="d-flex justify-space-between align-center pa-4 mt-8 me-3")
+        div(v-if="success" class="d-flex justify-space-between align-center pa-4 mt-8 me-3")
           ui-debio-button(
             color="secondary" 
             width="46%"
             height="35"
-            @click="toInstruction(dataService.dnaCollectionProcess)"
+            @click="toInstruction(serviceDetail.dnaCollectionProcess)"
             style="font-size: 10px;"
             outlined 
             ) View Instruction
@@ -87,7 +85,7 @@
             @click="toEtherscan"
             ) View Etherscan
 
-        div(v-if="success && status === 'Unpaid'" class="d-flex justify-space-between align-center pa-4 mt-8 me-3")
+        div(v-if="orderCreated" class="d-flex justify-space-between align-center pa-4 mt-8 me-3")
           ui-debio-button(
             color="secondary" 
             width="46%"
@@ -102,11 +100,13 @@
             width="46%"
             height="35"
             style="font-size: 10px;"
-            @click="showReceipt = true"
+            @click="showingReceiptDialog"
             ) Pay
 
     template
       PaymentReceiptDialog(
+        :orderDetail="orderDetail"
+        :serviceDetail="serviceDetail"
         :show="showReceipt"
         @onContinue="onContinue"
         @close="showReceipt = false"
@@ -148,11 +148,9 @@ import Kilt from "@kiltprotocol/sdk-js"
 import { u8aToHex } from "@polkadot/util"
 import CancelDialog from "@/common/components/Dialog/CancelDialog"
 import PaymentReceiptDialog from "./PaymentReceiptDialog.vue"
-import { createOrder } from "@debionetwork/polkadot-provider"
-import { processRequest } from "@debionetwork/polkadot-provider"
-import { queryLastOrderHashByCustomer, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
+import { createOrder, processRequest, queryLastOrderHashByCustomer, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
 import PayRemainingDialog from "./PayRemainingDialog.vue"
-import { getDbioBalance, fetchPaymentDetails } from "@/common/lib/api"
+import { getDbioBalance } from "@/common/lib/api"
 import {
   COVID_19,
   DRIED_BLOOD,
@@ -165,7 +163,12 @@ import {
 
 export default {
   name: "PaymentDetailCard",
-  
+  props: {
+    serviceDetail: Object,
+    orderDetail: Object,
+    loading: Boolean
+  },
+
   components: {
     PaymentReceiptDialog,
     PayRemainingDialog,
@@ -179,7 +182,6 @@ export default {
     detailOrder: null,
     cancelDialog: false,
     isCancelled: false,
-    status: "Unpaid",
     labDetail: null,
     stakingFlow: false,
     stakingAmount: 0,
@@ -203,7 +205,8 @@ export default {
     qcPrice: 0,
     totalPrice: 0,
     currency: "",
-    success: false
+    success: false,
+    orderCreated: false
   }),
 
   async mounted () {
@@ -211,29 +214,16 @@ export default {
 
     if(this.$route.params.hash) {
       this.success = true
+      if (!Object.values(this.serviceDetail).length) {
+        this.$router.push({ name:  "customer-payment-history" })
+      }
     }
 
-    if (this.dataService.detailPrice) {
-      this.servicePrice = this.formatPrice((this.dataService.detailPrice.price_components[0].value).replaceAll(",", ""))
-      this.qcPrice = this.formatPrice((this.dataService.detailPrice.additional_prices[0].value).replaceAll(",", ""))
-      this.totalPrice = this.formatPrice(this.dataService.price).replaceAll(",", "")
-      this.currency = this.dataService.currency.toUpperCase()
-    }
-    
-
-    // get last order id
-    this.lastOrder = await queryLastOrderHashByCustomer(
-      this.api,
-      this.wallet.address
-    )
-
-    if (this.lastOrder) {
-      this.detailOrder = await queryOrderDetailByOrderID(this.api, this.lastOrder)
-      this.orderId = this.detailOrder.id
-      this.status = this.detailOrder.status
+    if (this.$route.params.id) {
+      this.orderCreated = true
     }
 
-    if (this.dataService.serviceFlow === "StakingRequestService") {
+    if (this.serviceDetail.serviceFlow === "StakingRequestService") {
       this.stakingFlow = true
       const debioBalance = await getDbioBalance()
 
@@ -273,7 +263,6 @@ export default {
       api: (state) => state.substrate.api,
       wallet: (state) => state.substrate.wallet,
       mnemonicData: (state) => state.substrate.mnemonicData,
-      dataService: (state) => state.testRequest.products,
       metamaskWalletAddress: (state) => state.metamask.metamaskWalletAddress,
       stakingData: (state) => state.lab.stakingData,
       web3: (state) => state.metamask.web3
@@ -372,6 +361,10 @@ export default {
     onContinue() {
       this.$emit("onContinue")
     },
+    
+    showingReceiptDialog() {
+      this.showReceipt = true
+    },
 
     toInstruction (dnaCollectionProcess) {
       if (dnaCollectionProcess === "Covid 19 Saliva Test") {
@@ -405,45 +398,9 @@ export default {
     setCancelled() {
       this.isCancelled = true
       this.$emit("cancel")
-    },
-
-    async getDataService() {
-      const data = await fetchPaymentDetails(this.$route.params.id)
-
-      if (data.status !== "Unpaid") {
-        this.$router.push({ name: "customer-payment-history" })
-      }
-
-      const service = {
-        serviceId: data.service_id,
-        serviceName: data.service_info.name,
-        serviceRate: 0,
-        serviceImage: data.service_info.image,
-        serviceCategory: data.service_info.category,
-        serviceDescription: data.service_info.description,
-        labName: data.lab_info.name,
-        labId: data.seller_id,
-        labImage: data.lab_info.profile_image,
-        labRate: 0,
-        labAddress: data.lab_info.address,
-        price: (data.service_info.prices_by_currency[0].total_price).replaceAll(",", ""),
-        detailPrice: data.service_info.prices_by_currency[0],
-        currency: data.service_info.prices_by_currency[0].currency,
-        city: data.lab_info.city,
-        country: data.lab_info.country,
-        region: data.lab_info.region,
-        countRateLab: 0,
-        countServiceRate: 0,
-        duration: data.service_info.expected_duration.duration,
-        durationType: data.service_info.expected_duration.durationType,
-        verificationStatus: "Verified",
-        indexPrice: 0,
-        dnaCollectionProcess: data.service_info.dna_collection_process
-      }
-
-      this.setProductsToRequest(service)
-
     }
+
+
   }
 }
 </script>

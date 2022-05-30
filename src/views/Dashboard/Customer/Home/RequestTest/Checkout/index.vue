@@ -45,15 +45,15 @@ export default {
   },
 
   async mounted () {
-    if (!this.$route.params.id && this.dataService.length === 0) {
+    if (!this.$route.params.id && !Object.values(this.dataService).length) {
       this.$router.push({ name: "customer-request-test"})
     }
-
   },
+  
   methods: {
     handleBack() {
       if (!this.$route.params.id) return
-      this.$router.push({ name: "customer-request-test-service"})
+      this.$router.push({ name: "customer-request-test-service"}) 
     }
   }
 }

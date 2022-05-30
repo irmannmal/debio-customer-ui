@@ -18,14 +18,14 @@
         .dialog-payment__desc
           .dialog-payment__detail Service Price
           .dialog-payment__detail
-            | {{ servicePrice }} 
-            | {{ currency }} 
+            | {{ serviceDetail.servicePrice }} 
+            | {{ serviceDetail.currency }} 
 
         .dialog-payment__desc
           .dialog-payment__detail Quality Control Price
           .dialog-payment__detail
-            | {{ qcPrice }} 
-            | {{ currency }}
+            | {{ serviceDetail.qcPrice }} 
+            | {{ serviceDetail.currency }}
        
         .dialog-payment__operation +
 
@@ -34,8 +34,8 @@
         .dialog-payment__desc
           .dialog-payment__total Total Pay
           .dialog-payment__total-detail
-            | {{  totalPrice }} 
-            | {{ currency }}
+            | {{ serviceDetail.totalPrice }} 
+            | {{ serviceDetail.currency }}
 
         .dialog-payment__desc
           .dialog-payment__trans-weight Estimated Transaction Weight
@@ -73,6 +73,16 @@
       @close="showError = false"
     )
 
+    ui-debio-alert-dialog(
+      :show="showAlert"
+      :width="289"
+      title="Unpaid Order"
+      message="Complete your unpaid order first before requesting a new one. "
+      imgPath="alert-circle-primary.png"
+      btn-message="Go to My Payment"
+      @click="toPaymentHistory"
+      )
+
 </template>
 
 <script>
@@ -107,8 +117,9 @@ export default {
   mixins: [serviceHandlerMixin],
 
   props: {
-    prefillService: { type: Object, default: () => {} },
-    show: Boolean
+    show: Boolean,
+    serviceDetail: Object,
+    orderDetail: Object
   },
 
   data: () => ({
@@ -127,13 +138,10 @@ export default {
     orderId: "",
     txHash: "",
     showError: false,
+    showAlert: false,
     errorTitle: "",
     errorMsg: "",
-    txWeight: 0,
-    servicePrice: "",
-    qcPrice: "",
-    totalPrice: "",
-    currency: "",
+    txWeight: "",
     customerBoxPublicKey: null
   }),
 
@@ -166,41 +174,24 @@ export default {
     }
   },
 
-  async mounted () {
-    await this.getCustomerPublicKey()
-
-    if (this.lastEventData) {
-      if (this.lastEventData.method === "OrderCreated") {
-        this.dataEvent = JSON.parse(this.lastEventData.data.toString())[0]
-      }
-    }
-    // get last order id
-    this.lastOrder = await queryLastOrderHashByCustomer(
-      this.api,
-      this.wallet.address
-    )
-
-    if (this.lastOrder) {
-      this.detailOrder = await queryOrderDetailByOrderID(this.api, this.lastOrder)
-      this.status = this.detailOrder.status
+  async created() {
+    if (this.selectedService) {
+      await this.calculateTxWeight()
     }
 
-    this.servicePrice = this.formatPrice((this.selectedService.detailPrice.price_components[0].value).replaceAll(",", ""))
-    this.qcPrice = this.formatPrice((this.selectedService.detailPrice.additional_prices[0].value).replaceAll(",", ""))
-    this.totalPrice = this.formatPrice((this.selectedService.price).replaceAll(",", ""))
-    this.currency = this.selectedService.currency.toUpperCase()
-
-    await this.calculateTxWeight()
+    if (this.mnemonicData) {
+      await this.getCustomerPublicKey()
+    }
   },
 
   methods: {
-
     async getCustomerPublicKey() {
       const identity = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
       this.customerBoxPublicKey = u8aToHex(identity.boxKeyPair.publicKey)
     },
 
     async calculateTxWeight() {
+      this.txWeight = "Calculating..."
       const txWeight = await createOrderFee(
         this.api,
         this.wallet,
@@ -217,10 +208,26 @@ export default {
       this.error = ""
       try {
 
+        this.lastOrder = await queryLastOrderHashByCustomer(
+          this.api,
+          this.wallet.address
+        )
+
+        if (this.lastOrder) {
+          this.detailOrder = await queryOrderDetailByOrderID(this.api, this.lastOrder)
+          this.status = this.detailOrder.status
+          if (this.status === "Unpaid" && !this.$route.params.id) {
+            this.show = false
+            this.showAlert = true
+            return
+          }
+        }
+
         this.ethAccount = await startApp()
 
         if (this.ethAccount.currentAccount === "no_install") {
           this.isLoading = false
+          this.show = false
           this.password = ""
           this.error = "Please install MetaMask!"
           return
@@ -229,15 +236,16 @@ export default {
         // cek kalo udah binding wallet
         if (!this.metamaskWalletAddress) {
           this.isLoading = false
+          this.show = false
           this.password = ""
           this.error = "Metamask has no address ETH."
           return
         }
-
         // check ETH Balance
         const balance = await getBalanceETH(this.metamaskWalletAddress)
         if (balance <= 0 ) {
           this.isLoading = false
+          this.show = false
           this.password = ""
           this.error = "You don't have enough ETH"
           return
@@ -245,8 +253,9 @@ export default {
 
         // check DAI Balance 
         const daiBalance = await getBalanceDAI(this.metamaskWalletAddress)
-        if (Number(daiBalance) < Number(this.web3.utils.fromWei(String(this.selectedService.price)))) {
+        if (Number(daiBalance) < Number(this.web3.utils.fromWei(String(this.selectedService.totalPrice)))) {
           this.isLoading = false
+          this.show = false
           this.password = ""
           this.error = "You don't have enough DAI"
           return
@@ -258,12 +267,6 @@ export default {
           this.selectedService.labId
         )
 
-        if (this.ethSellerAddress === null || this.ethSellerAddress === "") {
-          this.isLoading = false
-          this.password = ""
-          this.error = "The seller has no ETH Address."
-          return
-        }
 
 
         if (!this.status || this.status !== "Unpaid") {
@@ -292,6 +295,7 @@ export default {
         this.showError = true
         this.errorTitle = error.title
         this.errorMsg = error.message
+        this.show = false
       } 
     },
 
@@ -337,6 +341,10 @@ export default {
 
     closeDialog(){
       this.$emit("close")
+    },
+
+    toPaymentHistory() {
+      this.$router.push({ name: "customer-payment-history" })
     }
   }
 }

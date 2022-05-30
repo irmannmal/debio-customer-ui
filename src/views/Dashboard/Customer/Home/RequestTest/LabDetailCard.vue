@@ -2,72 +2,65 @@
   v-container.container-card
     v-card.menu-card
       v-row.menu-card__service
-        ui-debio-avatar.menu-card__service-avatar(:src="service.serviceImage" size="90" rounded)
+        ui-debio-avatar.menu-card__service-avatar(:src="computeAvatar" size="90" rounded)
         
-        b.menu-card__service-title {{ service.serviceName }}
-          ui-debio-rating.menu-card__rating(:rating="service.serviceRate" :total-reviews="service.countServiceRate" size="10")
+        b.menu-card__service-title {{ serviceDetail.serviceName }}
+          ui-debio-rating.menu-card__rating(:rating="serviceDetail.serviceRate" :total-reviews="serviceDetail.countServiceRate" size="10")
         
           v-row.menu-card__service-detail
             v-col(cols="5.5")
               b.menu-card__service-sub-title Price
               .menu-card__service-description
-                | {{ price }} 
-                | {{ currency }}
+                | {{ serviceDetail.totalPrice }}
+                | {{ serviceDetail.currency }} 
             v-col(cols="6.5") 
               b.menu-card__service-sub-title Duration
               .menu-card__service-description
-                | {{ service.duration }} 
-                | {{ service.durationType }}
+                | {{ serviceDetail.duration }} 
+                | {{ serviceDetail.durationType }}
 
       hr.menu-card__line
       
       v-row.menu-card__lab
-        ui-debio-avatar.menu-card__lab-avatar(:src="service.labImage" size="90" rounded)
-        b.menu-card__lab-title {{ service.labName }}
-          ui-debio-rating.menu-card__rating(:rating="service.labRate" :total-reviews="service.countRateLab" size="10")
-          .menu-card__address {{ service.labAddress }}, {{ service.city }}, {{ country }}
+        ui-debio-avatar.menu-card__lab-avatar(:src="serviceDetail.labImage" size="90" rounded)
+        b.menu-card__lab-title {{ serviceDetail.labName }}
+          ui-debio-rating.menu-card__rating(:rating="serviceDetail.labRate" :total-reviews="serviceDetail.countRateLab" size="10")
+          .menu-card__address {{ serviceDetail.labAddress }}, {{ serviceDetail.city }}, {{ computeCountry(serviceDetail.country) }}
 </template>
 
 <script>
 
-import { mapState } from "vuex"
 import { getLocations } from "@/common/lib/api"
 
 
 export default {
   name: "LabDetailCard",
+  props: {
+    serviceDetail: Object
+  },
 
   data: () => ({
-    service: {},
-    countries: [],
-    price: "",
-    currency: "",
-    country: ""
+    countries: []
   }),
 
-  async mounted () {
-    await this.getCountries()
-
-    if (this.dataService) {      
-      this.service = this.dataService
-      this.price = this.web3.utils.fromWei(this.service.price, "ether")      
-      this.currency = this.service.currency.toUpperCase()
-      this.country = this.countries.filter((c) => c.iso2 === this.service.country)[0].name
+  computed: {
+    computeAvatar() {
+      return this.serviceDetail.serviceImage ? this.serviceDetail.serviceImage : require("@/assets/debio-logo.png")
     }
   },
 
-  computed: {
-    ...mapState({
-      mnemonicData: (state) => state.substrate.mnemonicData,
-      dataService: (state) => state.testRequest.products,
-      web3: (state) => state.metamask.web3
-    })
+  async mounted() {
+    await this.getCountries()
   },
 
   methods: {
     async getCountries() {
       const { data : { data }} = await getLocations()
       this.countries = data
+    },
+
+    computeCountry(country) {
+      return this.countries.filter((c) => c.iso2 === country)[0].name
     }
   }
 }

@@ -18,7 +18,7 @@
             :rate="service.serviceRate"
             :countRate="service.countServiceRate"
             :lab-name="service.labName"
-            :price="service.price"
+            :price="service.totalPrice"
             :currency="service.currency"
             :city="service.city"
             :region="service.region"
@@ -80,6 +80,7 @@ export default {
   computed: {
     ...mapState({
       api: (state) => state.substrate.api,
+      web3: (state) => state.metamask.web3,
       wallet: (state) => state.substrate.wallet,
       country: (state) => state.lab.country,
       city: (state) => state.lab.city,
@@ -149,7 +150,9 @@ export default {
         const serviceRate = serviceData.rating_service
         const countServiceRate = serviceData.count_rating_service
         const detailPrice = this.services[i].info.prices_by_currency[0]
-        const price = this.services[i].info.prices_by_currency[0].total_price.replaceAll(",", "")
+        const totalPrice = this.formatPrice(detailPrice.total_price.replaceAll(",", ""))
+        const servicePrice = this.formatPrice(detailPrice.price_components[0].value.replaceAll(",", ""))
+        const qcPrice =  this.formatPrice(detailPrice.additional_prices[0].value.replaceAll(",", ""))
 
         if (durationType === "WorkingDays") {
           durationType = "Days"
@@ -168,8 +171,9 @@ export default {
           labRate,
           labAddress,
           labImage,
-          price,
-          detailPrice,
+          totalPrice,
+          servicePrice,
+          qcPrice,
           currency,
           city,
           country,
@@ -191,6 +195,8 @@ export default {
           }
         }
       }
+
+      console.log(this.serviceList)
 
       if (!this.serviceList.length) {
         this.showNoLab = true
@@ -221,6 +227,10 @@ export default {
 
     toPaymentHistory () {
       this.$router.push({ name: "customer-payment-history" })
+    },
+
+    formatPrice(price) {
+      return this.web3.utils.fromWei(price, "ether")
     }
   }
 }

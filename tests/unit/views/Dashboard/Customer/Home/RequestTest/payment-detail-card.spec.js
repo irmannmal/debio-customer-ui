@@ -46,7 +46,20 @@ describe("Payment Detail Card", () => {
       localVue,
       vuetify,
       router,
-      store
+      store,
+      propsData: {
+        serviceDetail: {
+          labName: "",
+          labRate: "",
+          labAddress: "",
+          city: "",
+          country: "",
+          servicePrice: 1,
+          currency: "",
+          totalPrice: 1,
+          qcPrice: 1
+        }
+      }
     })
 
     expect(container.exists()).toBe(true)
