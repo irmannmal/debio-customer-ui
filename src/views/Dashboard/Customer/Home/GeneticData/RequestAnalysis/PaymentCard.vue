@@ -159,7 +159,7 @@ export default {
 
         if (e.method === "GeneticAnalysisOrderCancelled") {
           if (dataEvent[0].customerId === this.wallet.address) {
-            this.isCanceling = false
+            this.isCancelling = false
             this.showCancelDialog = false
             this.$router.push({ name: "customer-request-analysis-success", params: {id: this.orderId} })
           }
@@ -228,7 +228,7 @@ export default {
     },
 
     async cancelOrder() {
-      this.isCanceling = true
+      this.isCancelling = true
       await cancelGeneticAnalysisOrder(this.api, this.wallet, this.orderId)
     },
 

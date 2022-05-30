@@ -32,17 +32,13 @@
 
         .dialog-confirmation__button
           ui-debio-button(
+            :loading="loading"
             color="secondary" 
             width="280px"
             height="35px"
             @click="onSubmit"
           ) {{ btnMessage }}
   
-      v-progress-linear(
-        v-if="loading"
-        indeterminate
-        color="primary"
-      )
       
 </template>
 

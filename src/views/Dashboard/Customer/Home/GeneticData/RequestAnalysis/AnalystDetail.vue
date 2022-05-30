@@ -1,5 +1,5 @@
 <template lang="pug">
-  v-dialog.analyst-detail(:value="show" width="440" persistent rounded )
+  v-dialog.analyst-detail(:value="show" max-width="440" persistent rounded )
     ui-debio-error-dialog(
       :show="errorAlert"
       title="Insufficient Balance"
@@ -441,15 +441,17 @@ export default {
   @import "@/common/styles/mixins.sass"
 
   .analyst-detail
+    &__card
+      padding: 5px
+      
     &__service
-      padding: 15px 35px 0 35px
+      margin: 15px 30px 0 30px
 
     &__service-name
       @include button-2
 
     &__service-description
       height: 100px
-      overflow-y: scroll
       margin-top: 8px
       @include body-text-3-opensans
 
