@@ -124,6 +124,7 @@
                   div
                     span {{ item.dnaSampleTrackingId}}
 
+            template(class="status" v-slot:[`item.status`]="{item}") {{ checkStatus(item.status) }}
 
             template(v-slot:[`item.actions`]="{item}")
               ui-debio-icon.iconTable(
@@ -402,7 +403,7 @@ export default {
         month: "short" // numeric, 2-digit, long, short, narrow
       })
       const dnaSampleTrackingId = dnaSample.trackingId
-      const status = this.checkSatus(dnaSample.status)
+      const status = dnaSample.status
       
       const result = {
         orderId,
@@ -456,7 +457,7 @@ export default {
       this.titleTestWording = "Your recent tests"
     },
 
-    checkSatus(status) {
+    checkStatus(status) {
       if (status == "Registered") return REGISTERED
       if (status == "Arrived") return ARRIVED
       if (status == "Rejected") return REJECTED
