@@ -140,6 +140,7 @@ export default {
     ...mapState({
       api: (state) => state.substrate.api,
       rating: (state) => state.rating.rate,
+      lastEventData: (state) => state.substrate.lastEventData,
       web3: (state) => state.metamask.web3
     }),
 
@@ -177,6 +178,12 @@ export default {
 
   async mounted() {
     await this.fetchDetails()
+  },
+
+  watch: {
+    lastEventData: async function (e) {
+      if (e.section === "geneticTesting" || e.section === "orders") await this.fetchDetails()
+    }
   },
 
   methods: {

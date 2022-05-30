@@ -3,17 +3,17 @@
     "customer": {
       "orders": {
         "OrderPaid": {
-          "message": "Congrats! You successfully submitted your requested test ",
+          "message": "",
           "value": "id",
-          "value_message": "id",
+          "value_message": "You've successfully submitted your requested test ",
           "route": "customer-payment-details",
           "params": "id",
           "identity": "customerId"
         },
         "OrderFulfilled": {
-          "message": "Congrats! You’ve got ",
+          "message": "",
           "value": "id",
-          "value_message": "id",
+          "value_message": "Congrats! Your test results ",
           "route": "customer-payment-details",
           "params": "id",
           "identity": "customerId"

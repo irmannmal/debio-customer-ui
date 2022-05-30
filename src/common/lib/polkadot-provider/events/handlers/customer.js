@@ -17,16 +17,14 @@ const handler = {
   orders: async (dataEvent, value, valueMessage) => {
     const data = dataEvent[0]
     const id = data[value]
-    const status = { PAID: "submitted" }
-    const computeStatus = `has been ${status[data.status.toUpperCase()]}`
     const params = { id: id }
 
-    const computeId = `${data[valueMessage].substr(0, 4)}...${ data[valueMessage].substr(data[valueMessage].length - 4)}`
-    const computeWording = ` DBIO as a reward for completing the request test for ${computeId} from the service requested`
+    const computeId = `${id.substr(0, 4)}...${id.substr(id.length - 4)}`
+    const computeWording = `${valueMessage} DBIO as a reward for completing the request test for ${computeId} from the service requested`
 
     const finalWording = data.status === "Fulfilled" && data.orderFlow === "StakingRequestService"
       ? computeWording
-      : `for (${computeId}) ${computeStatus}`
+      : `${valueMessage} for (${computeId}) is ${data.status}`
 
     const wording = finalWording
     return { data, id, params, wording }
@@ -35,8 +33,12 @@ const handler = {
     const data = dataEvent[0]
     const id = data[value]
     const params = { orderId: id }
-    const wording = valueMessage
-    
+
+    const formatedHash = `${data?.trackingId.substr(0, 4)}...${data?.trackingId?.substr(data?.trackingId?.length - 4)}`
+    const computeWording = `${valueMessage} (${formatedHash}) are out. Click here to see your order details.`
+
+    const wording = computeWording
+
     return { data, id, params, wording }
   },
   balances: async (dataEvent, value, valueMessage) => {

@@ -1,15 +1,15 @@
-import { mount } from "@vue/test-utils"
+import { shallowMount, createLocalVue } from "@vue/test-utils"
 import PaymentHistoryDetails from "@/views/Dashboard/Customer/Home/PaymentHistory/Details"
 import Vuex from "vuex"
-import Vue from "vue"
 import Vuetify from "vuetify"
 import VueRouter from "vue-router"
 import "@/common/plugins/debionetwork-ui-components"
 
+const localVue = createLocalVue()
 
-Vue.use(Vuex)
-Vue.use(Vuetify)
-Vue.use(VueRouter)
+localVue.use(Vuex)
+localVue.use(Vuetify)
+localVue.use(VueRouter)
 
 const stubs = {
   uiDebioModal: true,
@@ -199,10 +199,26 @@ jest.mock("@debionetwork/polkadot-provider", () => ({
 describe("Customer Payment History Dashboard", () => {
   let container
   let vuetify
+  let store
   let router
 
   beforeEach(() => {
     vuetify = new Vuetify()
+    store = new Vuex.Store({
+      state: {
+        substrate: {
+          api: "API",
+          wallet: "WALLET",
+          mnemonicData: "oil spend nation obey lecture behave lake diary reward forest gym apple"
+        },
+        auth: {
+          loadingData: "LOADING"
+        },
+        metamask: {
+          web3: "WEB3"
+        }
+      }
+    })
     router = new VueRouter({
       routes: [
         {
@@ -220,8 +236,10 @@ describe("Customer Payment History Dashboard", () => {
   })
 
   it("Should render", () => {
-    container = mount(PaymentHistoryDetails, {
+    container = shallowMount(PaymentHistoryDetails, {
+      localVue,
       vuetify,
+      store,
       router,
       global: {
         stubs
@@ -239,8 +257,10 @@ describe("Customer Payment History Dashboard", () => {
       formatPrice: jest.fn()
     }
 
-    container = mount(PaymentHistoryDetails, {
+    container = shallowMount(PaymentHistoryDetails, {
+      localVue,
       vuetify,
+      store,
       router,
       global: {
         stubs
@@ -259,8 +279,10 @@ describe("Customer Payment History Dashboard", () => {
       formatPrice: jest.fn()
     }
 
-    container = mount(PaymentHistoryDetails, {
+    container = shallowMount(PaymentHistoryDetails, {
+      localVue,
       vuetify,
+      store,
       router,
       global: {
         stubs
