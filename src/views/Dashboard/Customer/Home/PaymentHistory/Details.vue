@@ -167,7 +167,7 @@ export default {
 
     computeRefundedValue() {
       return this.payment?.status === "Refunded"
-        ? `${this.computeTotalPrices} ${this.payment?.currency}`
+        ? `${this.formatPrice(this.payment?.prices[0].value)} ${this.payment?.currency}`
         : "-"
     }
   },
@@ -176,7 +176,7 @@ export default {
     if (!this.$route.params.id) this.$router.push({ name: "customer-payment-history" })
   },
 
-  async mounted() {
+  async created() {
     await this.fetchDetails()
   },
 
@@ -311,7 +311,7 @@ export default {
     },
 
     formatPrice(price) {
-      return parseInt(this.web3.utils.fromWei(String(price.replaceAll(",", "")), "ether"))
+      return parseFloat(this.web3.utils.fromWei(String(price.replaceAll(",", "")), "ether"))
     },
 
     async handleCTA() {
