@@ -143,14 +143,14 @@
 
 <script>
 import { mapState, mapMutations } from "vuex"
-import CryptoJS from "crypto-js"	
+import CryptoJS from "crypto-js"
 import Kilt from "@kiltprotocol/sdk-js"
 import { u8aToHex } from "@polkadot/util"
 import CancelDialog from "@/common/components/Dialog/CancelDialog"
 import PaymentReceiptDialog from "./PaymentReceiptDialog.vue"
 import { createOrder, processRequest, queryLastOrderHashByCustomer, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
 import PayRemainingDialog from "./PayRemainingDialog.vue"
-import { getDbioBalance } from "@/common/lib/api"
+import { getDbioBalance, fetchTxHashOrder } from "@/common/lib/api"
 import {
   COVID_19,
   DRIED_BLOOD,
@@ -281,8 +281,15 @@ export default {
       setProductsToRequest: "testRequest/SET_PRODUCTS"
     }),
 
-    toEtherscan () {
-      window.open(`https://rinkeby.etherscan.io/tx/${this.$route.params.hash}`, "_blank")
+    async toEtherscan () {
+      const { transaction_hash } = await fetchTxHashOrder(this.orderId)
+
+      const anchor = document.createElement("a")
+      anchor.target = "_blank"
+      anchor.rel = "noreferrer noopener nofollow"
+      // eslint-disable-next-line camelcase
+      anchor.href = `${process.env.VUE_APP_ETHERSCAN}${transaction_hash}`
+      anchor.click()
     },
 
     toPaymentHistory () {
