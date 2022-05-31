@@ -93,6 +93,8 @@ jobs:
           VUE_APP_PINATA_KEY=${{ secrets.VUE_APP_PINATA_KEY }}
           VUE_APP_PINATA_SECRET_KEY=${{ secrets.VUE_APP_PINATA_SECRET_KEY }}
           VUE_APP_PINATA_JWT_KEY=${{ secrets.VUE_APP_PINATA_JWT_KEY }}
+          VUE_APP_ETHERSCAN=${{ secrets.VUE_APP_ETHERSCAN }}
+          VUE_APP_PINATA_REQUIRED_DOCUMENT=${{ secrets.VUE_APP_PINATA_REQUIRED_DOCUMENT }}
           EOF
       - name: create contract.json file
         if: ${{ needs.compute-build-info.outputs.environment == 'mainnet' }}
