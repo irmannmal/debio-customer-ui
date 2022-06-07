@@ -196,7 +196,6 @@ export default {
         }
       }
 
-      console.log(this.serviceList)
 
       if (!this.serviceList.length) {
         this.showNoLab = true
