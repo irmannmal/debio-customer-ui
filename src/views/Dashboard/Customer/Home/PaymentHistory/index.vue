@@ -40,7 +40,7 @@
 import { mapState } from "vuex"
 import { searchIcon } from "@debionetwork/ui-icons"
 import { generalDebounce } from "@/common/lib/utils"
-import { fetchPaymentHistories } from "@/common/lib/api";
+import { getOrderList } from "@/common/lib/api";
 
 import metamaskServiceHandler from "@/common/lib/metamask/mixins/metamaskServiceHandler"
 
@@ -89,7 +89,8 @@ export default {
 
   methods: {
     onSearchInput: generalDebounce(async function (val) {
-      const { orders, ordersGA } = await fetchPaymentHistories(val)
+      console.log(val)
+      const { orders, ordersGA } = await getOrderList(val)
       const results = [...orders.data, ...ordersGA.data]
 
       this.payments = results.map(result => {

@@ -17,10 +17,11 @@
                   div.box
                     div.topBody
                       ui-debio-avatar.dataIcon.box(
-                        v-if="!!myTest.order.labInfo.profileImage"
-                        :src="myTest.order.labInfo.profileImage"
+                        v-if="myTest.lab_info.profile_image"
+                        :src="myTest.lab_info.profile_image"
                         :size="92"
                       )
+                      
                       ui-debio-icon.dataIcon.box(
                         v-else
                         :icon="microscopeIcon"
@@ -31,16 +32,16 @@
                         view-box="0 0 47 52"
                       )
                       div.topContentWraper
-                        span {{ myTest.order.labInfo.name }}
-                        span {{ myTest.order.labInfo.address }}
+                        span {{ myTest.lab_info.name }}
+                        span {{ myTest.lab_info.address }}
                 div.middleRow
                   div.topHead
                     span Product Details
                   div.box
                     div.topBody
                       ui-debio-avatar.dataIcon.box(
-                        v-if="!!myTest.order.serviceInfo.image"
-                        :src="myTest.order.serviceInfo.image"
+                        v-if="!!myTest.service_info.image"
+                        :src="myTest.service_info.image"
                         :size="92"
                       )
                       ui-debio-icon.dataIcon.box(
@@ -50,58 +51,58 @@
                         stroke
                         :stroke-width="0"
                         color="linear-gradient(180deg, #716CFF 0%, #B267FF 100%)"
-                        :view-box="selectedIcon == dnaIcon? '0 0 32 40' : '0 0 55 55'"
+                        :view-box="selectedIcon === dnaIcon? '0 0 32 40' : '0 0 55 55'"
                       )
                       div.topContentWraper
-                        span {{ myTest.order.serviceInfo.name }}
-                        span {{ myTest.order.serviceInfo.description }}
+                        span {{ myTest.service_info.name }}
+                        span {{ myTest.service_info.description }}
                 div.bottomRow
                   span Specimen Number
-                  span {{ myTest.order.dnaSampleTrackingId }}
+                  span {{ myTest.dna_sample_tracking_id }}
             v-col
               div.rightSection.box
                 div
                   div.imageBanner.box
                     ui-debio-icon(
-                      :icon="statusDetails[myTest.order.dnaInfo.status].banner"
-                      :size="statusDetails[myTest.order.dnaInfo.status].size"
-                      :view-box="statusDetails[myTest.order.dnaInfo.status].viewBox"
+                      :icon="banner"
+                      :size="status['size']"
+                      :view-box="status['viewBox']"
                     )
                 div.statusSection
-                  span.status {{ statusDetails[myTest.order.dnaInfo.status].name }}
-                  span.detail {{ statusDetails[myTest.order.dnaInfo.status].detail }}
+                  span.status {{ status['name']}}
+                  span.detail {{ status['detail'] }}
 
                 .progress
                   .step-indicator
                     .step
-                      div(:class="[`step-icon`, statusDetails[myTest.order.dnaInfo.status].step > 1 && `active`]")
-                        v-icon.icon(v-if="statusDetails[myTest.order.dnaInfo.status].step > 1") mdi-check
+                      div(:class="[`step-icon`, e1>1 && `active`]")
+                        v-icon(v-if="e1>1").icon mdi-check
                       small Registered
                     .indicator-line
                     .step
-                      div(:class="[`step-icon`, statusDetails[myTest.order.dnaInfo.status].step > 2 && `active`]")
-                        v-icon.icon(v-if="statusDetails[myTest.order.dnaInfo.status].step > 2") mdi-check
+                      div(:class="[`step-icon`, e1>2 && `active`]")
+                        v-icon(v-if="e1>2").icon mdi-check
                       small Received
                     .indicator-line
                     .step
-                      div(:class="[`step-icon`, statusDetails[myTest.order.dnaInfo.status].step > 3 && `active`, isRejected()]")
-                        v-icon.icon(v-if="statusDetails[myTest.order.dnaInfo.status].step > 3 && myTest.order.dnaInfo.status === `Rejected`") mdi-close
-                        v-icon.icon(v-else-if="statusDetails[myTest.order.dnaInfo.status].step > 3") mdi-check
-                      small Quality Control
+                      div(:class="[`step-icon`, e1>3 && `active`, isRejected()]")
+                        v-icon(v-if="e1>3 && dnaSample.status === `Rejected`").icon mdi-close
+                        v-icon(v-else-if="e1>3").icon mdi-check
+                      small {{ dnaSample.status === "Rejected" ? "Rejected" : "Quality Controlled" }} 
                     div(:class="[`indicator-line`, isRejected()]")
                     .step
-                      div(:class="[`step-icon`, statusDetails[myTest.order.dnaInfo.status].step > 4 && `active`, isRejected(true)]")
-                        v-icon.icon(v-if="statusDetails[myTest.order.dnaInfo.status].step > 4") mdi-check
+                      div(:class="[`step-icon`, e1>4 && `active`, isRejected(true)]")
+                        v-icon(v-if="e1>4").icon mdi-check
                       small Analyzed
                     div(:class="[`indicator-line`, isRejected()]")
                     .step
-                      div(:class="[`step-icon`, statusDetails[myTest.order.dnaInfo.status].step > 5 && `active`, isRejected(true)]")
-                        v-icon.icon(v-if="statusDetails[myTest.order.dnaInfo.status].step > 5") mdi-check
-                      small Results Ready
+                      div(:class="[`step-icon`, e1>5 && `active`, isRejected(true)]")
+                        v-icon(v-if="e1>5").icon mdi-check
+                      small Result Ready
 
                 .button
                   v-btn(
-                    v-if="myTest.order.dnaInfo.status === `Rejected`"
+                    v-if="dnaSample.status === `Rejected`"
                     @click="showDetail = true"
                     color="primary"
                     large
@@ -113,7 +114,7 @@
                     color="secondary"
                     large
                     width="100%"
-                    :disabled="myTest.order.dnaInfo.status !== `ResultReady`"
+                    :disabled="dnaSample.status !== `ResultReady`"
                   ) View Result
 
                 ui-debio-modal(
@@ -126,46 +127,37 @@
                   ctaTitle="OK"
                 )
                   .content
-                    h4 Title
-                    p {{ myTest.order.dnaInfo.rejectedTitle }}
-                    h4 Description
-                    p {{ myTest.order.dnaInfo.rejectedDescription }}
+                    p {{ dnaSample.rejectedTitle }}
+                    p {{ dnaSample.rejectedDescription }}
                   .content-detail
                     .border-bottom.ph15
                       p Details:
                     .border-bottom.mt10.ph15
                       .flex
                         p Service Price
-                        p {{ totalPrice }}
+                        p {{ prices.servicePrice }} {{ prices.currency }}
                       .flex
                         p Quality Control Price
-                        p {{ formatPrice(myTest.order.additionalPrices[0].value) }} {{ myTest.order.currency }}
+                        p {{ prices.qcPrice }} {{ prices.currency }}
+
                     .mt10.ph15.flex
                       p Amount to refund
-                      p {{ totalPrice }}
+                      p {{ computeDifferenceAmount }} {{ prices.currency }}
+
 </template>
 
 <script>
-import { mapState } from "vuex"
-import {
-  queryOrderDetailByOrderID,
-  queryServiceById,
-  queryLabById,
-  queryDnaSamples
-} from "@debionetwork/polkadot-provider"
 import {
   microscopeIcon,
   weightLifterIcon,
   hairIcon,
   dnaIcon,
-  virusIcon,
-  registeredBanner, //"0 0 182 135" size 185
-  receivedBanner, //"-20 0 300 135" size 300
-  wetworkBanner, //"-20 0 300 150" size 295
-  resultReadyBanner, //"-20 0 300 150" size 295
-  qualityControlBanner, //"-20 0 300 125" size 295
-  rejectedQCBanner
+  virusIcon
 } from "@debionetwork/ui-icons"
+import { mapState } from "vuex"
+import { getOrderDetail } from "@/common/lib/api"
+import { queryDnaSamples } from "@debionetwork/polkadot-provider"
+import { ORDER_STATUS_DETAIL } from "@/common/constants/status"
 
 export default {
   name: "OrderHistoryDetail",
@@ -175,76 +167,32 @@ export default {
     dnaIcon,
     virusIcon,
     weightLifterIcon,
-    registeredBanner,
-    receivedBanner,
-    wetworkBanner,
-    resultReadyBanner,
-    qualityControlBanner,
-    rejectedQCBanner,
+    banner: "",
     selectedIcon: weightLifterIcon,
     showDetail: false,
+    dnaSample: {},
+    e1: 1,
+    status: {
+      status: "",
+      name: "",
+      detail:"",
+      size: 0,
+      viewBox: ""
+    },
     myTest: {},
-    statusDetails: {
-      Registered: {
-        status: "Registered",
-        name: "Registered",
-        detail:
-          "Your request has been registered. You may send your sample to selected lab.",
-        size: 185,
-        viewBox: "-10 -13 182 182",
-        banner: registeredBanner,
-        step: 2
-      },
-      Received: {
-        status: "Received",
-        name: "Received",
-        detail: "Your chosen lab has received and confirmed your specimen. The lab will soon process your order.",
-        size: 300,
-        viewBox: "-18 -20 295 295",
-        banner: receivedBanner,
-        step: 3
-      },
-      QualityControlled: {
-        status: "QualityControlled",
-        name: "Quality Control",
-        detail: "Your specimen is now being examined by the lab to see if it is sufficient enough to be analyzed in the next phase. The lab will perform several procedures such as examine the visual of your specimen, do extraction and amplification of your DNA.",
-        size: 295,
-        viewBox: "-18 -15 275 275",
-        banner: qualityControlBanner,
-        step: 4
-      },
-      WetWork: {
-        status: "WetWork",
-        name: "Wet Work",
-        detail: "The lab is now analyzing your specimen.",
-        size: 295,
-        viewBox: "-15 -5 285 285",
-        banner: wetworkBanner,
-        step: 5
-      },
-      ResultReady: {
-        status: "ResultReady",
-        name: "Result Ready",
-        detail: "Thank you for your patience. Your order has been fulfilled. You can click on this button below to see your result.",
-        size: 295,
-        viewBox: "-5 -5 295 295",
-        banner: resultReadyBanner,
-        step: 6
-      },
-      Rejected: {
-        status: "Rejected",
-        name: "Quality Control",
-        detail: `Your sample has failed quality control. Your service fee of XX DAI will be refunded to your account.`,
-        size: 295,
-        viewBox: "-15 -5 260 260",
-        banner: rejectedQCBanner,
-        step: 4
-      }
+    prices: {
+      servicePrice: 0,
+      qcPrice: 0,
+      currency: ""
     }
   }),
-  async created() {
-    await this.prepareData()
-    if (!this.myTest.order.serviceInfo.image) this.iconSwitcher()
+
+  async mounted() {
+    if (this.$route.params.id) {
+      await this.getOrderDetail()
+      await this.checkOrderDetail()
+      this.iconSwitcher()
+    }
   },
 
   computed: {
@@ -253,44 +201,18 @@ export default {
       web3: (state) => state.metamask.web3
     }),
 
-    setDetail() {
-      const detail = `Your sample has failed quality control. Your service fee of ${this.myTest.serviceInfo.pricesByCurrency[0].priceComponents[0].value - this.myTest.serviceInfo.pricesByCurrency[0].additionalPrices[0].value} ${this.myTest.serviceInfo.pricesByCurrency[0].currency} will be refunded to your account.`
-      if (this.status.status === "Rejected") return detail
-      return this.status.detail
-    },
-
-    totalPrice() {
-      return `${this.formatPrice(this.myTest.order.prices[0].value) + this.formatPrice(this.myTest.order.additionalPrices[0].value)} ${this.myTest.order.currency}`
+    computeDifferenceAmount() {
+      return this.prices.servicePrice - this.prices.qcPrice
     }
   },
 
   methods: {
-    async prepareData() {
-      try {
-        const order = await queryOrderDetailByOrderID(this.api, this.$route.params.id)
-        const dnaInfo = await queryDnaSamples(this.api, order.dnaSampleTrackingId)
-        const labInfo = await queryLabById(this.api, order.sellerId)
-        const serviceInfo = await queryServiceById(this.api, order.serviceId)
-
-        this.myTest = {
-          order: {
-            ...order,
-            serviceInfo: { ...serviceInfo.info, ...serviceInfo },
-            labInfo: { ...labInfo.info, ...labInfo },
-            dnaInfo
-          }
-        }
-
-        const rejectedDetails = `
-          Your sample has failed quality control. Your service fee of 
-          ${this.totalPrice}
-          will be refunded to your account.
-        `
-
-        if (dnaInfo.status === "Rejected") this.statusDetails[dnaInfo.status].detail = rejectedDetails
-      } catch (error) {
-        console.error(error)
-      }
+    async getOrderDetail() {
+      this.myTest = await getOrderDetail(this.$route.params.id)
+      this.dnaSample = await queryDnaSamples(this.api, this.myTest.dna_sample_tracking_id)
+      this.prices.servicePrice = this.formatPrice(this.myTest.service_info.prices_by_currency[0].total_price)
+      this.prices.qcPrice = this.formatPrice(this.myTest.service_info.prices_by_currency[0].additional_prices[0].value)
+      this.prices.currency = this.myTest.service_info.prices_by_currency[0].currency.toUpperCase()
     },
 
     toViewResult() {
@@ -298,8 +220,8 @@ export default {
     },
 
     isRejected(border) {
-      if (border) return this.myTest?.order?.dnaInfo?.status === "Rejected" && `border-error`
-      else return  this.myTest?.order?.dnaInfo?.status === "Rejected" && `error`
+      if (border) return this.dnaSample.status === "Rejected" && `border-error`
+      else return  this.dnaSample.status === "Rejected" && `error`
     },
 
     closeModal() {
@@ -307,7 +229,7 @@ export default {
     },
 
     iconSwitcher() {
-      switch (this.myTest.order.serviceInfo.category) {
+      switch (this.myTest.service_info.name) {
       case "Covid-19 Testing":
         this.selectedIcon = virusIcon
         break
@@ -330,10 +252,27 @@ export default {
     },
 
     formatPrice(price) {
-      return parseInt(this.web3.utils.fromWei(String(price.replaceAll(",", "")), "ether"))
+      return this.web3.utils.fromWei(String(price.replaceAll(",", "")), "ether")
+    },
+    
+    checkOrderDetail() {
+      const statusDetail = ORDER_STATUS_DETAIL[this.dnaSample.status.toUpperCase()]
+      if (this.dnaSample.status === "Rejected") {
+        const refundAmount = this.formatPrice(this.myTest.service_info.prices_by_currency[0].total_price) - this.formatPrice(this.myTest.service_info.prices_by_currency[0].additional_prices[0].value)
+        const { banner, name, detail, bannerSize, viewBox, e1 } = statusDetail(refundAmount)
+        this.banner = banner
+        this.status = { name, detail, size: bannerSize, viewBox }
+        this.e1 = e1
+        return
+      }
+
+      const { banner, name, detail, bannerSize, viewBox, e1 } = statusDetail
+      this.banner = banner
+      this.status = { name, detail, size: bannerSize, viewBox }
+      this.e1 = e1
     }
   }
-}
+};
 </script>
 
 <style lang="sass">
@@ -342,19 +281,24 @@ export default {
   &::v-deep
     .banner__subtitle
       max-width: 36.188rem !important
+
   .headerSection
     text-align: center
     margin: 25px 0 50px 0
     font-weight: 600
     font-size: 24px
+
   .box
     border: solid 0.5px #E4E4E4
     box-sizing: border-box
     margin: 0px
+
   .fillColor
     height: 456px
+
   .bodyContent
     margin: 0 0 0 0
+
   .leftSection
     padding: 17px
     height: 456px
@@ -369,17 +313,21 @@ export default {
       font-size: 14px
       line-height: 20px
       justify-content: space-between
+
   .rightSection
     padding: 17px
     height: 456px
+
   .bodyWraper
     padding: 10px
+
   .dataIcon
     padding: 10px
     margin: 10px
     min-width: 92px
     .dataContent
       margin: 0 0 0 5px
+
   .topHead
     margin: 0 0 10px 0
     font-weight: 600
@@ -387,13 +335,16 @@ export default {
     line-height: 32px
   .topBody
     display: flex
+
   .topContentWraper
     display: flex
     flex-direction: column
     margin: 5px 0 5px 5px
     justify-content: space-evenly
     font-size: 14px
+
   .imageBanner
+    width: 100%
     height:184px
     margin-bottom: 15px
     align-items: center
@@ -423,6 +374,7 @@ export default {
     min-width: 100px
     padding: 17px
     margin-top: 30px
+
   .step-indicator
     display: flex
     align-items: center
@@ -436,6 +388,7 @@ export default {
       border: 1px solid #A868FF
       border-radius: 50%
       background: #FFF
+      
       .icon
         font-size: 10px
         color: #ffffff
@@ -444,6 +397,7 @@ export default {
     .active
       background: linear-gradient(225deg, #D665FF 0%, #4C6FFF 100%)
       border: none
+
     .error
       background: red
     .border-error
@@ -463,6 +417,7 @@ export default {
       color: #595959
       font-weight: 600
       width: 75px
+
   .indicator-line
     width: 100%
     height: 1px
@@ -481,13 +436,17 @@ export default {
     width: 100%
     font-size: 12px
     font-weight: 600
+
   .flex
     display: flex
     justify-content: space-between
+
   .border-bottom
     border-bottom: 0.5px solid #D3C9D1
+
   .ph15
     padding: 0px 15px
+
   .mt10
     margin-top: 10px
 </style>

@@ -35,7 +35,7 @@ import { mapState } from "vuex"
 import ServiceCard from "./ServiceCard"
 import StepperStatusCard from "./StepperStatusCard"
 import ReasonOfRejection from "./ReasonOfRejection"
-import ConfirmationDialog from "@/views/Dashboard/Customer/Home/MyTest/ConfirmationDialog"
+import ConfirmationDialog from "@/common/components/Dialog/ConfirmationDialog"
 import { cancelGeneticAnalysisOrder, cancelGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
 import { queryGeneticAnalysisByGeneticAnalysisTrackingId } from "@debionetwork/polkadot-provider"
 

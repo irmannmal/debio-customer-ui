@@ -45,7 +45,7 @@ import { mapState } from "vuex"
 import { pencilIcon, trashIcon } from "@debionetwork/ui-icons"
 import { queryGeneticDataByOwnerId, removeGeneticData, removeGeneticDataFee} from "@debionetwork/polkadot-provider"
 import { errorHandler } from "@/common/lib/error-handler"
-import ConfirmationDialog from "../MyTest/ConfirmationDialog"
+import ConfirmationDialog from "@/common/components/Dialog/ConfirmationDialog"
 
 
 export default {

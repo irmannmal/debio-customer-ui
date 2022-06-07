@@ -1,7 +1,7 @@
 import apiClientRequest from "@/common/lib/api";
 import localStorage from "@/common/lib/local-storage";
 
-export async function fetchPaymentHistories(searchQuery) {
+export async function getOrderList(searchQuery) {
   const { data } = await apiClientRequest.get(`substrate/orders/list/${localStorage.getAddress()}`, {
     params: {
       size: 1000,
@@ -13,7 +13,7 @@ export async function fetchPaymentHistories(searchQuery) {
   return data
 }
 
-export async function fetchPaymentDetails(hash) {
+export async function getOrderDetail(hash) {
   const {
     data
   } = await apiClientRequest.get(

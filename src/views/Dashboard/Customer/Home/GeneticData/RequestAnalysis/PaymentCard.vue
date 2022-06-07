@@ -80,7 +80,7 @@
 <script>
 
 import { mapState } from "vuex"
-import ConfirmationDialog from "@/views/Dashboard/Customer/Home/MyTest/ConfirmationDialog"
+import ConfirmationDialog from "@/common/components/Dialog/ConfirmationDialog"
 import { getDbioBalance, setGeneticAnalysisPaid } from "@/common/lib/api"
 import { 
   queryGeneticAnalysisOrderById,

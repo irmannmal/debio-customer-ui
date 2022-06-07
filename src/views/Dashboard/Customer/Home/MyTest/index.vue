@@ -55,45 +55,59 @@
             .customer-my-test__table
               ui-debio-data-table(
                 :headers="headers"
-                :items="testResult"
+                :items="testList"
               )
-                template(class="titleSection" v-slot:[`item.serviceInfo.name`]="{item}")
+                template(class="titleSection" v-slot:[`item.serviceName`]="{item}")
                   div(class="detailLab d-flex align-center")
                     .customer-my-test__title-detail
                       ui-debio-avatar(
-                        :src="item.serviceInfo.image"
+                        :src="setServiceImage(item.serviceImage)"
                         size="42"
                         rounded
                       )
                     div
                       div.customer-my-test__title-name
-                        span {{ item.serviceInfo.name }}
+                        span {{ item.serviceName }}
                       div.customer-my-test__title-number
                         span {{ item.dnaSampleTrackingId}}
 
+                template(v-slot:[`item.labName`]="{ item }")
+                  .d-flex.flex-column.customer-my-test__lab-name
+                    span {{ item.labName }}
+
+                template(v-slot:[`item.orderDate`]="{ item }")
+                  span {{ item.orderDate }}
+
+                template(v-slot:[`item.updatedAt`]="{ item }")
+                  span {{ item.updatedAt }}
+
+                template(v-slot:[`item.orderStatus`]="{item}")
+                  .customer-my-test__status
+                    span(:style="{color: setStatusColor(item.orderStatus)}") {{ setTestStatus(item.orderStatus) }}
+
                 template(v-slot:[`item.actions`]="{ item }")
                   .customer-my-test__actions
-                    ui-debio-button(
+                    ui-debio-button.pa-4(
                       height="25px"
                       width="50%"
                       dark
                       color="primary"
-                      :to="{ name: 'order-history-detail', params: { id: item.orderId }}"
+                      @click="goToDetail(item.orderId)"
                     ) Details
                     
-                    ui-debio-button(
-                      v-if="item.status !== 'ResultReady'"
-                      v-show="item.status === 'Registered'"
+                    ui-debio-button.pa-4(
+                      v-if="item.orderStatus !== 'ResultReady'"
+                      v-show="item.orderStatus === 'Registered'"
                       height="25px"
                       width="50%"
                       dark
                       color="secondary"
-                      @click="goToInstruction(item.serviceInfo.dnaCollectionProcess)"
+                      @click="goToInstruction(item.dnaCollectionProcess)"
                     ) Instruction
 
-                    ui-debio-button(
-                      v-if="item.status !== 'Registered'"
-                      v-show="item.status === 'ResultReady'"
+                    ui-debio-button.pa-4(
+                      v-if="item.orderStatus !== 'Registered'"
+                      v-show="item.orderStatus === 'ResultReady'"
                       height="25px"
                       width="50%"
                       dark
@@ -101,9 +115,6 @@
                       @click="handleSelectedBounty(item)"
                     ) Add as Bounty
 
-                template(v-slot:[`item.status`]="{item}")
-                  .customer-my-test__status
-                  span(:style="{color: setStatusColor(item.status)}") {{ item.status.replace(/([A-Z])/g, ' $1').trim() }}
           v-tab-item
             .customer-my-test__table
             StakingServiceTab(
@@ -133,30 +144,12 @@ import CryptoJS from "crypto-js"
 import localStorage from "@/common/lib/local-storage"
 import { u8aToHex } from "@polkadot/util"
 import { syncDecryptedFromIPFS } from "@/common/lib/ipfs"
-import { createSyncEvent } from "@/common/lib/api"
-import { getCategories } from "@/common/lib/api"
-import { 
-  queryOrdersByCustomer, 
-  queryLabById, 
-  queryServiceById, 
-  queryDnaSamples, 
-  queryDnaTestResults,
-  unstakeRequest,
-  unstakeRequestFee
-} from "@debionetwork/polkadot-provider"
-import {
-  COVID_19,
-  DRIED_BLOOD,
-  URINE_COLLECTION,
-  FECAL_COLLECTION,
-  SALIVA_COLLECTION,
-  BUCCAL_COLLECTION
-} from "@/common/constants/instruction-step.js"
 import metamaskServiceHandler from "@/common/lib/metamask/mixins/metamaskServiceHandler"
-import ConfirmationDialog from "./ConfirmationDialog.vue"
-
-
-
+import ConfirmationDialog from "@/common/components/Dialog/ConfirmationDialog"
+import { createSyncEvent, getCategories, getOrderList } from "@/common/lib/api"
+import { queryDnaSamples, queryDnaTestResults, unstakeRequest, unstakeRequestFee } from "@debionetwork/polkadot-provider"
+import DNA_COLLECTION_PROCESS from "@/common/constants/instruction-step.js"
+import { ORDER_STATUS_DETAIL } from "@/common/constants/status"
 
 export default {
   name: "MyTest",
@@ -180,40 +173,22 @@ export default {
     selectedBounty: null,
     publicKey: null,
     secretKey: null,
-    documents: null,
     tabs: null,
-    isProcessed: true,
     isBounty: false,
     isLoading: false,
-    orderHistory: [],
-    btnLabel: "",
     showDialog: false,
-    headers: [
-      { text: "Service Name", value: "serviceInfo.name", sortable: true },
-      { text: "Lab Name", value: "labInfo.name", sortable: true },
-      { text: "Order Date", value: "createdAt", sortable: true },
-      { text: "Last Update", value: "updatedAt", sortable: true },
-      { text: "Test Status", value: "status", width: "115", sortable: true },
-      {
-        text: "Actions",
-        value: "actions",
-        sortable: false,
-        align: "center",
-        width: "5%"
-      }
-    ],
-    COVID_19,
-    DRIED_BLOOD,
-    URINE_COLLECTION,
-    FECAL_COLLECTION,
-    SALIVA_COLLECTION,
-    BUCCAL_COLLECTION,
     medicalResearchIllustration,
-    isLoadingOrderHistory: false,
     isLoding: false,
-    isLoadingTestResults: false,
-    testResult: [],
-    txWeight: 0
+    txWeight: 0,
+    testList: [],
+    headers: [
+      { text: "Service Name", value: "serviceName", sortable: true },
+      { text: "Lab Name", value: "labName", sortable: true },
+      { text: "Order Date", value: "orderDate", sortable: true },
+      { text: "Last Update", value: "updatedAt", sortable: true },
+      { text: "Test Status", value: "orderStatus", width: "115", sortable: true },
+      { text: "Actions", value: "actions", sortable: false, align: "center" }
+    ]
   }),
 
   computed: {
@@ -281,12 +256,9 @@ export default {
         : 0
     }
 
-    await this.getTestResultData()
-
+    await this.fetchOrderList()
     const txWeight = await unstakeRequestFee(this.api, this.wallet, this.stakingId)
-
     this.txWeight = this.web3.utils.fromWei(String(txWeight.partialFee), "ether")
-
   },
   
   async created() {
@@ -294,6 +266,62 @@ export default {
   },
 
   methods: {
+    formatDate(date) {
+      const formattedDate = new Date(parseInt(date.replace(/,/g, ""))).toLocaleDateString("en-GB", {
+        day: "numeric", month: "short", year: "numeric"
+      })
+      return formattedDate
+    },
+
+    async fetchOrderList() {
+      const result = await getOrderList()
+      const orderList = result.orders.data
+      const newList = orderList.filter(order => order._source.status !== "Unpaid" && order._source.status !== "Cancelled")
+      newList.forEach(async (order) => {
+        const { 
+          id: orderId,
+          lab_info: {
+            name: labName
+          },
+          service_info: {
+            name: serviceName,
+            image: serviceImage,
+            dna_collection_process: dnaCollectionProcess
+          },
+          dna_sample_tracking_id: dnaSampleTrackingId,
+          created_at: createdAt,
+          status: paymentStatus
+        } = order._source
+
+        const dnaSample = await queryDnaSamples(this.api, dnaSampleTrackingId)
+        let dnaTestResults
+
+        if (paymentStatus === "Fulfilled") {
+          dnaTestResults = await queryDnaTestResults(this.api, dnaSampleTrackingId)
+        }
+
+        const orderDetail = {
+          orderId,
+          dnaSampleTrackingId, 
+          labName,
+          serviceName,
+          serviceImage,
+          orderDate: this.formatDate(createdAt),
+          updatedAt: this.formatDate(dnaSample.updatedAt),
+          orderStatus: dnaSample.status,
+          paymentStatus,
+          dnaCollectionProcess,
+          dnaTestResults,
+          timestamp: new Date (parseInt(dnaSample.updatedAt.replaceAll(",", ""))).getTime().toString()
+        }
+
+        this.testList.push(orderDetail)
+        this.testList.sort(
+          (a, b) => parseInt(b.timestamp) - parseInt(a.timestamp)
+        )
+      })
+    },
+
     async initialData() {
       const cred = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
 
@@ -301,179 +329,33 @@ export default {
       this.secretKey = u8aToHex(cred.boxKeyPair.secretKey)
     },
 
-    toRequestTest() {
-      this.$router.push({ name: "customer-request-test-select-lab"})
+    setStatusColor(status) {
+      if (status === "Rejected") {
+        const detail = ORDER_STATUS_DETAIL[status.toUpperCase()]
+        return detail().color
+      }
+      return ORDER_STATUS_DETAIL[status.toUpperCase()].color
     },
 
-    setStatusColor(status) { //change color for each order status
-      let colors = Object.freeze({
-        REGISTERED: "#6F4CEC",
-        PAID: "#44921A",
-        UNPAID: "#FAAD15",
-        FULFILLED: "#44921A",
-        CANCELLED: "#9B1B37",
-        FAILED: "#9B1B37",
-        RESULTREADY: "#6F4CEC",
-        REJECTED: "#9B1B37",
-        SUBMITEDASDATABOUNTY: "#5640A5"
-      })
-      return colors[status.toUpperCase()]
+    setTestStatus(status) {
+      if (status === "Rejected") {
+        const detail = ORDER_STATUS_DETAIL[status.toUpperCase()]
+        console.log(detail().name)
+        return detail().name
+      }
+      return ORDER_STATUS_DETAIL[status.toUpperCase()].name
     },
 
-    async getTestResultData(){
-      this.isLoadingTestResults = true
-      try {
-        this.testResult = []
-        const address = this.wallet.address
-        const orders = await queryOrdersByCustomer(this.api, address)
-        if (orders != null) {
-          orders.reverse()
-          for (let i = 0; i < orders.length; i++) { 
-            if (orders[i].status !== "Cancelled" && orders[i].status != "Unpaid") {
-              const dnaSample = await queryDnaSamples(this.api, orders[i].dnaSampleTrackingId)
-              const detailLab = await queryLabById(this.api, orders[i].sellerId)
-              const detailService = await queryServiceById(this.api, orders[i].serviceId)
-              let dnaTestResults
-              
-              if (orders[i].status === "Fulfilled") {
-                dnaTestResults = await queryDnaTestResults(this.api, orders[i].dnaSampleTrackingId)
-              }
-              this.prepareTestResult(dnaTestResults, orders[i], dnaSample, detailLab, detailService)
-            }
-          }
-        }
-        this.isLoadingTestResults = false
-      } catch (error) {
-        console.error(error)
-        this.isLoadingTestResults = false
-      }
-
-      this.testResult.sort((a, b) => {
-
-        if( new Date(a.orderDate) < new Date(b.orderDate)) {
-          return 1
-        } 
-
-        if( new Date(a.orderDate) > new Date(b.orderDate)) {
-          return -1
-        }
-
-        return 0
-      })
+    setServiceImage(image) {
+      return image ? image : require("@/assets/debio-logo.png")
     },
 
-    prepareTestResult(dnaTestResults, detailOrder, dnaSample, detailLab, detailService) {
-      const feedback = {
-        rejectedTitle: dnaSample.rejectedTitle,
-        rejectedDescription: dnaSample.rejectedDescription
-      }
-      const orderId = detailOrder.id
-      const title = detailService.info.name
-      const description = detailService.info.description
-      const serviceImage = detailService.info.image
-      const category = detailService.info.category
-      const testResultSample = detailService.info.testResultSample 
-      const pricesByCurrency = detailService.info.pricesByCurrency 
-      const expectedDuration = detailService.info.expectedDuration 
-      const serviceId = detailService.id 
-      const dnaCollectionProcess = detailService.info.dnaCollectionProcess 
-      const serviceInfo = { 
-        name: title,
-        description: description,
-        image: serviceImage,
-        category: category,
-        testResultSample: testResultSample,
-        pricesByCurrency: pricesByCurrency,
-        expectedDuration: expectedDuration,
-        dnaCollectionProcess: dnaCollectionProcess
-      }
-      const labName = detailLab.info.name
-      const address = detailLab.info.address
-      const labImage = detailLab.info.profileImage
-      const labId = detailLab.info.boxPublicKey 
-      const labInfo = { 
-        name: labName,
-        address: address,
-        profileImage: labImage
-      }
-      let icon = "mdi-needle";
-      if (detailService.info.image != null) {
-        icon = detailService.info.image;
-      }
-
-      const dateSet = new Date(
-        parseInt(dnaSample.createdAt.replace(/,/g, ""))
-      )
-      const dateUpdate = new Date(
-        parseInt(dnaSample.updatedAt.replace(/,/g, ""))
-      )
-      const timestamp = dateSet.getTime().toString();
-      const orderDate = dateSet.toLocaleString("en-GB", {
-        weekday: "short", // long, short, narrow
-        day: "numeric", // numeric, 2-digit
-        year: "numeric", // numeric, 2-digit
-        month: "short", // numeric, 2-digit, long, short, narrow
-        hour: "numeric", // numeric, 2-digit
-        minute: "numeric"
-      });
-
-      const updatedAt = dateUpdate.toLocaleString("en-GB", { 
-        day: "numeric", // numeric, 2-digit
-        year: "numeric", // numeric, 2-digit
-        month: "short" // numeric, 2-digit, long, short, narrow
-      })
-      const createdAt = dateSet.toLocaleString("en-GB", {
-        day: "numeric", // numeric, 2-digit
-        year: "numeric", // numeric, 2-digit
-        month: "short" // numeric, 2-digit, long, short, narrow
-      })
-      const dnaSampleTrackingId = detailOrder.dnaSampleTrackingId
-      const status = dnaSample.status
-      
-      const result = {
-        orderId,
-        icon,
-        dnaSampleTrackingId,
-        timestamp,
-        status,
-        orderDate,
-        serviceId,
-        dnaTestResults,
-        serviceInfo,
-        labId,
-        labInfo,
-        createdAt,
-        updatedAt,
-        labName,
-        feedback
-      }
-      this.testResult.push(result)
-    },
-
-    checkLastOrder() {
-      const status = localStorage.getLocalStorageByName("lastOrderStatus")
-      this.isProcessed = status ? status : null
+    goToDetail(id) {
+      this.$router.push({ name: "order-history-detail", params: {id}})
     },
 
     goToInstruction(item) {
-      if (item == "Covid 19 Saliva Test") {
-        window.open(this.COVID_19, "_blank")
-      }
-      if (item == "Blood Cells - Dried Blood Spot Collection Process") {
-        window.open(this.DRIED_BLOOD, "_blank")
-      }
-      if (item == "Epithelial Cells - Buccal Swab Collection Process") {
-        window.open(this.BUCCAL_COLLECTION, "_blank")
-      }
-      if (item == "Fecal Matters - Stool Collection Process") {
-        window.open(this.FECAL_COLLECTION, "_blank")
-      }
-      if (item == "Saliva - Saliva Collection Process") {
-        window.open(this.SALIVA_COLLECTION, "_blank")
-      }
-      if (item == "Urine - Clean Catch Urine Collection Process") {
-        window.open(this.URINE_COLLECTION, "_blank")
-      }
+      window.open(DNA_COLLECTION_PROCESS[item], "_blank")
     },
 
     async handleSelectedBounty(val) {
@@ -572,10 +454,10 @@ export default {
       padding: 0px
 
     &__actions
-      padding: 35px
+      padding: 0 10px
       display: flex
       align-items: center
-      gap: 30px
+      gap: 20px
       margin: 5px
 
     &__status
