@@ -1,5 +1,5 @@
 <template lang="pug">
-  v-dialog.analyst-detail(:value="show" max-width="440" persistent rounded )
+  v-dialog.analyst-detail(:value="show" max-width="440" overflow-hidden persistent rounded )
     ui-debio-error-dialog(
       :show="errorAlert"
       title="Insufficient Balance"
@@ -476,6 +476,7 @@ export default {
 
     &__profil
       margin-left: 0 !important
+      margin-right: 0 !important
       padding: 12px 23px
 
     &__profil-name
