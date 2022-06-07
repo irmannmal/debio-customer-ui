@@ -71,6 +71,31 @@ const handler = {
     }
 
     return { data, id, params, wording}
+  },
+  geneticAnalysisOrders: async (dataEvent, value, valueMessage, event) => {
+    const data = dataEvent[0]
+    const id = data[value]
+    const status = data["status"]
+    const params = { orderId: id }
+    const formatedHash = `${id?.substr(0, 4)}...${id?.substr(id?.length - 4)}`
+    let wording = `${valueMessage} <${formatedHash}>`
+
+    if (event.method === "GeneticAnalysisOrderRefunded") {
+      wording = `${wording} has been ${status.toLowerCase()}, kindly check your account balance.`
+    }
+
+    return { data, id, params, wording }
+  },
+  geneticAnalysis: async (dataEvent, value, valueMessage, event) => {
+    const data = dataEvent[0]
+    const id = data[value]
+    const status = data["status"]
+    const params = { orderId: id }
+    const formatedHash = `${id?.substr(0, 4)}...${id?.substr(id?.length - 4)}`
+    const computeStatus = event.method === "GeneticAnalysisResultReady" ? "are out" : `has been ${status.toLowerCase()}`
+    const wording = `${valueMessage} <${formatedHash}> ${computeStatus}. Click here to see your order details.`
+
+    return { data, id, params, wording }
   }
 }
 

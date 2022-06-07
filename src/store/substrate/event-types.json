@@ -121,6 +121,42 @@
           "params": "1",
           "identity": 0
         }
+      },
+      "geneticAnalysisOrders": {
+        "GeneticAnalysisOrderCreated": {
+          "message": "",
+          "value": "id",
+          "value_message": "Congrats! You successfully submitted your requested test for ",
+          "route": "",
+          "params": "id",
+          "identity": "customerId"
+        },
+        "GeneticAnalysisOrderRefunded": {
+          "message": "",
+          "value": "id",
+          "value_message": "Your service analysis fee from ",
+          "route": "",
+          "params": "",
+          "identity": "customerId"
+        }
+      },
+      "geneticAnalysis": {
+        "GeneticAnalysisRejected": {
+          "message": "",
+          "value": "geneticAnalysisOrderId",
+          "value_message": "Your sample from ",
+          "route": "",
+          "params": "geneticAnalysisOrderId",
+          "identity": "ownerId"
+        },
+        "GeneticAnalysisResultReady": {
+          "message": "",
+          "value": "geneticAnalysisOrderId",
+          "value_message": "Congrats! Your DNA results for ",
+          "route": "",
+          "params": "geneticAnalysisOrderId",
+          "identity": "ownerId"
+        }
       }
     },
     "lab": {
