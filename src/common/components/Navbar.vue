@@ -127,8 +127,7 @@ import {
 
 import localStorage from "@/common/lib/local-storage"
 import { generalDebounce } from "@/common/lib/utils"
-import { queryAccountBalance } from "@debionetwork/polkadot-provider"
-import { queryEthAdressByAccountId } from "@debionetwork/polkadot-provider"
+import { queryAccountBalance, queryEthAdressByAccountId } from "@debionetwork/polkadot-provider"
 import { getBalanceDAI } from "@/common/lib/metamask/wallet"
 import { startApp } from "@/common/lib/metamask"
 import { handleSetWallet } from "@/common/lib/wallet"
@@ -166,6 +165,8 @@ export default {
     walletAddress: "",
     polkadotBalance: 0,
     metamaskBalance: 0,
+    activeMetamaskAddress: null,
+    ethRegisterAddress: null,
     ethAccount: null,
     loading: false,
     menus: [
@@ -227,9 +228,8 @@ export default {
   },
 
   async mounted () {
-    this.checkMetamaskAddress()
+    this.checkMetamask()
     this.fetchWalletBalance()
-
   },
 
   watch: {
@@ -237,16 +237,29 @@ export default {
       if(this.lastEventData) {
         this.fetchWalletBalance()
       }
+    },
+
+    metamaskWalletAddress() {
+      if (this.metamaskWalletAddress.currentAccount === this.metamaskWalletAddress.accountList[0]) {
+        this.loginStatus = true
+        this.getActiveMenu()
+        return
+      }
+      this.loginStatus = false
     }
   },
 
   methods: {
     ...mapMutations({
       setWalletBalance: "substrate/SET_WALLET_BALANCE",
-      setMetamaskAddress: "metamask/SET_WALLET_ADDRESS",
       setMetamaskBalance: "metamask/SET_WALLET_BALANCE",
       clearWallet: "metamask/CLEAR_WALLET"
     }),
+
+    async getDaiBalance (address) {
+      const balance = await getBalanceDAI(address)
+      return balance
+    },
 
     handleNotificationRead(notif) {
       notif.read = true
@@ -282,7 +295,7 @@ export default {
 
       if (selectedMenu.type === "metamask" && !this.loginStatus) return
 
-      if (selectedMenu.type === "metamask") this.walletAddress = this.metamaskWalletAddress
+      if (selectedMenu.type === "metamask") this.walletAddress = this.activeMetamaskAddress
 
       selectedMenu.active = true
 
@@ -318,26 +331,29 @@ export default {
       }
     },
 
-    async checkMetamaskAddress() {
-      if (this.metamaskWalletAddress === "") {
-        const ethRegisterAddress = await queryEthAdressByAccountId(
-          this.api,
-          this.wallet.address
-        )
+    async checkMetamask() {
+      this.loginStatus = false
+      this.ethRegisterAddress = await queryEthAdressByAccountId(
+        this.api,
+        this.wallet.address
+      )
 
-        if (ethRegisterAddress !== null) {
-          const balance = await getBalanceDAI(ethRegisterAddress)
-          this.metamaskBalance = balance
-          this.setMetamaskAddress(ethRegisterAddress)
-          this.setMetamaskBalance(balance)
-          this.loginStatus = true
-        }
+      if (!this.ethRegisterAddress) {
+        this.loginStatus = false
+        return
       }
 
-      if (this.metamaskWalletAddress) {
+      const accountDetail = await startApp()
+      if (accountDetail.currentAccount === this.ethRegisterAddress) {
+        this.activeMetamaskAddress = this.ethRegisterAddress
+        const balance = await getBalanceDAI(this.ethRegisterAddress)
+        this.metamaskBalance = balance
+        this.setMetamaskBalance(balance)
         this.loginStatus = true
+        this.getActiveMenu()
       }
-
+      this.activeMetamaskAddress = ""
+      this.loginStatus = false
     },
 
     async connectToMetamask() {
@@ -351,12 +367,12 @@ export default {
         return
       }
 
-      const account = await handleSetWallet("metamask", this.metamaskWalletAddress)
+      const account = await handleSetWallet("metamask", this.ethRegisterAddress)
+      this.metamaskBalance = await getBalanceDAI(this.ethRegisterAddress)
       const accountId = localStorage.getAddress()
       const ethAddress = account[0].address
 
       await this.$store.dispatch("wallet/walletBinding", {accountId, ethAddress})
-      this.setMetamaskAddress(ethAddress)
       this.loading = false
       this.loginStatus = true
       this.menus.find(menu => menu.type === "metamask").active = true
