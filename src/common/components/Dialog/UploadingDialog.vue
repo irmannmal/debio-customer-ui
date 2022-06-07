@@ -5,7 +5,7 @@
         v-app-bar( flat dense color="white" ) 
 
         v-card-text
-          .dialog-uploading__title {{ renderTitle }} in Progress {{ progress }}
+          .dialog-uploading__title {{ type }} in Progress {{ progress }}
 
           .dialog-uploading__card-loading
             SpinnerLoader(
@@ -13,16 +13,32 @@
               :size="140"
             )
 
-          .dialog-uploading__message
-            b Your file is still {{ renderTitle }}. 
-            b Please wait, do not close this tab. 
-          .dialog-uploading__border-text We support file sizes up to 200 MB, there may be longer upload time associated with larger files on slower Internet connections.
-          .dialog-uploading__border-text The larger the file size, the longer it will take to upload 
-            a.link(
-              target="_blank"
-              :href="renderUrlDownload"
-              @click.stop
-            ) here’s why
+          template(v-if="type !== 'Processing'" )
+            .dialog-uploading__message
+              b Your file is still {{ type }}. 
+              b Please wait, do not close this tab.
+            .dialog-uploading__border
+              .dialog-uploading__border-text We support file sizes up to 200 MB, there may be longer upload/download time associated with larger files on slower Internet connections.
+              .dialog-uploading__border-text The larger the file size, the longer it will take to upload/download 
+                a.link(
+                  target="_blank"
+                  :href="renderUrlDownload"
+                  @click.stop
+                ) here’s why
+
+          template(v-if="type === 'Processing'" )
+            .dialog-uploading__message
+              b We are processing your order.
+              b Please wait, do not close this tab. 
+            
+            .dialog-uploading__border
+              .dialog-uploading__border-text The process may be longer associated with larger data on slower Internet connections.
+              .dialog-uploading__border-text The larger the data size, the longer it will take to process 
+                a.link(
+                  target="_blank"
+                  :href="renderUrlDownload"
+                  @click.stop
+                ) here’s why          
 
 </template>
 
@@ -55,7 +71,7 @@ export default {
 
   watch: {
     loadingProgress() {
-      this.progress = `${this.loadingProgress.progress}%`
+      this.progress = `${this.loadingProgress}%`
     }
   },
 
@@ -64,10 +80,6 @@ export default {
     ...mapState({
       loadingProgress: (state) => state.geneticData.loadingProgress
     }),
-
-    renderTitle() {
-      return this.type === "download" ? "Downloading" : "Uploading"
-    },
 
     renderUrlDownload() {
       return this.type === "download" ? this.urlDownload : this.urlUpload
@@ -103,6 +115,7 @@ export default {
       text-align: center
       letter-spacing: -0.0075em
       text-transform: initial
+      margin-bottom: 5px
       @include button-2
 
     &__border

@@ -85,22 +85,10 @@
             @click="onSelect"
           ) Checkout Order
 
-      div(v-if="isLoading")
-        .analyst-detail__loading-title Checkout in Progress...
-        .analyst-detail__loading-spin
-          SpinnerLoader(
-            :color="'#C400A5'"
-            :size="140"
-          )
-
-        .analyst-detail__loading-message
-          b Please wait, do not close this tab. 
-        .analyst-detail__loading-border-text It may take a while, 
-            a.link(
-              target="_blank"
-              href="https://docs.debio.network/complete-guidelines/user-guideline/upload-and-encrypt-data"
-              @click.stop
-            )  here’s why
+      UploadingDialog(
+        :show="isLoading"
+        type="Processing"
+      )
 
     ui-debio-alert-dialog(
       :show="showAlert"
@@ -126,8 +114,9 @@ import {
   createGeneticAnalysisOrder, 
   createGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
 import { queryLastGeneticAnalysisOrderByCustomer } from "@/common/lib/polkadot-provider/query/genetic-analysis-orders.js"
-import { downloadFile, uploadFile, getFileUrl } from "@/common/lib/pinata-proxy"
-import SpinnerLoader from "@bit/joshk.vue-spinners-css.spinner-loader"
+import { downloadWithProgress, uploadFile, getFileUrl } from "@/common/lib/pinata-proxy"
+// import SpinnerLoader from "@bit/joshk.vue-spinners-css.spinner-loader"
+import UploadingDialog from "@/common/components/Dialog/UploadingDialog"
 
 export default {
   name: "AnalystDetail",
@@ -149,7 +138,7 @@ export default {
   }),
 
   components: {
-    SpinnerLoader
+    UploadingDialog
   },
 
   props: {
@@ -201,6 +190,8 @@ export default {
       let lastOrder 
       try {
         lastOrder = await queryLastGeneticAnalysisOrderByCustomerId(this.api, this.wallet.address)
+        console.log(lastOrder)
+
         return lastOrder.status
       } catch (error) {
         lastOrder = null
@@ -269,7 +260,7 @@ export default {
       let fileType
       let fileName
       for (let i = 0; i < links.length; i++) {
-        const { name, type, data } = await downloadFile(links[i], true)
+        const { name, type, data } = await downloadWithProgress(links[i], true)
         fileType = type
         fileName = name
         download.push(data)
@@ -387,6 +378,7 @@ export default {
     },
 
     async upload({ encryptedFileChunks, fileName, fileType }) {
+      console.log("upload")
       for (let i = 0; i < encryptedFileChunks.length; i++) {
         const data = JSON.stringify(encryptedFileChunks[i]) // not working if the size is large
         const blob = new Blob([data], { type: fileType })
@@ -401,10 +393,14 @@ export default {
         this.links.push(link)
       }
 
+      console.log("uploaded")
       this.geneticLink = JSON.stringify(this.links)
+      console.log(this.geneticLink);
       if (this.geneticLink) {
         await this.createOrder()
       }
+
+
     },
 
     formatBalance(balance) {

@@ -67,7 +67,7 @@
 
       UploadingDialog(
         :show="isLoading"
-        type="upload"
+        type="Uploading"
       )
 
       SuccessDialog(

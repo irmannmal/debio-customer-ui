@@ -35,7 +35,14 @@ export default {
     },
 
     async getLoadingProgress({ commit }, data) {
-      commit("SET_LOADING_PROGRESS", data)
+      if (!data.download) {
+        commit("SET_LOADING_PROGRESS", data.upload)
+        return
+      }
+      let download = Math.round(data.download/2)
+      let upload = data.upload ? Math.round(data.upload/2) : 0
+      const total = download + upload
+      commit("SET_LOADING_PROGRESS", total)
     },
 
     async setCancel({commit}, data) {

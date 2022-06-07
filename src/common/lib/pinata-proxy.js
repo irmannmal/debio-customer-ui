@@ -37,7 +37,7 @@ export const uploadFile = val => {
       if(!progressEvent.lengthComputable) return
 
       let percentCompleted = Math.round( (progressEvent.loaded * 100) / progressEvent.total )
-      store.dispatch("geneticData/getLoadingProgress", { progress: percentCompleted })
+      store.dispatch("geneticData/getLoadingProgress", { upload: percentCompleted })
     }
   )
 }
@@ -93,4 +93,44 @@ export const downloadDocumentFile = (data, fileName, type) => {
   } catch (error) {
     console.error(error)
   }
+}
+
+export const downloadWithProgress = async (ipfsLink, withMetaData = false) => {
+  const cid = ipfsLink.split("/").pop();
+  const response = await fetch(new URL(ipfsLink).toString());
+  const contentLength = response.headers.get("content-length");
+  const total = parseInt(contentLength, 10);
+  let loaded = 0;
+
+  const res = new Response(new ReadableStream({
+    async start(controller) {
+      const reader = response.body.getReader();
+      do {
+        const { value } = await reader.read();
+        loaded += value.byteLength;
+        let percentCompleted = Math.round( (loaded * 100) / total )
+        store.dispatch("geneticData/getLoadingProgress", { download: percentCompleted } )
+        controller.enqueue(value);
+      } while (loaded < total)
+      controller.close();
+    }
+  }))
+
+  const data = await res.json()
+  let metadata;
+
+  if (withMetaData) {
+    if (pinataJwtKey == null) {
+      throw new Error("pinataJwtKey parameter is required if withMetaData is set to true");
+    }
+
+    const { rows } = await pinataIpfsGetIpfsMetadata(cid, pinataJwtKey);
+
+    metadata = {
+      name: rows[0].metadata.name,
+      type: rows[0].metadata.keyvalues.type
+    };
+  }
+
+  return { ...(withMetaData ? metadata : null), data };
 }
