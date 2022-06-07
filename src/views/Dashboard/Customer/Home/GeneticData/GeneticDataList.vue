@@ -34,6 +34,7 @@
       title="Delete Genetic Data"
       message="By delete this Genetic Data, you might not be able to retrieve it back"
       btnMessage="Delete"
+      :loading="isDeleting"
       @close="showDialog=false"
       @click="confirmedDelete"
     )
@@ -91,6 +92,7 @@ export default {
     ],
     items: [],
     showDialog: false,
+    isDeleting: false,
     selectedDataId: null,
     txWeight: 0,
     error: null
@@ -103,6 +105,7 @@ export default {
         if (dataEvent[1] === this.wallet.address) {
           if (e.method === "GeneticDataRemoved") {
             this.fetchGeneticData()
+            this.isDeleting = false
             this.showDialog = false
           }
         }
@@ -164,6 +167,7 @@ export default {
     },
 
     async confirmedDelete() {
+      this.isDeleting = true
       try{
         await removeGeneticData(this.api, this.wallet, this.selectedDataId)
       } catch (e) {
