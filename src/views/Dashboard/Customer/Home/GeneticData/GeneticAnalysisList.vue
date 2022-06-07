@@ -148,14 +148,14 @@ export default {
       })
 
       paidOrder.forEach( async order => {
-        const { geneticAnalysisdTrackingId, sellerId, serviceId, id, createdAt, updatedAt} = order
-        const geneticAnalysis = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, geneticAnalysisdTrackingId)
+        const { geneticAnalysisTrackingId, sellerId, serviceId, id, createdAt, updatedAt} = order
+        const geneticAnalysis = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, geneticAnalysisTrackingId)
         const analystInfo = await queryGeneticAnalystByAccountId(this.api, sellerId)
         const geneticAnalysisService = await queryGeneticAnalystServicesByHashId(this.api, serviceId)
         const timestamp = geneticAnalysis.createdAt
 
         const data = {
-          trackingId: geneticAnalysisdTrackingId,
+          trackingId: geneticAnalysisTrackingId,
           orderId: id,
           serviceName: geneticAnalysisService.info.name,
           analystName: `${analystInfo.info.firstName} ${analystInfo.info.lastName}`,

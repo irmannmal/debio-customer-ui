@@ -129,7 +129,7 @@ export default {
   methods: {
     async getStatus() {
       const detail = await queryGeneticAnalysisOrderById(this.api, this.orderId)
-      this.trackingId = detail.geneticAnalysisdTrackingId
+      this.trackingId = detail.geneticAnalysisTrackingId
       const analysisDetail = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, this.trackingId)
       this.analystInfo = await queryGeneticAnalystByAccountId(this.api, detail.sellerId)
 

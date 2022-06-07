@@ -90,8 +90,8 @@ export default {
     },
 
     async prepareData() {
-      const { serviceId, sellerId, geneticAnalysisdTrackingId, status } = await queryGeneticAnalysisOrderById(this.api, this.$route.params.id)
-      const geneticData = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, geneticAnalysisdTrackingId)
+      const { serviceId, sellerId, geneticAnalysisTrackingId, status } = await queryGeneticAnalysisOrderById(this.api, this.$route.params.id)
+      const geneticData = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, geneticAnalysisTrackingId)
 
       if (geneticData.status !== "ResultReady" || status === "Refunded") this.$router.push({
         name: "customer-genetic-analysis-detail",
