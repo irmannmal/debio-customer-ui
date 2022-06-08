@@ -156,15 +156,17 @@ export default {
   },
 
   watch: {
-    lastEventData() {
-      if (this.lastEventData) {
-        if (this.lastEventData.method === "OrderPaid") {
+    lastEventData(event) {
+      if (event) {
+        const dataEvent = JSON.parse(event.data.toString())
+
+        if (event.method === "OrderPaid") {
           this.isLoading = false
           this.password = ""
           this.$router.push({ 
             name: "customer-request-test-success",
             params: {
-              hash: this.txHash
+              hash: dataEvent[0].id
             }
           })
         }
