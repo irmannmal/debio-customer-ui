@@ -104,7 +104,6 @@ import Kilt from "@kiltprotocol/sdk-js"
 import { u8aToHex } from "@polkadot/util"
 import { errorHandler } from "@/common/lib/error-handler"
 import SpinnerLoader from "@bit/joshk.vue-spinners-css.spinner-loader"
-import errorMessage from "@/common/constants/error-messages"
 import { postTxHash } from "@/common/lib/api"
 
 export default {
@@ -123,7 +122,6 @@ export default {
   },
 
   data: () => ({
-    errorMessage,
     password: "",
     error: "",
     showPassword: false,
@@ -290,12 +288,6 @@ export default {
         this.isLoading = false
         this.password = ""
         const error = await errorHandler(err.message)
-        
-        if (error.title === "error") {
-          this.error = this.errorMessage.INCORRECT_PASSWORD
-          return
-        } 
-
         this.showError = true
         this.errorTitle = error.title
         this.errorMsg = error.message

@@ -37,7 +37,7 @@ apiClientRequest.interceptors.response.use(
   },
   error => {
     Sentry.captureException(error);
-
+    if (error.response.status !== 503) VueRouter.push({ query: { error: true } })
     responseValidation(error)
 
     return Promise.reject(error);

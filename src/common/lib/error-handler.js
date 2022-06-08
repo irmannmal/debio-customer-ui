@@ -15,8 +15,8 @@ export async function errorHandler(err) {
     }
     break;
   default : error = {
-    title: "error",
-    message: "Internal Server Error"
+    title: "Error",
+    message: err
   }
     break
   }
