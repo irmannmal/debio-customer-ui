@@ -10,15 +10,16 @@
       .menu-card__details
         .menu-card__sub-title Service Price
         .menu-card__price 
-          | {{ servicePrice }}
-          | {{ currency }}
+          | {{ dataService.servicePrice }}
+          | {{ dataService.currency }}
     
 
       .menu-card__details
         .menu-card__sub-title Quality Control Price
         .menu-card__price 
-          | {{ qcPrice }} 
-          | {{ currency }}
+          | {{ dataService.qcPrice }} 
+          | {{ dataService.currency }}
+
 
       .menu-card__operation +
       hr.menu-card__line
@@ -26,8 +27,8 @@
       .menu-card__details
         .menu-card__sub-title-medium Total Price
         .menu-card__price-medium
-          | {{ totalPrice }} 
-          | {{ currency}}
+          | {{ dataService.totalPrice }} 
+          | {{ dataService.currency}}
 
 
       .menu-card__details(v-if="stakingFlow")
@@ -58,7 +59,7 @@
           | {{ currency }}
 
       div(class="text-center" v-if="!isCancelled")
-        div(v-if="!success" class="mt-3 d-flex justify-center align-center")
+        div(v-if="!success && !isCreated" class="mt-3 d-flex justify-center align-center")
           ui-debio-button(
             :class="setMargin"
             color="secondary"
@@ -85,7 +86,7 @@
             @click="toEtherscan"
             ) View Etherscan
 
-        div(v-if="success && status === 'Unpaid'" class="d-flex justify-space-between align-center pa-4 mt-8 me-3")
+        div(v-if="status === 'Unpaid'" class="d-flex justify-space-between align-center pa-4 mt-8 me-3")
           ui-debio-button(
             color="secondary"
             width="46%"
@@ -106,6 +107,7 @@
     template
       PaymentReceiptDialog(
         :show="showReceipt"
+        :serviceDetail="dataService"
         @onContinue="onContinue"
         @close="showReceipt = false"
       )
@@ -181,10 +183,7 @@ export default {
     isBalanced: false,
     excessAmount: 0,
     showAlert: false,
-    servicePrice: 0,
-    qcPrice: 0,
-    totalPrice: 0,
-    currency: "",
+    isCreated: false,
     success: false
   }),
 
@@ -195,13 +194,9 @@ export default {
       this.success = true
     }
 
-    if (this.dataService.detailPrice) {
-      this.servicePrice = this.formatPrice((this.dataService.detailPrice.price_components[0].value).replaceAll(",", ""))
-      this.qcPrice = this.formatPrice((this.dataService.detailPrice.additional_prices[0].value).replaceAll(",", ""))
-      this.totalPrice = this.formatPrice(this.dataService.price).replaceAll(",", "")
-      this.currency = this.dataService.currency.toUpperCase()
+    if(this.$route.params.id) {
+      this.isCreated = true
     }
-    
 
     // get last order id
     this.lastOrder = await queryLastOrderHashByCustomer(

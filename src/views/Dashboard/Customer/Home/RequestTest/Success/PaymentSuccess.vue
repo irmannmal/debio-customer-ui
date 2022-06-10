@@ -30,6 +30,12 @@ export default {
     PaymentDetailCard
   },
 
+  mounted() {
+    if (!this.selectedService) {
+      this.$router.push({ name: "customer-payment-history" })
+    }
+  },
+
   computed: {
     ...mapState({
       selectedService: (state) => state.testRequest.products,

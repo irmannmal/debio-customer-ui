@@ -217,51 +217,50 @@ export default {
           this.detailOrder = await queryOrderDetailByOrderID(this.api, this.lastOrder)
           this.status = this.detailOrder.status
           if (this.status === "Unpaid" && !this.$route.params.id) {
-            this.show = false
             this.showAlert = true
+            this.closeDialog()
             return
           }
         }
 
         this.ethAccount = await startApp()
+        const ethAddress = await queryEthAdressByAccountId(this.api, this.wallet.address)    
 
         if (this.ethAccount.currentAccount === "no_install") {
           this.isLoading = false
-          this.show = false
           this.password = ""
           this.showError = true
-          this.error = "Please install MetaMask!"
+          this.errorMsg = "Please install MetaMask!"
+          this.closeDialog()
           return
         }
 
-        // cek kalo udah binding wallet
-        if (!this.metamaskWalletAddress) {
-          this.isLoading = false
-          this.show = false
-          this.password = ""
+        if (ethAddress !== this.ethAccount.accountList[0]) {
           this.showError = true
-          this.error = "Metamask has no address ETH."
+          this.errorMsg = "Please connect your wallet"
+          this.closeDialog()
           return
         }
+
         // check ETH Balance
-        const balance = await getBalanceETH(this.metamaskWalletAddress)
+        const balance = await getBalanceETH(ethAddress)
         if (balance <= 0 ) {
           this.isLoading = false
-          this.show = false
           this.password = ""
           this.showError = true
-          this.error = "You don't have enough ETH"
+          this.errorMsg = "You don't have enough ETH"
+          this.closeDialog()
           return
         }
 
         // check DAI Balance 
-        const daiBalance = await getBalanceDAI(this.metamaskWalletAddress)
+        const daiBalance = await getBalanceDAI(ethAddress)
         if (Number(daiBalance) < Number(this.selectedService.totalPrice)) {
           this.isLoading = false
-          this.show = false
           this.password = ""
           this.showError = true
-          this.error = "You don't have enough DAI"
+          this.errorMsg = "You don't have enough DAI"
+          this.closeDialog()
           return
         }
 
@@ -293,8 +292,7 @@ export default {
         this.showError = true
         this.errorTitle = error.title
         this.errorMsg = error.message
-        this.show = false
-      } 
+      }
     },
 
     async payOrder () {
@@ -305,19 +303,18 @@ export default {
           this.wallet.address
         )
         this.detailOrder = await queryOrderDetailByOrderID(this.api, this.lastOrder)
+        const ethAddress = await queryEthAdressByAccountId(this.api, this.wallet.address)    
+        const stakingAmountAllowance = await checkAllowance(ethAddress)
 
-        const stakingAmountAllowance = await checkAllowance(this.metamaskWalletAddress)
-        const totalPrice = this.selectedService.price
-
-        if (stakingAmountAllowance < totalPrice ) {
+        if (stakingAmountAllowance < this.selectedService.totalPrice ) {
           const txHash = await approveDaiStakingAmount(
-            this.metamaskWalletAddress,
-            totalPrice
+            ethAddress,
+            this.selectedService.totalPrice
           )
           await getTransactionReceiptMined(txHash)
         }
 
-        this.txHash = await sendPaymentOrder(this.api, this.lastOrder, this.metamaskWalletAddress, this.ethSellerAddress)  
+        this.txHash = await sendPaymentOrder(this.api, this.lastOrder, ethAddress, this.ethSellerAddress)  
         await getTransactionReceiptMined(this.txHash)
         await postTxHash(this.lastOrder, this.txHash)
         
