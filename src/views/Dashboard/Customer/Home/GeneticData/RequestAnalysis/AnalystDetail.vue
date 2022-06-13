@@ -378,7 +378,6 @@ export default {
     },
 
     async upload({ encryptedFileChunks, fileName, fileType }) {
-      console.log("upload")
       for (let i = 0; i < encryptedFileChunks.length; i++) {
         const data = JSON.stringify(encryptedFileChunks[i]) // not working if the size is large
         const blob = new Blob([data], { type: fileType })
@@ -393,9 +392,7 @@ export default {
         this.links.push(link)
       }
 
-      console.log("uploaded")
       this.geneticLink = JSON.stringify(this.links)
-      console.log(this.geneticLink);
       if (this.geneticLink) {
         await this.createOrder()
       }

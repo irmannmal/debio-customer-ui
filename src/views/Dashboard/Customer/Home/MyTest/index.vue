@@ -340,7 +340,6 @@ export default {
     setTestStatus(status) {
       if (status === "Rejected") {
         const detail = ORDER_STATUS_DETAIL[status.toUpperCase()]
-        console.log(detail().name)
         return detail().name
       }
       return ORDER_STATUS_DETAIL[status.toUpperCase()].name

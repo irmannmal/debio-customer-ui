@@ -66,7 +66,7 @@ export default {
         commit("SET_LOADING_WEB3", false)
         return { success: true }
       } catch (error) {
-        console.log(error)
+        console.error(error)
 
         commit("SET_WEB3", null)
         commit("SET_LOADING_WEB3", false)

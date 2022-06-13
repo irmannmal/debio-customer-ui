@@ -182,7 +182,7 @@ export default {
         }
         this.dataAccount = JSON.parse(this.dataAccountJson)
       } catch (err) {
-        console.log(err)
+        console.error(err)
         this.isloading = false
       }
     },

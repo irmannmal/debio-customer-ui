@@ -242,7 +242,6 @@ export default {
   },
 
   async mounted() {
-    // console.log("api", this.state)
     if (!this.mnemonicData) this.showModalPassword = true
     await this.getListNotification()
   },

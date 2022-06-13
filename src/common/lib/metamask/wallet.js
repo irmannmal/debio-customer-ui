@@ -51,7 +51,7 @@ export async function addTokenDAI() {
       return true
     }
   } catch (err) {
-    console.log(err)
+    console.error(err)
     return false
   }
 }

@@ -50,7 +50,7 @@ export async function startApp() {
       return { currentAccount: "no_install" }
     }
   } catch (e) {
-    console.log("Connection refush.")
+    console.error("Connection refush.")
     window.refresh()
   }
 }

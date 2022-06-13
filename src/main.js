@@ -51,7 +51,7 @@ Vue.filter("timestampToDate", function (val) {
   try {
     return format(new Date(timestamp), "MMMM dd yyyy")
   } catch (err) {
-    console.log(err)
+    console.error(err)
     return ""
   }
 })

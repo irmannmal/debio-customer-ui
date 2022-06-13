@@ -71,7 +71,7 @@ export default {
         commit("SET_LOADING_WEB3", false)
         return { success: true }
       } catch (error) {
-        console.log(error)
+        console.error(error)
         
         commit("SET_WEB3", null)
         commit("SET_LOADING_WEB3", false)
@@ -127,7 +127,7 @@ export default {
 
         // commit('SET_LOADING_WALLET', false)
       } catch (err) {
-        console.log(err)
+        console.error(err)
         commit("CLEAR_WALLET")
         commit("SET_LOADING_WALLET", false)
 
@@ -156,7 +156,7 @@ export default {
 
         commit("SET_LOADING_WALLET", false)
       } catch (err) {
-        console.log(err)
+        console.error(err)
         commit("CLEAR_WALLET")
         commit("SET_LOADING_WALLET", false)
 
@@ -180,7 +180,7 @@ export default {
         return { success: true }
 
       } catch (err) {
-        console.log(err)
+        console.error(err)
         commit("CLEAR_WALLET")
 
         commit("SET_LOADING_WALLET", false)

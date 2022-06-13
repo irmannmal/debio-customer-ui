@@ -15,5 +15,5 @@ onmessage = function(e) {
   // eslint-disable-next-line no-unused-vars
   })(ipfs).then(res => {
     console.log("IPFS Uploader finish")
-  }).catch(console.log)
+  }).catch(console.error)
 }
