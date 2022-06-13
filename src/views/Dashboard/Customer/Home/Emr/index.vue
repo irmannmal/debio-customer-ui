@@ -222,7 +222,7 @@ export default {
     async getEMRHistory() {
       this.showModal = false
       this.isLoading = true
-      this.emrDocuments = []
+      const documents = []
 
       try {
         const dataEMR = await queryElectronicMedicalRecordByOwnerId(this.api, this.wallet.address)
@@ -237,9 +237,12 @@ export default {
           listEMR.reverse()
 
           for (const emrDetail of listEMR) {
-            await this.prepareEMRData(emrDetail)
+            const documentDetail = await this.prepareEMRData(emrDetail)
+            documents.push(documentDetail)
           }
         }
+
+        this.emrDocuments = documents
         this.isLoading = false
       } catch (error) {
         this.isLoading = false
@@ -269,18 +272,17 @@ export default {
             month: "short",
             year: "numeric"
           }),
-          recordLink: file.recordLink.replace("https://ipfs.io/ipfs/", "")})
+          recordLink: file.recordLink
+        })
       }
 
-      const order = {
+      return {
         id: dataEMR.id,
         title: dataEMR.title,
         category: dataEMR.category,
         createdAt: dataEMR.createdAt,
         files: files?.slice(0, 3)
       }
-
-      this.emrDocuments.push(order)
     },
 
     onEdit(emr) {

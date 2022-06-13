@@ -64,6 +64,7 @@ export default {
     publicKey: null,
     secretKey: null,
     messageError: null,
+    tempDocuments: [],
     result: null,
     message: "Please wait",
     selected: null,
@@ -121,13 +122,15 @@ export default {
 
       this.emrDocument.files = files
 
-      if (this.emrDocument?.files.length) this.parseResult(
+      if (this.emrDocument?.files.length) await this.parseResult(
         0,
         { recordLink: this.emrDocument?.files[0].recordLink }
       )
     },
 
     async parseResult(idx, { recordLink }) {
+      let fileBlob, dataFile, decryptedFile
+
       if (this.selected === idx) return
 
       this.selected = idx
@@ -136,10 +139,16 @@ export default {
         this.isLoading = true
 
         const pair = { publicKey: this.publicKey, secretKey: this.secretKey }
-        const { type, data } = await downloadFile(recordLink, true)
+        const checkTempDocuments = this.tempDocuments.find(doc => doc.link === recordLink)
+        if (!checkTempDocuments) {
+          dataFile = await downloadFile(recordLink, true)
+          decryptedFile = decryptFile(dataFile.data, pair, dataFile.type)
+        }
 
-        const decryptedFile = decryptFile(data, pair, type)
-        const fileBlob = window.URL.createObjectURL(new Blob([decryptedFile], { type }))
+        if (!checkTempDocuments) this.tempDocuments.push({ link: recordLink, file: decryptedFile, type: dataFile.type })
+
+        if (checkTempDocuments) fileBlob = window.URL.createObjectURL(new Blob([checkTempDocuments.file], { type: checkTempDocuments.type }))
+        else fileBlob = window.URL.createObjectURL(new Blob([decryptedFile], { type: dataFile.type }))
 
         this.result = fileBlob
       } catch {
