@@ -1,9 +1,7 @@
 import CustomerRoutes from "./customer"
-import GeneticAnalystRoutes from "./geneticAnalyst"
 
 const indexRoutes = [
-  ...CustomerRoutes,
-  ...GeneticAnalystRoutes
+  ...CustomerRoutes
 ]
 
 export default indexRoutes

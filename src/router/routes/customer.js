@@ -3,13 +3,6 @@ import { checkIsLoggedIn } from "@/common/lib/route-guard"
 export default [
   {
     path: "/",
-    name: "dashboard",
-    beforeEnter: checkIsLoggedIn,
-    redirect: { name: "customer-dashboard" },
-    component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Layout")
-  },
-  {
-    path: "/customer",
     component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Layout"),
     beforeEnter: checkIsLoggedIn,
     name: "customer",
@@ -110,13 +103,13 @@ export default [
       },
 
       {
-        path: "payment/histories",
+        path: "payment-history",
         name: "customer-payment-history",
         meta: { pageHeader: "Payment History" },
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/PaymentHistory")
       },
       {
-        path: "payment/details/:id?",
+        path: "payment-details/:id?",
         name: "customer-payment-details",
         meta: { pageHeader: "Details", parent: "customer-payment-history" },
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/PaymentHistory/Details")

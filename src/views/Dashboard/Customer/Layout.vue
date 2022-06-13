@@ -281,7 +281,7 @@ export default {
 
     goToDashboard() {
       this.showModalError = false
-      this.$router.push({ name: "dashboard"})
+      this.$router.push({ name: "customer-dashboard"})
     },
 
     handleShowPassword() {

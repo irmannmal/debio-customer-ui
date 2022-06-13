@@ -222,7 +222,7 @@ describe("Customer Payment History Dashboard", () => {
     router = new VueRouter({
       routes: [
         {
-          path: "payment/histories",
+          path: "payment-histories",
           name: "customer-payment-history",
           meta: { pageHeader: "Payment History" },
           component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/PaymentHistory")
