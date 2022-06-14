@@ -9,6 +9,7 @@
     line-height: 150%;
     display: flex;
     align-items: center;
+    margin-left: -68px;
 
     #checkboxLabel {
       font-size: 18px;
@@ -16,12 +17,6 @@
       margin-left: 20px;
       font-family: "Raleway", sans-serif;
     }
-}
-.m1{
-  margin: 23px 0px;
-}
-.m40{
-  margin-bottom: 40px;
 }
 .mt20{
   margin-top: 20px;
@@ -36,8 +31,10 @@
     template(v-slot:header) Generate an Account
     template(v-slot:main)
       h3.m1 Generate an account to use our features on the AppChain
-      p.m40.text-justify You will receive 12 words as mnemonic phrase that allow you to recover an account, make sure you save by copy paste, write it down, and put in somewhere safe
-      v-checkbox(v-model="agreeConditions"): template(v-slot:label): div#checkboxLabel I understand with DeBio 
+      p You will receive 12 words as mnemonic phrase that allow you to recover an account. 
+      p Make sure you save the mnemonic phrase by writing it down and putting it somewhere safe
+      
+      v-checkbox(v-model="agreeConditions"): template(v-slot:label): div#checkboxLabel I understand DeBio 
         v-tooltip(bottom)
           template(v-slot:activator="{ on }")
             a.link(target="_blank"
@@ -59,6 +56,7 @@ import localStorage from "@/common/lib/local-storage"
 
 export default {
   name: "GenerateAccount",
+
 
   components: {
     LandingPagePopUp

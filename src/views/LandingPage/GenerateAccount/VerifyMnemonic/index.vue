@@ -2,7 +2,7 @@
      LandingPagePopUp(:previous='previous')
         template(v-slot:header) Verify Mnemonic Phrase
         template(v-slot:main): div.pop-up-main
-            h3 Tap the words to pull them next to each other in the correct order.
+            h3 Tap the words to put them next to each other in the correct order.
             MnemonicInput(:mnemonicCollection="mnemonicInputs" @click="(inputs) => validate(inputs)")
             small.error-message(v-if="isIncorrect") {{ error }}
             v-btn(
