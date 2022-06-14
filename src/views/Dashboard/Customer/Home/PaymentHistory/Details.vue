@@ -8,7 +8,7 @@
     )
       | {{ messageError }}
 
-    .payment-history-details__wrapper(v-if="hasPaymentDetails")
+    .payment-history-details__wrapper
       ui-debio-card(block centered-content)
         .payment-details
           .payment-details__title {{ computeDetailsTitle }}

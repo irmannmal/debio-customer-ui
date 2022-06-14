@@ -9,7 +9,7 @@ export default [
     redirect: { name: "customer-dashboard" },
     children: [
       {
-        path: "/",
+        path: "",
         name: "customer-dashboard",
         meta: { pageHeader: "Home" },
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home")

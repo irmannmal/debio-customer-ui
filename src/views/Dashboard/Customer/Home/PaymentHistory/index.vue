@@ -1,7 +1,7 @@
 <template lang="pug">
   .payment-history
     .payment-history__wrapper
-      ui-debio-data-table(:headers="paymentHeaders" :items="payments")
+      ui-debio-data-table(:headers="paymentHeaders" :loading="isLoading" :items="payments")
         template(slot="prepend")
           .payment-history__nav
             .payment-history__nav-text
@@ -49,7 +49,6 @@ export default {
 
   mixins: [metamaskServiceHandler],
 
-
   data: () => ({
     searchIcon,
 
@@ -79,50 +78,56 @@ export default {
 
   watch: {
     searchQuery(newVal, oldVal) {
-      if (newVal === "" && oldVal) this.metamaskDispatchAction(this.onSearchInput)
+      if (newVal === "" && oldVal) this.onSearchInput()
     }
   },
 
   async created() {
-    await this.metamaskDispatchAction(this.onSearchInput)
+    await this.onSearchInput()
   },
 
   methods: {
     onSearchInput: generalDebounce(async function (val) {
-      console.log(val)
-      const { orders, ordersGA } = await getOrderList(val)
-      const results = [...orders.data, ...ordersGA.data]
+      try {
+        this.isLoading = true
+        const { orders, ordersGA } = await getOrderList(val)
+        const results = [...orders.data, ...ordersGA.data]
 
-      this.payments = results.map(result => {
-        const analystName = `
-          ${result._source?.genetic_analyst_info?.first_name ?? ""} 
-          ${result?._source?.genetic_analyst_info?.last_name ?? ""}
-        `
+        this.payments = results.map(result => {
+          const analystName = `
+            ${result._source?.genetic_analyst_info?.first_name ?? ""} 
+            ${result?._source?.genetic_analyst_info?.last_name ?? ""}
+          `
 
-        const computeAnalystName = !/^\s*$/.test(analystName)
-          ? analystName
-          : "Unknown Analyst Provider"
+          const computeAnalystName = !/^\s*$/.test(analystName)
+            ? analystName
+            : "Unknown Analyst Provider"
 
-        return {
-          ...result._source,
-          id: result._id,
-          provider: result._index === "orders"
-            ? result._source?.lab_info?.name ?? "Unknown Lab Provider"
-            : computeAnalystName,
-          timestamp: parseInt(result._source.created_at.replaceAll(",", "")),
-          created_at: new Date(parseInt(result._source.created_at.replaceAll(",", ""))).toLocaleDateString("en-GB", {
-            day: "numeric",
-            month: "short",
-            year: "numeric"
-          })
-        }
-      })
+          return {
+            ...result._source,
+            id: result._id,
+            provider: result._index === "orders"
+              ? result._source?.lab_info?.name ?? "Unknown Lab Provider"
+              : computeAnalystName,
+            timestamp: parseInt(result._source.created_at.replaceAll(",", "")),
+            created_at: new Date(parseInt(result._source.created_at.replaceAll(",", ""))).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric"
+            })
+          }
+        })
 
-      // NOTE: Set unpaid status to always be in the top position
-      this.payments.sort((a, b) => {
-        if (b.status === "Unpaid") return
-        else return b.timestamp - a.timestamp
-      })
+        // NOTE: Set unpaid status to always be in the top position
+        this.payments.sort((a, b) => {
+          if (b.status === "Unpaid") return
+          else return b.timestamp - a.timestamp
+        })
+        this.isLoading = false
+      } catch (error) {
+        this.isLoading = false
+        console.error(error);
+      }
     }, 250),
 
     setButtonBackground(status) {

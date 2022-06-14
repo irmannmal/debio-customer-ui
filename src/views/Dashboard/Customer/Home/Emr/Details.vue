@@ -8,27 +8,32 @@
     )
       | {{ messageError }}
 
-    .customer-emr-details__wrapper(v-if="emrDocument")
+    .customer-emr-details__wrapper
       .customer-emr-details__emr
         .customer-emr-details__emr-title List of {{ emrDocument.title }}
         .customer-emr-details__emr-documents
-          .customer-emr-details__document(
-            v-for="(document, idx) in emrDocument.files"
-            :key="idx"
-            role="button"
-            :title="document.title"
-            :class="{ 'customer-emr-details__document--active': selected === idx }"
-            @click="parseResult(idx, document)"
-          )
-            ui-debio-icon.customer-emr-details__document-icon(
-              :icon="fileTextIcon"
-              size="28"
-              color="#D3C9D1"
-              fill
+          template(v-if="!emrDocument.files.length")
+            .customer-emr-details__document.customer-emr-details__document--skeleton
+            .customer-emr-details__document.customer-emr-details__document--skeleton
+            .customer-emr-details__document.customer-emr-details__document--skeleton
+          template(v-else)
+            .customer-emr-details__document(
+              v-for="(document, idx) in emrDocument.files"
+              :key="idx"
+              role="button"
+              :title="document.title"
+              :class="{ 'customer-emr-details__document--active': selected === idx }"
+              @click="parseResult(idx, document)"
             )
-            label.customer-emr-details__document-title(
-              :aria-label="document.title"
-            ) {{ document.title }}
+              ui-debio-icon.customer-emr-details__document-icon(
+                :icon="fileTextIcon"
+                size="28"
+                color="#D3C9D1"
+                fill
+              )
+              label.customer-emr-details__document-title(
+                :aria-label="document.title"
+              ) {{ document.title }}
       keep-alive
         .customer-emr-details__viewer
           .customer-emr-details__viewer-wrapper(
@@ -177,7 +182,7 @@ export default {
 
     &__emr-title
       @include body-text-medium-2
-    
+
     &__emr-documents
       display: flex
       flex-direction: column
@@ -193,16 +198,34 @@ export default {
       border-radius: 4px
       transition: all cubic-bezier(.7, -0.04, .61, 1.14) .3s
 
+      &--skeleton
+        height: 70px
+        background: #F5F7F9
+        border: none
+        position: relative
+        overflow: hidden
+
+        &::before
+          content: ""
+          display: block
+          position: absolute
+          top: 0
+          left: 0
+          width: 300px
+          height: 100%
+          background: rgba(255, 255, 255, .5)
+          animation: shine infinite 1s
+
       &:hover
         background: #F9F9F9
-        border-radius: 1px 
-        border-style: solid 
+        border-radius: 1px
+        border-style: solid
         border-color: #6F4CEC
 
       &--active
         background: #F9F9F9
-        border-radius: 1px 
-        border-style: solid 
+        border-radius: 1px
+        border-style: solid
         border-color: #6F4CEC
 
     &__document-title
@@ -217,7 +240,7 @@ export default {
       user-select: none
 
       @include body-text-2
-    
+
     &__viewer
       width: 100%
 
@@ -245,12 +268,6 @@ export default {
           background: rgba(255, 255, 255, .5)
           animation: shine infinite 1s
 
-          @keyframes shine
-            0%
-              transform: skew(25deg) translateX(-1000px)
-            100%
-              transform: skew(25deg) translateX(1000px)
-
     &__viewer-loading
       &::after
         content: ""
@@ -272,4 +289,10 @@ export default {
     .modal-password
       &__cta
         gap: 20px
+
+    @keyframes shine
+      0%
+        transform: skew(25deg) translateX(-1000px)
+      100%
+        transform: skew(25deg) translateX(1000px)
 </style>

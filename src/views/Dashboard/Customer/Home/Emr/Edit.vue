@@ -95,9 +95,11 @@
         .customer-create-emr__files
           .customer-create-emr__files-title Uploaded Files
           .customer-create-emr__files-items
+            template(v-if="isLoading")
+              .customer-create-emr__file-item.customer-create-emr__file-item--skeleton(v-for="n in 3" :key="n")
             .customer-create-emr__file-item.customer-create-emr__file-item--no-file.d-flex.align-center(
               :class="{ 'customer-create-emr__file-item--error': fileEmpty }"
-              v-if="!computeFiles.length"
+              v-if="!computeFiles.length && !isLoading"
               @click="showModal = true"
             )
               .customer-create-emr__file-details.mt-0
@@ -344,46 +346,53 @@ export default {
     },
 
     async prepareData() {
-      const { id } = this.$route.params
-      const data = await queryElectronicMedicalRecordById(this.api, id)
-      let files = []
+      try {
+        this.isLoading = true
+        const { id } = this.$route.params
+        const data = await queryElectronicMedicalRecordById(this.api, id)
+        let files = []
 
-      if (!id || !data) {
-        this.messageError = "Oh no! We can't find your selected order. Please select another one or try again"
+        if (!id || !data) {
+          this.messageError = "Oh no! We can't find your selected order. Please select another one or try again"
 
-        return
+          return
+        }
+
+        this.emr.id = id
+        this.emr.title = data.title
+        this.emr.category = data.category
+
+        for (const file of data.files) {
+          const dataFile = await queryElectronicMedicalRecordFileById(this.api, file)
+          dataFile.id = file
+          files.push(dataFile)
+        }
+
+        let completeFiles = []
+
+        for (const file of files) {
+          const details = await getIpfsMetaData(file.recordLink.split("/").pop())
+          const pair = { publicKey: this.publicKey, secretKey: this.secretKey }
+          const { type, data } = await downloadFile(file.recordLink, true)
+
+          const decryptedFile = decryptFile(data, pair, type)
+
+          const blobData = new Blob([decryptedFile], { type })
+
+          completeFiles.push({
+            ...file,
+            file: new File([blobData], details.rows[0].metadata.name, {type: "application/pdf"}),
+            oldFile: new File([blobData], details.rows[0].metadata.name, {type: "application/pdf"}),
+            recordLink: file.recordLink
+          })
+        }
+
+        this.emr.files = completeFiles
+        this.isLoading = false
+      } catch (error) {
+        this.isLoading = false
+        console.error(error)
       }
-
-      this.emr.id = id
-      this.emr.title = data.title
-      this.emr.category = data.category
-
-      for (const file of data.files) {
-        const dataFile = await queryElectronicMedicalRecordFileById(this.api, file)
-        dataFile.id = file
-        files.push(dataFile)
-      }
-
-      let completeFiles = []
-
-      for (const file of files) {
-        const details = await getIpfsMetaData(file.recordLink.split("/").pop())
-        const pair = { publicKey: this.publicKey, secretKey: this.secretKey }
-        const { type, data } = await downloadFile(file.recordLink, true)
-
-        const decryptedFile = decryptFile(data, pair, type)
-
-        const blobData = new Blob([decryptedFile], { type })
-
-        completeFiles.push({
-          ...file,
-          file: new File([blobData], details.rows[0].metadata.name, {type: "application/pdf"}),
-          oldFile: new File([blobData], details.rows[0].metadata.name, {type: "application/pdf"}),
-          recordLink: file.recordLink
-        })
-      }
-
-      this.emr.files = completeFiles
     },
 
     async fetchCategories() {
@@ -402,7 +411,7 @@ export default {
       const { title: docTitle, description: docDescription, file: docFile } = this.isDirty?.document
       if (docTitle || docDescription || docFile) return
 
-      const { createdAt, title, description, file } = this.document
+      const { title, description, file, id } = this.document
 
       const context = this
       const fr = new FileReader()
@@ -422,13 +431,14 @@ export default {
             description,
             file,
             chunks,
+            id,
             fileName,
             fileType,
             createdAt: new Date().getTime()
           }
 
           if (context.isEdit) {
-            const index = context.emr.files.findIndex(file => file.createdAt === createdAt)
+            const index = context.emr.files.findIndex(emrFile => emrFile.id === id)
 
             context.emr.files[index] = dataFile
 
@@ -515,6 +525,7 @@ export default {
         if (this.emr.files.length === 0) return
 
         for await (let [index, value] of this.emr.files.entries()) {
+          if (value.file?.toString() === value.oldFile?.toString()) continue
           const dataFile = await this.setupFileReader({ value })
           await this.upload({
             encryptedFileChunks: dataFile.chunks,
@@ -664,6 +675,7 @@ export default {
       padding-right: .35rem
       max-height: calc(116px * 3)
       overflow-y: auto
+      overflow-x: hidden
 
       &::-webkit-scrollbar-track
         background-color: #f2f2ff
@@ -683,10 +695,28 @@ export default {
     &__file-item
       padding: 12px 20px
       border-radius: 4px
-      border-style: dashed 
+      border-style: dashed
       border-color: #8AC1FF
       background: #F9F9FF
       transition: all cubic-bezier(.7, -0.04, .61, 1.14) .3s
+
+      &--skeleton
+        background: #F5F7F9
+        border: unset
+        width: 100%
+        height: 120px
+        position: relative
+
+        &::before
+          content: ""
+          display: block
+          position: absolute
+          top: 0
+          left: 0
+          width: 300px
+          height: 100%
+          background: rgba(255, 255, 255, .5)
+          animation: shine infinite 1s
 
       &:hover
         background: #f2f2ff
@@ -868,4 +898,10 @@ export default {
         height: 100%
         background: #6FE4AF
         border-radius: inherit
+
+  @keyframes shine
+    0%
+      transform: skew(25deg) translateX(-1000px)
+    100%
+      transform: skew(25deg) translateX(1000px)
 </style>

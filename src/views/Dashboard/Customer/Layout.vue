@@ -60,12 +60,12 @@
             width="130"
             @click="handleSubmitPassword"
           ) Submit
-        
+
         .modal-password__cta.d-flex.align-center.justify-space-between
           div.modal-password__divider
           span.modal-password__cta-forgot OR
           div.modal-password__divider
-          
+
         .modal-password__cta-change-account(
           @click="signOut"
         ) Not you? Try different account
@@ -75,7 +75,7 @@
       flat
     )
       v-expansion-panel
-        v-expansion-panel-header.main-layout__expantion-title 
+        v-expansion-panel-header.main-layout__expantion-title
           span Announcement for users who stake $DBIO for a service request with the "Others" category.
         v-expansion-panel-content.main-layout__expantion-content
           p Due to the medical lab establishment and medical equipment procurement executing according to a specific service category, we will take down the “Others” option from the list of service categories. DAOGenics, Ltd will determine the available specific service categories. 

@@ -61,19 +61,19 @@
           p.customer-emr__subtitle.mb-0 Your Electronic Medical Records
     template(v-slot:[`item.title`]="{ item }")
       .d-flex.flex-column
-        span {{ item.title }}
+        span.customer-emr__document-title(:title="item.title") {{ item.title }}
 
     template(v-slot:[`item.category`]="{ item }")
       .d-flex.flex-column
-        span {{ item.category }}
+        span.customer-emr__document-category(:title="item.category") {{ item.category }}
 
     template(v-slot:[`item.documentTitle`]="{ item }")
       .d-flex.flex-column
-        span.customer-emr__file-title(v-for="(file, idx) in item.files") {{ idx + 1 }}. {{ file.title }}
+        span.customer-emr__file-title(v-for="(file, idx) in item.files" :title="file.title") {{ idx + 1 }}. {{ file.title }}
 
     template(v-slot:[`item.documentDescription`]="{ item }")
       .d-flex.flex-column
-        span.customer-emr__file-description(v-for="(file, idx) in item.files") {{ idx + 1 }}. {{ file.description }}
+        span.customer-emr__file-description(v-for="(file, idx) in item.files" :title="file.description") {{ idx + 1 }}. {{ file.description }}
 
     template(v-slot:[`item.createdAt`]="{ item }")
       span {{ item.createdAt }}
@@ -352,12 +352,9 @@ export default {
       .ui-debio-modal__card
         gap: 20px
 
-    &__file-title
-      max-width: 150px
-      white-space: pre
-      overflow: hidden
-      text-overflow: ellipsis
-
+    &__document-title,
+    &__document-category,
+    &__file-title,
     &__file-description
       max-width: 150px
       white-space: pre

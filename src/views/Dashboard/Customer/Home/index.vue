@@ -46,7 +46,7 @@
                 :height="'25px'"
                 color="#5640A5"
                 outlined
-                @click="goToPaymentHistory"
+                :to="{ name: 'customer-payment-history' }"
               ) View All
 
         div
@@ -87,7 +87,7 @@
                 color="#C400A5"
                 stroke
                 @click="goToPaymentDetail(item)"
-                )
+              )
 
 
       ui-debio-card.rightTable
@@ -104,7 +104,7 @@
                 height="25px"
                 outlined
                 color="#5640A5"
-                @click="goToMyTest"
+                :to="{ name: 'my-test' }"
               ) View All
 
         div
@@ -127,7 +127,7 @@
                     span {{ item.serviceName }}
                   .d-flex.flex-column.customer-home__order-service-sample-id
                     span {{ item.dnaSampleTrackingId}}
-            
+
             template(v-slot:[`item.labName`]="{item}")
               .d-flex.flex-column.customer-home__order
                 span {{ item.labName }}
@@ -317,14 +317,6 @@ export default {
       this.titlePaymentWording = "Your recent payments"
     },
 
-    goToMyTest() {
-      this.$router.push({ name: "my-test" }) //go to order history page (mytest)
-    },
-
-    goToPaymentHistory() {
-      this.$router.push({ name: "customer-payment-history" }) //go to payment history page
-    },
-
     goToOrderDetail(item) {
       this.$router.push({ name: "order-history-detail", params: { id: item.orderId }}) //go to order history detail page
     },
@@ -337,7 +329,7 @@ export default {
 
   computed: {
     ...mapState({ 
-      api: (state) => state.substrate.api 
+      api: (state) => state.substrate.api
     })
   }
 }

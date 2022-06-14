@@ -107,9 +107,8 @@
     floating
   )
     div.dbioLogo
-      a(
-        @click.stop="goToDashboard"
-        target="_blank"
+      router-link(
+        :to="{ name: 'customer-dashboard' }"
         style="text-decoration: none"
       )
         div(class="d-flex align-center")
@@ -206,10 +205,6 @@ export default {
         return "font-weight-bold sidebar-text primary--text activeButton"
       }
       return "font-weight-bold sidebar-text"
-    },
-
-    goToDashboard() {
-      this.$router.push({ path: "/customer" });
     }
   }
 }
