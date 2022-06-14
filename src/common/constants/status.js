@@ -39,7 +39,7 @@ export const ORDER_STATUS_DETAIL = Object.freeze({
 
   QUALITYCONTROLLED: {
     name: "Quality Controlled",
-    color: "#F5222D",
+    color: "#FAAD15",
     detail: "Your specimen is now being examined by the lab to see if it is sufficient enough to be analyzed in the next phase. The lab will perform several procedures such as examine the visual of your specimen, do extraction and amplification of your DNA.",
     banner: qualityControlBanner,
     bannerSize: 295,
@@ -51,7 +51,7 @@ export const ORDER_STATUS_DETAIL = Object.freeze({
     const detail = `Your sample has failed quality control. Your service fee of ${amount} DAI will be refunded to your account.`
     return {
       name: "Rejected",
-      color: "#FAAD15",
+      color: "#F5222D",
       detail,
       banner: rejectedQCBanner,
       bannerSize: 295,

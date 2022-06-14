@@ -217,11 +217,11 @@ export default {
     },
 
     setButtonBackground(status) {
-      return STAKE_STATUS_DETAIL.filter(stake => stake.status === status.toUpperCase())[0].color
+      return STAKE_STATUS_DETAIL[status.toUpperCase()].color
     },
 
     getStatusName(status) {
-      return STAKE_STATUS_DETAIL.filter(stake => stake.status === status.toUpperCase())[0].display
+      return STAKE_STATUS_DETAIL[status.toUpperCase()].display
     },
 
     formatDate(date) {
