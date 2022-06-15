@@ -1,6 +1,6 @@
 <template lang="pug">
   .dialog-cancel
-    v-dialog(:value="show" height="350" width="400" persistent )
+    v-dialog(:value="show" width="400" persistent )
       v-card 
         v-toolbar-title(class="title d-flex justify-end align-center" style="width: 100%;")
           v-btn(icon @click="closeDialog")

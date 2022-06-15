@@ -196,7 +196,6 @@ export default {
         }
       }
 
-
       if (!this.serviceList.length) {
         this.showNoLab = true
       }

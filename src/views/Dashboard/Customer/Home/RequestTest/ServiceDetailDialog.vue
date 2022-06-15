@@ -2,7 +2,7 @@
   v-dialog.dialog-service(:value="show" width="440" persistent rounded )
     v-card.dialog-service__card
       div.dialog-service__close
-        v-btn.fixed-button(icon @click="closeDialog")
+        v-btn.fixed-button(icon @click="closeDialog" :disabled="loading")
           v-icon mdi-close
 
       div.dialog-service__service-image
@@ -42,6 +42,7 @@
           height="38" 
           outlined 
           @click="downloadFile"
+          :disabled="loading"
         ) Download Sample Report
 
         ui-debio-button.dialog-service__button-text(
@@ -49,6 +50,7 @@
           width="48%"
           height="38" 
           @click="onSelect"
+          :loading="loading"
         ) Select This Service
 
 </template>
@@ -58,12 +60,19 @@
 
 import { mapState } from "vuex"
 import { getLocations } from "@/common/lib/api"
+import CryptoJS from "crypto-js"
+import Kilt from "@kiltprotocol/sdk-js"
+import { u8aToHex } from "@polkadot/util"
+import { createOrder, queryLastOrderHashByCustomer } from "@debionetwork/polkadot-provider"
 
 export default {
   name: "ServiceDetailDialog",
   
   data: () => ({
-    countries: []
+    countries: [],
+    publicKey: "",
+    secretKey: "",
+    loading: false
   }),
 
   async mounted () {
@@ -76,7 +85,12 @@ export default {
 
   computed: {
     ...mapState({
-      selectedService: (state) => state.testRequest.products
+      api: (state) => state.substrate.api,
+      wallet: (state) => state.substrate.wallet,
+      mnemonicData: (state) => state.substrate.mnemonicData,
+      stakingData: (state) => state.lab.stakingData,
+      selectedService: (state) => state.testRequest.products,
+      lastEventData: (state) => state.substrate.lastEventData
     }),
 
     computeAvatar() {
@@ -84,21 +98,56 @@ export default {
     }
   },
 
-  methods: {
+  watch: {
+    lastEventData(event) {
+      if (!event) return
+      
+      if (event.method === "OrderCreated") this.toCheckout()
+    }
+  },
 
+  methods: {
     async getCountries() {
       const { data : { data }} = await getLocations()
       this.countries = data
+    },
+
+    async toCheckout() {
+      const lastOrder = await queryLastOrderHashByCustomer(
+        this.api,
+        this.wallet.address
+      )
+      
+      this.$router.push({ 
+        name: "customer-request-test-checkout", params: { id: lastOrder }
+      })
+      this.loading = false
+    },
+
+    getCustomerPublicKey() {
+      const identity = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
+      this.publicKey = u8aToHex(identity.boxKeyPair.publicKey)
+      this.secretKey = u8aToHex(identity.boxKeyPair.secretKey)
+      return u8aToHex(identity.boxKeyPair.publicKey)
     },
 
     closeDialog() {
       this.$emit("close")
     },
 
-    onSelect () {
-      this.$router.push({ name: "customer-request-test-checkout"})
+    async onSelect () {
+      this.loading = true
+      const customerBoxPublicKey = await this.getCustomerPublicKey()        
+      
+      await createOrder(
+        this.api,
+        this.wallet,
+        this.selectedService.serviceId,
+        this.selectedService.indexPrice,
+        customerBoxPublicKey,
+        this.selectedService.serviceFlow
+      )
     },
-
 
     country (country) {
       if (country) {
