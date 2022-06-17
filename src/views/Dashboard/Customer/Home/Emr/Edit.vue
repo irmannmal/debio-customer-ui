@@ -95,11 +95,11 @@
         .customer-create-emr__files
           .customer-create-emr__files-title Uploaded Files
           .customer-create-emr__files-items
-            template(v-if="isLoading")
+            template(v-if="isDocumentLoading")
               .customer-create-emr__file-item.customer-create-emr__file-item--skeleton(v-for="n in 3" :key="n")
             .customer-create-emr__file-item.customer-create-emr__file-item--no-file.d-flex.align-center(
               :class="{ 'customer-create-emr__file-item--error': fileEmpty }"
-              v-if="!computeFiles.length && !isLoading"
+              v-if="!computeFiles.length && !isDocumentLoading"
               @click="showModal = true"
             )
               .customer-create-emr__file-details.mt-0
@@ -179,6 +179,7 @@
         ui-debio-button.white--text(
           color="secondary"
           height="2.5rem"
+          :disabled="disabledButton"
           :loading="isLoading"
           @click="handleModalPassword"
           block
@@ -229,6 +230,8 @@ export default {
     showModalConfirm: null,
     error: null,
     isLoading: false,
+    isDocumentLoading: false,
+    disabledButton: false,
     fileEmpty: false,
     clearFile: false,
     showTooltip: false,
@@ -347,7 +350,7 @@ export default {
 
     async prepareData() {
       try {
-        this.isLoading = true
+        this.isDocumentLoading = true
         const { id } = this.$route.params
         const data = await queryElectronicMedicalRecordById(this.api, id)
         let files = []
@@ -388,9 +391,9 @@ export default {
         }
 
         this.emr.files = completeFiles
-        this.isLoading = false
+        this.isDocumentLoading = false
       } catch (error) {
-        this.isLoading = false
+        this.isDocumentLoading = false
         console.error(error)
       }
     },
@@ -520,6 +523,7 @@ export default {
 
     async finalSubmit() {
       this.isLoading = true
+      this.disabledButton = true
 
       try {
         if (this.emr.files.length === 0) return
@@ -542,6 +546,7 @@ export default {
         const error = await errorHandler(e.message)
         this.error = error
         this.isLoading = false
+        this.disabledButton = false
       }
     },
 

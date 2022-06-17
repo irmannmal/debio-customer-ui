@@ -178,6 +178,7 @@
           ui-debio-button.white--text(
             color="secondary"
             :loading="isLoading"
+            :disabled="disabledButton"
             height="2.5rem"
             @click="handleSubmit"
             block
@@ -224,6 +225,7 @@ export default {
     showModalConfirm: null,
     error: null,
     isLoading: false,
+    disabledButton: false,
     fileEmpty: false,
     clearFile: false,
     showTooltip: false,
@@ -455,6 +457,7 @@ export default {
 
     async finalSubmit() {
       this.isLoading = true
+      this.disabledButton = true
 
       try {
         if (this.emr.files.length === 0) return
@@ -474,6 +477,7 @@ export default {
         const error = await errorHandler(e.message)
         this.error = error
         this.isLoading = false
+        this.disabledButton = false
       }
     },
 
