@@ -138,7 +138,7 @@ export default {
         if (!result.success) {
           throw("Mnemonic registration failed!")
         }
-        this.$router.push({name: "registration-successful"})
+        this.$router.push({name: "registration-successful", params: { flag: "created" }})
       } 
       catch (err) {
         console.error(err)

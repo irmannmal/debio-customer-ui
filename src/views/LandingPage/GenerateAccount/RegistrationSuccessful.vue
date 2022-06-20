@@ -23,7 +23,7 @@
      LandingPagePopUp
         template(v-slot:main): div.pop-up-main
             img(src='@/assets/check-circle-primary.png')
-            h2 Your account has been successfully created.
+            h2 {{ text }}
             v-btn.white--text(elevation='0' color='primary' @click="onContinue") Continue
 </template>
 
@@ -35,9 +35,17 @@ export default {
   components: {
     LandingPagePopUp
   },
+
   methods: {
     onContinue() {
       this.$router.push({ name: "customer-dashboard" })
+    }
+  },
+
+  computed: {
+    text() {
+      if(this.$route.params.flag === "changed") return "Your password is successfully changed."
+      return "Your account has been successfully created."
     }
   }
 }
