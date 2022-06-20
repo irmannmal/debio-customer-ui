@@ -3,8 +3,11 @@
     .ga-order-detail__title Test Summary
 
     .ga-order-detail__cards
-      ServiceCard
+      ServiceCard(
+        :service="serviceDetail"
+      )
       StepperStatusCard(
+        :analysis="analysisDetail"
         @cancel="showingDialog"
         @reject="showReasonOfRejection"
       )
@@ -36,9 +39,10 @@ import ServiceCard from "./ServiceCard"
 import StepperStatusCard from "./StepperStatusCard"
 import ReasonOfRejection from "./ReasonOfRejection"
 import ConfirmationDialog from "@/common/components/Dialog/ConfirmationDialog"
-import { cancelGeneticAnalysisOrder, cancelGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
+import { getOrderDetail } from "@/common/lib/api"
 import { queryGeneticAnalysisByGeneticAnalysisTrackingId } from "@debionetwork/polkadot-provider"
-
+import { cancelGeneticAnalysisOrder, cancelGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
+import { formatPrice } from "@/common/lib/price-format.js"
 
 export default {
   name: "GAOrderDetail",
@@ -83,7 +87,10 @@ export default {
     reasonOfRejection: false,
     trackingId: "",
     title: "",
-    message: ""
+    message: "",
+    orderDetail: null,
+    serviceDetail: null,
+    analysisDetail: null
   }),
 
   async mounted() {
@@ -91,12 +98,32 @@ export default {
 
     if(this.$route.params.id) {
       this.orderId = this.$route.params.id
+      await this.getOrderDetail()
     }
 
     await this.getCancelFee()
   },
 
   methods: {
+
+    async getOrderDetail() {
+      const detail = await getOrderDetail(this.orderId)
+      this.serviceDetail = {
+        analystName: `${detail.genetic_analyst_info.first_name} ${detail.genetic_analyst_info.last_name}`,
+        analystProfileImage: detail.genetic_analyst_info.profile_image,
+        analystSpecialization: detail.genetic_analyst_info.specialization,
+        serviceName: detail.service_info.name,
+        serviceDescription: detail.service_info.description,
+        serviceDuration: `${detail.service_info.expected_duration.duration} ${detail.service_info.expected_duration.duration_type}`,
+        servicePrice: `${formatPrice(detail.service_info.prices_by_currency[0].total_price)} ${detail.service_info.prices_by_currency[0].currency}`
+      }
+
+      const trackingId = detail.genetic_analysis_tracking_id
+      this.analysisDetail = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, trackingId)
+      this.title = this.analysisDetail.rejectedTitle
+      this.message = this.analysisDetail.rejectedDescription
+    },
+
     showingDialog() {
       this.showCancelDialog = true
     },
@@ -106,20 +133,12 @@ export default {
       this.txWeight = this.web3.utils.fromWei(String(txWeight.partialFee), "ether")
     },
 
-    async getDetail() {
-      const data = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, this.trackingId)
-      this.title = data.rejectedTitle
-      this.message = data.rejectedDescription
-    },
-
     async cancelOrder() {
       this.isLoading = true
       await cancelGeneticAnalysisOrder(this.api, this.wallet, this.orderId)
     },
 
-    showReasonOfRejection(val) {
-      this.trackingId = val
-      this.getDetail()
+    showReasonOfRejection() {
       this.reasonOfRejection = true
     },
 

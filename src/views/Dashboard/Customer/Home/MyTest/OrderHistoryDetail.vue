@@ -158,6 +158,8 @@ import { mapState } from "vuex"
 import { getOrderDetail } from "@/common/lib/api"
 import { queryDnaSamples } from "@debionetwork/polkadot-provider"
 import { ORDER_STATUS_DETAIL } from "@/common/constants/status"
+import { formatPrice } from "@/common/lib/price-format.js"
+
 
 export default {
   name: "OrderHistoryDetail",
@@ -210,8 +212,8 @@ export default {
     async getOrderDetail() {
       this.myTest = await getOrderDetail(this.$route.params.id)
       this.dnaSample = await queryDnaSamples(this.api, this.myTest.dna_sample_tracking_id)
-      this.prices.servicePrice = this.formatPrice(this.myTest.service_info.prices_by_currency[0].total_price)
-      this.prices.qcPrice = this.formatPrice(this.myTest.service_info.prices_by_currency[0].additional_prices[0].value)
+      this.prices.servicePrice = formatPrice(this.myTest.service_info.prices_by_currency[0].total_price)
+      this.prices.qcPrice = formatPrice(this.myTest.service_info.prices_by_currency[0].additional_prices[0].value)
       this.prices.currency = this.myTest.service_info.prices_by_currency[0].currency.toUpperCase()
     },
 
@@ -250,15 +252,11 @@ export default {
         break
       }
     },
-
-    formatPrice(price) {
-      return this.web3.utils.fromWei(String(price.replaceAll(",", "")), "ether")
-    },
     
     checkOrderDetail() {
       const statusDetail = ORDER_STATUS_DETAIL[this.dnaSample.status.toUpperCase()]
       if (this.dnaSample.status === "Rejected") {
-        const refundAmount = this.formatPrice(this.myTest.service_info.prices_by_currency[0].total_price) - this.formatPrice(this.myTest.service_info.prices_by_currency[0].additional_prices[0].value)
+        const refundAmount = formatPrice(this.myTest.service_info.prices_by_currency[0].total_price) - formatPrice(this.myTest.service_info.prices_by_currency[0].additional_prices[0].value)
         const { banner, name, detail, bannerSize, viewBox, e1 } = statusDetail(refundAmount)
         this.banner = banner
         this.status = { name, detail, size: bannerSize, viewBox }

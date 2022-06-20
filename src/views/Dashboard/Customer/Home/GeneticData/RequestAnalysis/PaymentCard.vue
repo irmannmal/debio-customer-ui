@@ -1,5 +1,12 @@
 <template lang="pug">
   v-card.customer-analysis-payment-card
+    ui-debio-error-dialog(
+      :show="!!error"
+      :title="error ? error.title : ''"
+      :message="error ? error.message : ''"
+      @close="error = null"
+    )
+
     .customer-analysis-payment-card__data
       .customer-analysis-payment-card__data-service
         .customer-analysis-payment-card__text-label Genetic Data Name
@@ -82,13 +89,14 @@
 import { mapState } from "vuex"
 import ConfirmationDialog from "@/common/components/Dialog/ConfirmationDialog"
 import { getDbioBalance, setGeneticAnalysisPaid } from "@/common/lib/api"
+import { errorHandler } from "@/common/lib/error-handler"
+import PaymentDialog from "@/common/components/Dialog/PaymentDialog"
 import { 
   queryGeneticAnalysisOrderById,
   queryGeneticDataById, 
   queryGeneticAnalysisByGeneticAnalysisTrackingId,
   cancelGeneticAnalysisOrder,
   cancelGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
-import PaymentDialog from "@/common/components/Dialog/PaymentDialog"
 
 export default {
   name: "PaymentCard",
@@ -115,7 +123,8 @@ export default {
     geneticLink: null,
     links: [],
     geneticData: {},
-    customerBoxPublicKey: null
+    customerBoxPublicKey: null,
+    error: null
   }),
 
   computed: {
@@ -229,7 +238,13 @@ export default {
 
     async cancelOrder() {
       this.isCancelling = true
-      await cancelGeneticAnalysisOrder(this.api, this.wallet, this.orderId)
+      try {
+        await cancelGeneticAnalysisOrder(this.api, this.wallet, this.orderId)
+      } catch (e) {
+        this.error = await(errorHandler(e.message))
+        this.isCancelling = false
+        this.showCancelDialog = false
+      }
     },
 
     async getCancelOrderFee() {

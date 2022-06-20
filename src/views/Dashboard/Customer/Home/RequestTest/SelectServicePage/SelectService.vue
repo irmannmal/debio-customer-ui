@@ -52,7 +52,7 @@ import NoLab from "../NoLab.vue"
 import MenuCard from "../MenuCard.vue"
 import ServiceDetailDialog from "../ServiceDetailDialog.vue"
 import { queryLastOrderHashByCustomer, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
-
+import { formatPrice } from "@/common/lib/price-format.js"
 
 export default {
   name: "SelectService",
@@ -150,9 +150,9 @@ export default {
         const serviceRate = serviceData.rating_service
         const countServiceRate = serviceData.count_rating_service
         const detailPrice = this.services[i].info.prices_by_currency[0]
-        const totalPrice = this.formatPrice(detailPrice.total_price.replaceAll(",", ""))
-        const servicePrice = this.formatPrice(detailPrice.price_components[0].value.replaceAll(",", ""))
-        const qcPrice =  this.formatPrice(detailPrice.additional_prices[0].value.replaceAll(",", ""))
+        const totalPrice = formatPrice(detailPrice.total_price.replaceAll(",", ""))
+        const servicePrice = formatPrice(detailPrice.price_components[0].value.replaceAll(",", ""))
+        const qcPrice =  formatPrice(detailPrice.additional_prices[0].value.replaceAll(",", ""))
 
         if (durationType === "WorkingDays") {
           durationType = "Days"
@@ -225,10 +225,6 @@ export default {
 
     toPaymentHistory () {
       this.$router.push({ name: "customer-payment-history" })
-    },
-
-    formatPrice(price) {
-      return this.web3.utils.fromWei(price, "ether")
     }
   }
 }

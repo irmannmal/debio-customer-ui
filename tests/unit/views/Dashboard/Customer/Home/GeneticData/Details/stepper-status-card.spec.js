@@ -24,13 +24,17 @@ describe("Service card", () => {
 
   it("Should render", () => {
     StepperStatusCard.methods = {
-      getStatus: jest.fn(),
       setClass: jest.fn()
     }
 
     container = shallowMount(StepperStatusCard, {
       localVue,
       vuetify: new Vuetify(),
+      propsData: {
+        analysis: {
+          status: ""
+        }
+      },
       store: new Vuex.Store({
         state: {
           substrate: {

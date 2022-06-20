@@ -3,83 +3,42 @@
     .service-card__label Service Provider
       .service-card__service-provider
         ui-debio-avatar.service-card__service-provider-avatar(
-          :src="analystAvatar"
+          :src="computeAvatar"
           size="92" 
+          rounded
         )
 
         .service-card__service-provider-info
-          .service-card__service-provider-name {{ analystName }}
-          .service-card__service-provider-speciality {{ analystSpecialization }}
+          .service-card__service-provider-name {{ service.analystName }}
+          .service-card__service-provider-speciality {{ service.analystSpecialization }}
 
     .service-card__label Service Details
     .service-card__service-details
-      p.service-card__service-details-name {{ serviceName }}
-      p.service-card__service-details-desc {{ serviceDescription }}
+      p.service-card__service-details-name {{ service.serviceName }}
+      p.service-card__service-details-desc {{ service.serviceDescription }}
 
       .service-card__service-details-info
         .service-card__service-details-timer 
           v-icon(size="14") mdi-timer
-          span.service-card__service-details-duration  {{ serviceDuration }}
+          span.service-card__service-details-duration  {{ service.serviceDuration }}
 
-        b.service-card__service-details-price {{ servicePrice }}
+        b.service-card__service-details-price {{ service.servicePrice }}
 
 
 </template>
 
 <script>
-import { mapState } from "vuex"
-import { queryGeneticAnalystByAccountId } from "@debionetwork/polkadot-provider"
-import { queryGeneticAnalystServicesByHashId } from "@debionetwork/polkadot-provider"
-import { queryGeneticAnalysisOrderById } from "@debionetwork/polkadot-provider"
-
 
 export default {
   name: "ServiceCard",
-
-  data: () => ({
-    orderId: "",
-    serviceName: null,
-    serviceDescription: null,
-    serviceDuration: null,
-    servicePrice: null,
-    analystName: null,
-    analystAvatar: null,
-    analystSpecialization: null
-  }),
+  
+  props: {
+    service: Object
+  },
 
   computed: {
-    ...mapState({
-      api: (state) => state.substrate.api,
-      web3: (state) => state.metamask.web3
-    })
-  },
-
-  async mounted() {
-    if (this.$route.params.id) {
-      this.orderId = this.$route.params.id
-      await this.getGAOrder()
-    }
-  },
-
-  methods: {
-    async getGAOrder() {
-      const gAOrder = await queryGeneticAnalysisOrderById(this.api, this.orderId)
-      const serviceDetail = await queryGeneticAnalystServicesByHashId(this.api, gAOrder.serviceId)
-      const analystDetail = await queryGeneticAnalystByAccountId(this.api, gAOrder.sellerId)
-
-      this.analystName = `${analystDetail.info.firstName} ${analystDetail.info.lastName}`
-      this.analystSpecialization = analystDetail.info.specialization
-      this.analystAvatar = analystDetail.info.profileImage
-
-      this.serviceName = serviceDetail.info.name
-      this.serviceDescription = serviceDetail.info.description
-      this.serviceDuration = `${serviceDetail.info.expectedDuration.duration} ${serviceDetail.info.expectedDuration.durationType}`
-      this.servicePrice = `${this.formatPrice(serviceDetail.info.pricesByCurrency[0].totalPrice)} ${serviceDetail.info.pricesByCurrency[0].currency}`
-
-    },
-
-    formatPrice(price) {
-      return this.web3.utils.fromWei(String(price.replaceAll(",", "")), "ether")
+    computeAvatar() {
+      return this.service?.analystProfileImage ? this.service?.analystProfileImage : require("@/assets/defaultAvatar.svg")
     }
   }
 }

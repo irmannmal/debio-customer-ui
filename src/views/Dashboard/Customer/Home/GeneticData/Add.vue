@@ -375,6 +375,7 @@ export default {
           title: "Insufficient Balance",
           message: "Your transaction cannot succeed due to insufficient balance, check your account balance"
         }
+        return
       }
 
       try{

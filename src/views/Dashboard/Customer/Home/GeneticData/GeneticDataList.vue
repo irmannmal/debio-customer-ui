@@ -174,6 +174,7 @@ export default {
         const error = await(errorHandler(e.message))
         this.error = error
         this.showDialog = false
+        this.isDeleting = false
       }
     },
 

@@ -248,6 +248,7 @@ export default {
       const txWeight = Number(this.txWeight.split(" ")[0])
       if (this.walletBalance < txWeight) {
         this.errorAlert = true 
+        this.closeDialog()
         return
       }
 

@@ -152,6 +152,7 @@ import { queryLastOrderHashByCustomer, queryOrderDetailByOrderID } from "@debion
 import PayRemainingDialog from "./PayRemainingDialog.vue"
 import { getDbioBalance, getOrderDetail, fetchTxHashOrder } from "@/common/lib/api"
 import DNA_COLLECTION_PROCESS from "@/common/constants/instruction-step.js"
+import { formatPrice } from "@/common/lib/price-format.js"
 
 export default {
   name: "PaymentDetailCard",
@@ -216,14 +217,14 @@ export default {
 
       const stakingAmount = Number(this.stakingData.staking_amount.replaceAll(",", "")) * debioBalance.dbioToDai
 
-      this.stakingAmount = Number(this.formatPrice(stakingAmount)).toFixed(3)
+      this.stakingAmount = Number(formatPrice(stakingAmount)).toFixed(3)
       const remainingStaking = this.dataService.price - stakingAmount
       this.remainingDai = remainingStaking
-      this.remainingStaking = Number(this.formatPrice(remainingStaking)).toFixed(3)
-      this.remainingDbio = Number(this.formatPrice(remainingStaking / debioBalance.dbioToDai)).toFixed(3)
+      this.remainingStaking = Number(formatPrice(remainingStaking)).toFixed(3)
+      this.remainingDbio = Number(formatPrice(remainingStaking / debioBalance.dbioToDai)).toFixed(3)
 
       const excessAmount = stakingAmount - this.dataService.price
-      this.excessAmount = Number(this.formatPrice(excessAmount)).toFixed(3)
+      this.excessAmount = Number(formatPrice(excessAmount)).toFixed(3)
 
       if (this.excessAmount > 0) {
         this.isExcess = true
@@ -361,10 +362,6 @@ export default {
 
     showCancelConfirmation () {
       this.cancelDialog = true
-    },
-
-    formatPrice (price) {
-      return this.web3.utils.fromWei(String(price), "ether")
     },
 
     async setCancelled() {

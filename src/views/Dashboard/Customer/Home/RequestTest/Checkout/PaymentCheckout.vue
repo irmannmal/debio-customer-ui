@@ -23,7 +23,7 @@ import { mapState, mapMutations } from "vuex"
 import LabDetailCard from "../LabDetailCard.vue"
 import PaymentDetailCard from "../PaymentDetailCard.vue"
 import { queryLabById, queryOrderDetailByOrderID, queryServiceById } from "@debionetwork/polkadot-provider"
-
+import { formatPrice } from "@/common/lib/price-format.js"
 
 export default {
   name: "PaymentCheckout",
@@ -130,9 +130,9 @@ export default {
         labRate: labRateData.rating,
         labAddress,
         labImage,
-        totalPrice: this.formatPrice(detailPrice.totalPrice.replaceAll(",", "")),
-        servicePrice: this.formatPrice(detailPrice.priceComponents[0].value.replaceAll(",","")),
-        qcPrice: this.formatPrice(detailPrice.additionalPrices[0].value.replaceAll(",","")),
+        totalPrice: formatPrice(detailPrice.totalPrice.replaceAll(",", "")),
+        servicePrice: formatPrice(detailPrice.priceComponents[0].value.replaceAll(",","")),
+        qcPrice: formatPrice(detailPrice.additionalPrices[0].value.replaceAll(",","")),
         currency: detailPrice.currency.toUpperCase(),
         city,
         country,
@@ -151,10 +151,6 @@ export default {
 
       this.setProductsToRequest(this.service)
       this.isLoading = false
-    },
-
-    formatPrice(price) {
-      return this.web3.utils.fromWei(price, "ether")
     }
   }
 }

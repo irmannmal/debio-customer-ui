@@ -330,10 +330,6 @@ export default {
 
     },
 
-    formatPrice(price) {
-      return this.web3.utils.fromWei(String(price), "ether")
-    },
-
     closeDialog(){
       this.$emit("close")
     },
