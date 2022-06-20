@@ -424,10 +424,11 @@ export default {
           const encrypted = await context.encrypt({
             text: fr.result,
             fileType: file.type,
+            fileSize: file.size,
             fileName: file.name
           })
 
-          const { chunks, fileName, fileType } = encrypted
+          const { chunks, fileName, fileType, fileSize } = encrypted
 
           const dataFile = {
             title,
@@ -435,6 +436,7 @@ export default {
             file,
             chunks,
             id,
+            fileSize,
             fileName,
             fileType,
             createdAt: new Date().getTime()
@@ -535,7 +537,8 @@ export default {
             encryptedFileChunks: dataFile.chunks,
             fileName: dataFile.fileName,
             index: index,
-            fileType: dataFile.fileType
+            fileType: dataFile.fileType,
+            fileSize: dataFile.fileSize
           })
         }
 
@@ -565,7 +568,7 @@ export default {
       })
     },
 
-    async encrypt({ text, fileType, fileName }) {
+    async encrypt({ text, fileType, fileName, fileSize }) {
       const context = this
       const arrChunks = []
       let chunksAmount
@@ -588,9 +591,10 @@ export default {
 
             if (arrChunks.length === chunksAmount) {
               resolve({
-                fileName: fileName,
-                chunks: arrChunks,
-                fileType: fileType
+                fileName,
+                fileSize,
+                fileType,
+                chunks: arrChunks
               })
             }
           }
@@ -602,13 +606,14 @@ export default {
       })
     },
 
-    async upload({ encryptedFileChunks, fileName, index, fileType }) {
+    async upload({ encryptedFileChunks, fileName, index, fileType, fileSize }) {
       const data = JSON.stringify(encryptedFileChunks)
       const blob = new Blob([data], { type: fileType })
 
       const result = await uploadFile({
         title: fileName,
         type: fileType,
+        size: fileSize,
         file: blob
       })
 

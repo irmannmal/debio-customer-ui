@@ -239,7 +239,7 @@ export default {
       const link = JSON.parse(detail.reportLink)  
       const fileName = link[0].split("/").pop()
       const res = await downloadFile(link[0])
-      
+
       let { box, nonce } = res.data.data
       box = Object.values(box) // Convert from object to Array
       nonce = Object.values(nonce) // Convert from object to Array
@@ -265,7 +265,7 @@ export default {
       this.secretKey = u8aToHex(cred.boxKeyPair.secretKey)
     },
 
-    async encrypt({ text, fileType, fileName}) {
+    async encrypt({ text, fileType, fileName, fileSize }) {
       const context = this
       const arrChunks = []
       let chunksAmount
@@ -293,9 +293,10 @@ export default {
 
             if (arrChunks.length === chunksAmount ) {
               res({
-                fileName: fileName,
-                chunks: arrChunks,
-                fileType: fileType
+                fileName,
+                fileType,
+                fileSize,
+                chunks: arrChunks
               })
             }
           }
@@ -319,10 +320,11 @@ export default {
             const encrypted = await context.encrypt({
               text: fr.result,
               fileType: file.type,
+              fileSize: file.size,
               fileName: file.name
             })
 
-            const { chunks, fileName, fileType } = encrypted
+            const { chunks, fileName, fileType, fileSize } = encrypted
             const dataFile = {
               title,
               description,
@@ -330,6 +332,7 @@ export default {
               chunks,
               fileName,
               fileType,
+              fileSize,
               createdAt: new Date().getTime()
             }
             res(dataFile)
@@ -342,8 +345,7 @@ export default {
       })
     },
 
-    async upload({ encryptedFileChunks, fileType, fileName }) {
-
+    async upload({ encryptedFileChunks, fileType, fileName, fileSize }) {
       for (let i = 0; i < encryptedFileChunks.length; i++) {
         const data = JSON.stringify(encryptedFileChunks[i]) // not working if the size is large
         const blob = new Blob([data], { type: fileType })
@@ -351,6 +353,7 @@ export default {
         const result = await uploadFile({
           title: fileName,
           type: fileType,
+          size: fileSize,
           file: blob
         })
         const link = await getFileUrl(result.IpfsHash)
@@ -387,6 +390,7 @@ export default {
         await this.upload({
           encryptedFileChunks: dataFile.chunks,
           fileName: dataFile.fileName,
+          fileSize: dataFile.fileSize,
           fileType: dataFile.fileType
         })
 
@@ -433,7 +437,6 @@ export default {
 
       txWeight = await addGeneticDataFee(this.api, this.wallet, this.document.title, this.document.description)
       this.txWeight = this.formatTxWeight(txWeight.partialFee)
-       
     },
 
     closeDialog() {

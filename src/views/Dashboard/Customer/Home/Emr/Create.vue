@@ -365,10 +365,11 @@ export default {
           const encrypted = await context.encrypt({
             text: fr.result,
             fileType: file.type,
+            fileSize: file.size,
             fileName: file.name
           })
 
-          const { chunks, fileName, fileType } = encrypted
+          const { chunks, fileName, fileType, fileSize } = encrypted
 
           const dataFile = {
             title,
@@ -376,6 +377,7 @@ export default {
             file,
             chunks,
             fileName,
+            fileSize,
             fileType,
             createdAt: new Date().getTime()
           }
@@ -467,6 +469,7 @@ export default {
           await this.upload({
             encryptedFileChunks: dataFile.chunks,
             fileName: dataFile.fileName,
+            fileSize: dataFile.fileSize,
             index: index,
             fileType: dataFile.fileType
           })
@@ -496,7 +499,7 @@ export default {
       })
     },
 
-    async encrypt({ text, fileType, fileName }) {
+    async encrypt({ text, fileType, fileName, fileSize }) {
       const context = this
       const arrChunks = []
       let chunksAmount
@@ -519,9 +522,10 @@ export default {
 
             if (arrChunks.length === chunksAmount) {
               resolve({
-                fileName: fileName,
-                chunks: arrChunks,
-                fileType: fileType
+                fileName,
+                fileSize,
+                fileType,
+                chunks: arrChunks
               })
             }
           }
@@ -533,13 +537,14 @@ export default {
       })
     },
 
-    async upload({ encryptedFileChunks, index, fileType, fileName }) {
+    async upload({ encryptedFileChunks, index, fileType, fileName, fileSize }) {
       const data = JSON.stringify(encryptedFileChunks)
       const blob = new Blob([data], { type: fileType })
 
       const result = await uploadFile({
         title: fileName,
         type: fileType,
+        size: fileSize,
         file: blob
       })
 

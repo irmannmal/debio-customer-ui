@@ -147,20 +147,60 @@ export default {
     files: []
   }),
 
+  computed: {
+    ...mapState({
+      api: (state) => state.substrate.api,
+      wallet: (state) => state.substrate.wallet,
+      mnemonicData: (state) => state.substrate.mnemonicData
+    }),
+
+    reportResult() {
+      if (this.dialog) {
+        return ""
+      }
+
+      if (this.resultLoading) {
+        return "Decrypting report.."
+      }
+
+      return this.result ? this.result : "No report available for this result"
+    },
+
+    modalTitle() {
+      return `Thank you! ${"\n"} Your feedback has been sent`
+    }
+  },
+
+  watch: {
+    mnemonicData(val) {
+      if (val) this.initialData()
+    }
+  },
+
   async created() {
     this.resultLoading = true
-    this.idOrder = this.$route.params.idOrder
-    const cred = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
-    this.privateKey = u8aToHex(cred.boxKeyPair.secretKey)
+    this.idOrder = this.$route.params.id
     this.ownerAddress = this.wallet.address
-    await this.getRatingTestResult()
-    await this.getTestResult()
-    await this.getLabServices()
-    await this.getFileUploaded()
-    await this.parseResult()
+    if (this.mnemonicData) await this.initialData()
   },
 
   methods: {
+    async initialData() {
+      const cred = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
+
+      this.privateKey = u8aToHex(cred.boxKeyPair.secretKey)
+
+      if (cred) await this.prepareData()
+    },
+
+    async prepareData() {
+      await this.getRatingTestResult()
+      await this.getTestResult()
+      await this.getLabServices()
+      await this.getFileUploaded()
+      await this.parseResult()
+    },
+
     async getRatingTestResult() {
       try {
         const data = await getRatingByOrderId(this.idOrder)
@@ -296,30 +336,6 @@ export default {
         this.showModal = true
         console.error(error)
       }
-    }
-  },
-
-  computed: {
-    ...mapState({
-      api: (state) => state.substrate.api,
-      wallet: (state) => state.substrate.wallet,
-      mnemonicData: (state) => state.substrate.mnemonicData
-    }),
-
-    reportResult() {
-      if (this.dialog) {
-        return ""
-      }
-
-      if (this.resultLoading) {
-        return "Decrypting report.."
-      }
-
-      return this.result ? this.result : "No report available for this result"
-    },
-
-    modalTitle() {
-      return `Thank you! ${"\n"} Your feedback has been sent`
     }
   },
 

@@ -64,7 +64,7 @@ export default [
         component: () => import( /* webpackChunkName */ "@/views/Dashboard/Customer/Home/MyTest/OrderHistoryDetail")
       },
       {
-        path: "test-result",
+        path: "test-result/:id",
         name: "test-result",
         meta: { pageHeader: "Test Result", parent: "my-test" },
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/MyTest/TestResult")

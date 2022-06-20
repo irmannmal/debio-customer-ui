@@ -293,9 +293,10 @@ export default {
       this.file = new File([blob], fileName)
 
       const dataFile = await this.setupFileReader(this.file)
-      
+
       await this.upload({
         encryptedFileChunks: dataFile.chunks,
+        fileSize: dataFile.fileSize,
         fileName: dataFile.fileName,
         fileType: fileType
       })
@@ -310,15 +311,17 @@ export default {
             const encrypted = await context.encrypt({
               text: fr.result,
               fileType: file.type,
+              fileSize: file.size,
               fileName: file.name
             })
 
-            const { chunks, fileName, fileType } = encrypted
+            const { chunks, fileName, fileType, fileSize } = encrypted
             const dataFile = {
               title: "title",
               description: "description",
               file,
               chunks,
+              fileSize,
               fileName,
               fileType,
               createdAt: new Date().getTime()
@@ -334,7 +337,7 @@ export default {
       })
     },
 
-    async encrypt({ text, fileType, fileName}) {
+    async encrypt({ text, fileType, fileName, fileSize }) {
       console.log("encrypting..")
       const analystPublicKey = await this.getAnalystPublicKey()
       const context = this
@@ -364,9 +367,10 @@ export default {
 
             if (arrChunks.length === chunksAmount ) {
               res({
-                fileName: fileName,
-                chunks: arrChunks,
-                fileType: fileType
+                fileName,
+                fileType,
+                fileSize,
+                chunks: arrChunks
               })
             }
           }
@@ -378,7 +382,8 @@ export default {
 
     },
 
-    async upload({ encryptedFileChunks, fileName, fileType }) {
+    async upload({ encryptedFileChunks, fileName, fileType, fileSize }) {
+
       for (let i = 0; i < encryptedFileChunks.length; i++) {
         const data = JSON.stringify(encryptedFileChunks[i]) // not working if the size is large
         const blob = new Blob([data], { type: fileType })
@@ -387,6 +392,7 @@ export default {
         const result = await uploadFile({
           title: fileName,
           type: fileType,
+          size: fileSize,
           file: blob
         })
         const link = await getFileUrl(result.IpfsHash)
