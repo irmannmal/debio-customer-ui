@@ -56,6 +56,7 @@
               ui-debio-data-table(
                 :headers="headers"
                 :items="testList"
+                :loading="isLoadingData"
               )
                 template(class="titleSection" v-slot:[`item.serviceName`]="{item}")
                   div(class="detailLab d-flex align-center")
@@ -179,6 +180,7 @@ export default {
     showDialog: false,
     medicalResearchIllustration,
     isLoding: false,
+    isLoadingData: false,
     txWeight: 0,
     testList: [],
     headers: [
@@ -274,6 +276,7 @@ export default {
     },
 
     async fetchOrderList() {
+      this.isLoadingData = true
       const result = await getOrderList()
       const orderList = result.orders.data
       const newList = orderList.filter(order => order._source.status !== "Unpaid" && order._source.status !== "Cancelled")
@@ -319,6 +322,7 @@ export default {
         this.testList.sort(
           (a, b) => parseInt(b.timestamp) - parseInt(a.timestamp)
         )
+        this.isLoadingData = false
       })
     },
 

@@ -10,7 +10,14 @@
         div.bodyContent
           v-row
             v-col
-              div.leftSection.box.fillColor
+              div.leftSection.box.fillColor(v-if="isLoading")
+                div.topRow
+                  div.topHead
+                    v-skeleton-loader(
+                      v-bind="attrs"
+                      type="card-heading, list-item-avatar, divider, card-heading, list-item-avatar, devider, list-item"
+                    )
+              div.leftSection.box.fillColor(v-if="!isLoading")
                 div.topRow
                   div.topHead
                     span Lab Details
@@ -60,7 +67,14 @@
                   span Specimen Number
                   span {{ myTest.dna_sample_tracking_id }}
             v-col
-              div.rightSection.box
+              div.rightSection.box(v-if="isLoading")
+                div
+                    v-skeleton-loader(
+                      v-bind="attrs"
+                      type="image, list-item-two-line"
+                    )
+
+              div.rightSection.box(v-if="!isLoading")
                 div
                   div.imageBanner.box
                     ui-debio-icon(
@@ -186,7 +200,8 @@ export default {
       servicePrice: 0,
       qcPrice: 0,
       currency: ""
-    }
+    },
+    isLoading: false
   }),
 
   async mounted() {
@@ -210,11 +225,18 @@ export default {
 
   methods: {
     async getOrderDetail() {
-      this.myTest = await getOrderDetail(this.$route.params.id)
-      this.dnaSample = await queryDnaSamples(this.api, this.myTest.dna_sample_tracking_id)
-      this.prices.servicePrice = formatPrice(this.myTest.service_info.prices_by_currency[0].total_price)
-      this.prices.qcPrice = formatPrice(this.myTest.service_info.prices_by_currency[0].additional_prices[0].value)
-      this.prices.currency = this.myTest.service_info.prices_by_currency[0].currency.toUpperCase()
+      this.isLoading = true
+      try {
+        this.myTest = await getOrderDetail(this.$route.params.id)
+        this.dnaSample = await queryDnaSamples(this.api, this.myTest.dna_sample_tracking_id)
+        this.prices.servicePrice = this.formatPrice(this.myTest.service_info.prices_by_currency[0].total_price)
+        this.prices.qcPrice = this.formatPrice(this.myTest.service_info.prices_by_currency[0].additional_prices[0].value)
+        this.prices.currency = this.myTest.service_info.prices_by_currency[0].currency.toUpperCase()
+        this.isLoading = false
+      } catch (error) {
+        console.error(error)
+        this.isLoading = false
+      }
     },
 
     toViewResult() {
