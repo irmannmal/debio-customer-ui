@@ -5,6 +5,7 @@
       :items="items"
       :sort-by="['timestamp']"
       :sort-desc="[true]"
+      :loading="loadingData"
     )
       template(v-slot:[`item.serviceName`]="{ item }")
         .d-flex.flex-column.genetic-analysis-list__service
@@ -100,7 +101,8 @@ export default {
     iconShow: true, //temporary disable.
     iconDownloadShow: false,
     publicKey: null,
-    secretKey: null
+    secretKey: null,
+    loadingData: false
   }),
 
   watch: {
@@ -136,38 +138,46 @@ export default {
     },
 
     async fetchGeneticAnalysisData() {
-      this.items = []
-      const orderList = await queryGeneticAnalysisOrderByCustomerId(this.api, this.wallet.address)
-      const paidOrder = []
+      this.loadingData = true
 
-      orderList.forEach( order => {
-        const status = order.status
-        if (status === "Paid" || status === "Refunded" || status === "Fulfilled") {
-          paidOrder.push(order)
-        }
-      })
-
-      paidOrder.forEach( async order => {
-        const { geneticAnalysisTrackingId, sellerId, serviceId, id, createdAt, updatedAt} = order
-        const geneticAnalysis = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, geneticAnalysisTrackingId)
-        const analystInfo = await queryGeneticAnalystByAccountId(this.api, sellerId)
-        const geneticAnalysisService = await queryGeneticAnalystServicesByHashId(this.api, serviceId)
-        const timestamp = geneticAnalysis.createdAt
-
-        const data = {
-          trackingId: geneticAnalysisTrackingId,
-          orderId: id,
-          serviceName: geneticAnalysisService.info.name,
-          analystName: `${analystInfo.info.firstName} ${analystInfo.info.lastName}`,
-          analystInfo,
-          createdAt: this.formatDate(createdAt),
-          updatedAt: this.formatDate(updatedAt),
-          status: this.getStatus(geneticAnalysis.status),
-          ipfsLink:  geneticAnalysis.reportLink,
-          timestamp
-        }
-        this.items.push(data)
-      })
+      try {
+        this.items = []
+        const orderList = await queryGeneticAnalysisOrderByCustomerId(this.api, this.wallet.address)
+        const paidOrder = []
+  
+        orderList.forEach( order => {
+          const status = order.status
+          if (status === "Paid" || status === "Refunded" || status === "Fulfilled") {
+            paidOrder.push(order)
+          }
+        })
+  
+        paidOrder.forEach( async order => {
+          const { geneticAnalysisTrackingId, sellerId, serviceId, id, createdAt, updatedAt} = order
+          const geneticAnalysis = await queryGeneticAnalysisByGeneticAnalysisTrackingId(this.api, geneticAnalysisTrackingId)
+          const analystInfo = await queryGeneticAnalystByAccountId(this.api, sellerId)
+          const geneticAnalysisService = await queryGeneticAnalystServicesByHashId(this.api, serviceId)
+          const timestamp = geneticAnalysis.createdAt
+  
+          const data = {
+            trackingId: geneticAnalysisTrackingId,
+            orderId: id,
+            serviceName: geneticAnalysisService.info.name,
+            analystName: `${analystInfo.info.firstName} ${analystInfo.info.lastName}`,
+            analystInfo,
+            createdAt: this.formatDate(createdAt),
+            updatedAt: this.formatDate(updatedAt),
+            status: this.getStatus(geneticAnalysis.status),
+            ipfsLink:  geneticAnalysis.reportLink,
+            timestamp
+          }
+          this.items.push(data)
+        })
+        this.loadingData = false
+      } catch (error) {
+        console.error(error)
+        this.loadingData = false
+      }
     },
 
     toDetail(item) {

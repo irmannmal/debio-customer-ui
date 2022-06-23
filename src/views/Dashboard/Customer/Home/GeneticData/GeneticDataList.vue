@@ -10,6 +10,7 @@
     ui-debio-data-table(
       :headers="headers"
       :items="items"
+      :loading="loadingData"
     )
       template(v-slot:[`item.title`]="{ item }")
         .d-flex.flex-column.genetic-data-list__title
@@ -95,7 +96,8 @@ export default {
     isDeleting: false,
     selectedDataId: null,
     txWeight: 0,
-    error: null
+    error: null,
+    loadingData: false
   }),
 
   watch: {
@@ -121,34 +123,40 @@ export default {
 
   methods: {
     async fetchGeneticData() {
-      this.items = []
-      const accountId = this.wallet.address
-      const dataList = await queryGeneticDataByOwnerId(this.api, accountId)
+      try {
+        this.loadingData = true
+        this.items = []
+        const accountId = this.wallet.address
+        const dataList = await queryGeneticDataByOwnerId(this.api, accountId)
 
-      for (const {id, owenerId, reportLink, title, description, createdAt, updatedAt} of dataList) {
+        for (const {id, owenerId, reportLink, title, description, createdAt, updatedAt} of dataList) {
 
-        let uploadAt
-        if (updatedAt !== "0") {
-          uploadAt = this.formatDate(updatedAt)
-        } else {
-          uploadAt = this.formatDate(createdAt)
+          let uploadAt
+          if (updatedAt !== "0") {
+            uploadAt = this.formatDate(updatedAt)
+          } else {
+            uploadAt = this.formatDate(createdAt)
+          }
+
+          const item = { id, owenerId, reportLink, title, description, uploadAt }
+          this.items.push(item)
+          
         }
 
-        const item = { id, owenerId, reportLink, title, description, uploadAt }
-        this.items.push(item)
-        
+        this.items.sort((a, b) => {
+          if(new Date(a.uploadAt) < new Date(b.uploadAt)) {
+            return 1
+          } 
+          if  (new Date(a.uploadAt) > new Date(b.uploadAt)) {
+            return -1
+          } 
+          return 0
+        })
+        this.loadingData = false
+      } catch (error) {
+        console.error(error)
+        this.loadingData = false
       }
-
-      this.items.sort((a, b) => {
-        if(new Date(a.uploadAt) < new Date(b.uploadAt)) {
-          return 1
-        } 
-        if  (new Date(a.uploadAt) > new Date(b.uploadAt)) {
-          return -1
-        } 
-        return 0
-      })
-
     },
 
     onEdit(item) {

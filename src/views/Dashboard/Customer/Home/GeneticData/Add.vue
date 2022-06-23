@@ -9,7 +9,13 @@
       )
 
       .genetic-data-add__title {{ isEdit ? "Edit Genetic Data" : "Add Genetic Data"}}
-      .genetic-data-add__forms
+      .genetic-data-add__forms(v-if="loadingData" )
+        v-skeleton-loader(
+          v-bind="attrs"
+          type="table-cell, list-item, table-cell, list-item-three-line, text, table-heading, text, card-heading "
+        )
+
+      .genetic-data-add__forms(v-if="!loadingData" )
         ui-debio-input(
           :rules="$options.rules.document.title"
           v-model="document.title"
@@ -145,7 +151,8 @@ export default {
     dataId: null,
     error: null,
     orderId: null,
-    isUpdated: false
+    isUpdated: false,
+    loadingData: false
   }),
 
   computed: {
@@ -226,6 +233,9 @@ export default {
       immediate: true,
       handler: generalDebounce(async function() {
         await this.getTxWeight()
+        if (this.document.file) {
+          this.loadingData = false
+        }
       }, 500)
     }
   },
@@ -233,30 +243,37 @@ export default {
   methods: {
 
     async getDetails() {
-      const detail = await queryGeneticDataById(this.api, this.dataId)
-      this.document.title = detail.title
-      this.document.description = detail.description
-      const link = JSON.parse(detail.reportLink)  
-      const fileName = link[0].split("/").pop()
-      const res = await downloadFile(link[0])
+      this.loadingData = true
+      try {
+        const detail = await queryGeneticDataById(this.api, this.dataId)
+        this.document.title = detail.title
+        this.document.description = detail.description
+        const link = JSON.parse(detail.reportLink)
+        const fileName = link[0].split("/").pop()
+        const res = await downloadFile(link[0])
 
-      let { box, nonce } = res.data.data
-      box = Object.values(box) // Convert from object to Array
-      nonce = Object.values(nonce) // Convert from object to Array
+        let { box, nonce } = res.data.data
+        box = Object.values(box) // Convert from object to Array
+        nonce = Object.values(nonce) // Convert from object to Array
 
-      const toDecrypt = {
-        box: Uint8Array.from(box),
-        nonce: Uint8Array.from(nonce)
+        const toDecrypt = {
+          box: Uint8Array.from(box),
+          nonce: Uint8Array.from(nonce)
+        }
+        console.log("Decrypting...")
+        const decryptedObject = await Kilt.Utils.Crypto.decryptAsymmetric(
+          toDecrypt,
+          this.publicKey,
+          this.secretKey
+        )
+
+        const blob = new Blob([decryptedObject], { type: "text/directory" })
+        console.log("Decrypted!")
+        this.document.file = new File([blob], fileName)
+      } catch (error) {
+        console.error(error)
+        this.loadingData = false
       }
-      console.log("Decrypting...")
-      const decryptedObject = await Kilt.Utils.Crypto.decryptAsymmetric(
-        toDecrypt, 
-        this.publicKey, 
-        this.secretKey
-      )
-      const blob = new Blob([decryptedObject], { type: "text/directory" })
-      console.log("Decrypted!")
-      this.document.file = new File([blob], fileName)
     },
 
     initialDataKey() {
