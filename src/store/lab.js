@@ -53,11 +53,13 @@ export default {
     },
 
     async getServicesByCategory({ commit }, datas) {
-      const { category, status } = datas
-      const data = await getServicesByCategory (category, status)
-
+      const data = await getServicesByCategory ( datas.category)
+      commit("SET_CATEGORY", datas.category)
+      if (datas.status === "StakingRequestService") {
+        const result = data.result.filter(s => s.service_flow === "StakingRequestService")
+        commit("SET_SERVICES", result)
+      }
       commit("SET_SERVICES", data.result)
-      commit("SET_CATEGORY", category)
     }
   },
 

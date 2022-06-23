@@ -90,8 +90,7 @@ export default {
     countries: [],
     noState: false,
     noCity: false,
-    countryName: "",
-    status: "RequestTest"
+    countryName: ""
   }),
 
   computed: {
@@ -194,7 +193,7 @@ export default {
       const region = this.state
       const city = this.city
       const category = this.category
-      const status = this.status
+      const status = "All"
       this.setCategory(category)
       await this.$store.dispatch("lab/setCountryRegionCity", {country, region, city})
       await this.$store.dispatch("lab/getServicesByCategory", {category, status})
