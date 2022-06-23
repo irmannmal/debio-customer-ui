@@ -12,14 +12,13 @@
           :serviceDetail="service"
           :orderDetail="detailOrder"
           :loading="isLoading"
-          @cancel="isCancelled = true"
+          @cancel="onCancel"
           @onContinue="onContinue"
         )
 </template>
 
 <script>
-
-import { mapState, mapMutations } from "vuex"
+import {mapState, mapMutations} from "vuex"
 import LabDetailCard from "../LabDetailCard.vue"
 import PaymentDetailCard from "../PaymentDetailCard.vue"
 import { queryLabById, queryOrderDetailByOrderID, queryServiceById } from "@debionetwork/polkadot-provider"
@@ -48,13 +47,14 @@ export default {
     service: {}
   }),
 
-  async mounted () {
+  async created() {
     if (!this.$route.params.id) {
       this.service = this.dataService
-    }
-
-    if (this.$route.params.id) {
-      this.detailOrder = await queryOrderDetailByOrderID(this.api, this.$route.params.id)
+    } else {
+      this.detailOrder = await queryOrderDetailByOrderID(
+        this.api,
+        this.$route.params.id
+      )
 
       this.setOrderDetail(this.detailOrder)
 
@@ -71,14 +71,22 @@ export default {
       setOrderDetail: "testRequest/SET_ORDER"
     }),
 
-    onContinue () {
-      this.$router.push({ name: "customer-request-test-service"})
+    onContinue() {
+      this.$router.push({name: "customer-request-test-service"})
+    },
+
+    onCancel() {
+      this.isCancelled = true
+      
     },
 
     async getServiceDetail() {
       this.isLoading = true
       const labDetail = await queryLabById(this.api, this.detailOrder.sellerId)
-      const serviceDetail = await queryServiceById(this.api, this.detailOrder.serviceId)
+      const serviceDetail = await queryServiceById(
+        this.api,
+        this.detailOrder.serviceId
+      )
 
       let {
         accountId: labId,
@@ -104,27 +112,27 @@ export default {
           image: serviceImage,
           dnaCollectionProcess,
           testResultSample: resultSample,
-          expectedDuration: {
-            duration,
-            durationType
-          },
+          expectedDuration: {duration, durationType},
           pricesByCurrency
         },
         serviceFlow
       } = serviceDetail
 
       const labRateData = await this.$store.dispatch("rating/getLabRate", labId)
-      const serviceData = await this.$store.dispatch("rating/getServiceRate", serviceId)
+      const serviceData = await this.$store.dispatch(
+        "rating/getServiceRate",
+        serviceId
+      )
       const detailPrice = pricesByCurrency[0]
-      
+
       this.service = {
-        serviceId, 
-        serviceName, 
+        serviceId,
+        serviceName,
         serviceRate: serviceData.rating_service,
-        serviceImage, 
-        serviceCategory, 
-        serviceDescription, 
-        longDescription, 
+        serviceImage,
+        serviceCategory,
+        serviceDescription,
+        longDescription,
         labId,
         labName,
         labRate: labRateData.rating,
@@ -139,12 +147,12 @@ export default {
         region,
         countRateLab: labRateData.count,
         countServiceRate: serviceData.count_rating_service,
-        duration, 
+        duration,
         durationType,
         verificationStatus,
         stakeStatus,
         indexPrice: 0,
-        dnaCollectionProcess, 
+        dnaCollectionProcess,
         resultSample,
         serviceFlow
       }
@@ -157,27 +165,26 @@ export default {
 </script>
 
 <style lang="sass">
-  @import "@/common/styles/mixins.sass"
+@import "@/common/styles/mixins.sass"
 
-  .customer-payment-checkout
-    width: 100%
-    height: 100% 
+.customer-payment-checkout
+  width: 100%
+  height: 100%
+  display: flex
+  flex-direction: column
+  align-items: center
+
+  &__title
     display: flex
     flex-direction: column
     align-items: center
+    text-align: center
+    letter-spacing: 0.0044em !important
+    margin-top:55px
+    @include h6-opensans
 
-    &__title
-      display: flex
-      flex-direction: column
-      align-items: center
-      text-align: center
-      letter-spacing: 0.0044em !important
-      margin-top:55px
-      @include h6-opensans
-
-    &__row
-      margin-top: 3.5rem !important
-      display: flex
-      justify-content: center
-
+  &__row
+    margin-top: 3.5rem !important
+    display: flex
+    justify-content: center
 </style>

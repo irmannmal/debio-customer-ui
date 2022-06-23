@@ -93,6 +93,12 @@ export default [
         meta: { pageHeader: "Success", parent: "customer-request-test" },
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/RequestTest/Success")
       },
+      {
+        path: "request-test/canceled/:hash?",
+        name: "customer-request-test-canceled",
+        meta: { pageHeader: "Canceled", parent: "customer-request-test" },
+        component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/RequestTest/Canceled")
+      },
 
       // Data Bounty
       {

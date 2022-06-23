@@ -58,7 +58,26 @@
           | {{ excessAmount }}
           | {{ currency }}
 
-      div(class="text-center" v-if="!isCancelled")
+      div(class="text-center" v-if="status === 'Cancelled'")
+        div(class="d-flex justify-space-between align-center pa-4 mt-8 me-3")
+          ui-debio-button(
+            color="secondary"
+            width="49%"
+            height="35"
+            @click="$router.push({name: 'customer-dashboard'})"
+            style="font-size: 10px;"
+            outlined 
+            ) Go to Dashboard
+
+          ui-debio-button(
+            color="secondary"
+            width="49%"
+            height="35"
+            style="font-size: 9px;"
+            @click="toPaymentHistory"
+            ) Go To Payment History
+
+      div(class="text-center" v-else)
         div(v-if="!success && !isCreated" class="mt-3 d-flex justify-center align-center")
           ui-debio-button(
             :class="setMargin"
@@ -88,12 +107,13 @@
 
         div(v-if="status === 'Unpaid'" class="d-flex justify-space-between align-center pa-4 mt-8 me-3")
           ui-debio-button(
-            color="secondary"
+            color="primary"
             width="46%"
             height="35"
             @click="showCancelConfirmation"
             style="font-size: 10px;"
             outlined 
+            :loading="loading"
             ) Cancel Order
 
           ui-debio-button(
@@ -102,8 +122,9 @@
             height="35"
             style="font-size: 10px;"
             @click="showReceipt = true"
+            :disabled="loading"
             ) Pay
-
+            
     template
       PaymentReceiptDialog(
         :show="showReceipt"
@@ -185,7 +206,8 @@ export default {
     excessAmount: 0,
     showAlert: false,
     isCreated: false,
-    success: false
+    success: false,
+    loading: false
   }),
 
   async mounted () {
@@ -199,14 +221,17 @@ export default {
       this.isCreated = true
     }
 
+    const orderId = this.$route.params.id || this.$route.params.hash
+
     // get last order id
     this.lastOrder = await queryLastOrderHashByCustomer(
       this.api,
       this.wallet.address
     )
-
+    
     if (this.lastOrder) {
-      this.detailOrder = await queryOrderDetailByOrderID(this.api, this.lastOrder)
+      const detailOrder = await queryOrderDetailByOrderID(this.api, orderId)
+      this.detailOrder = detailOrder
       this.orderId = this.detailOrder.id
       this.status = this.detailOrder.status
     }
@@ -254,7 +279,8 @@ export default {
       dataService: (state) => state.testRequest.products,
       metamaskWalletAddress: (state) => state.metamask.metamaskWalletAddress,
       stakingData: (state) => state.lab.stakingData,
-      web3: (state) => state.metamask.web3
+      web3: (state) => state.metamask.web3,
+      lastEventData: (state) => state.substrate.lastEventData
     }),
 
     setMargin() {
@@ -262,6 +288,21 @@ export default {
         return "mt-2"
       }
       return "mt-12"
+    }
+  },
+
+  watch: {
+    lastEventData(event) {
+      if (!event) return
+      if (event.method === "OrderCancelled" && this.isCancelled) {
+        this.loading = false
+        this.$router.push({
+          name: "customer-request-test-canceled",
+          params: {
+            hash: this.$route.params.id || this.$route.params.hash
+          }
+        })
+      }
     }
   },
 
@@ -367,6 +408,8 @@ export default {
     },
 
     async setCancelled() {
+      this.loading = true
+      this.isCancelled = true
       if (this.orderCreated) {
         await cancelOrder(
           this.api, 
@@ -374,8 +417,6 @@ export default {
           this.$route.params.id
         )
       }
-      this.isCancelled = true
-      this.$emit("cancel")
     },
 
     async getDataService() {
