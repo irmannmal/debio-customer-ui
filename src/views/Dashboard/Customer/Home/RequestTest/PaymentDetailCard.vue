@@ -151,7 +151,7 @@ import { processRequest } from "@debionetwork/polkadot-provider"
 import { queryLastOrderHashByCustomer, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
 import PayRemainingDialog from "./PayRemainingDialog.vue"
 import { getDbioBalance, getOrderDetail, fetchTxHashOrder } from "@/common/lib/api"
-import DNA_COLLECTION_PROCESS from "@/common/constants/instruction-step.js"
+import { getDNACollectionProcess } from "@/common/lib/api"
 import { formatPrice } from "@/common/lib/price-format.js"
 
 export default {
@@ -356,8 +356,10 @@ export default {
       this.$emit("onContinue")
     },
 
-    toInstruction (dnaCollectionProcess) {
-      window.open(DNA_COLLECTION_PROCESS[dnaCollectionProcess], "_blank")
+    async toInstruction (val) {
+      const dnaCollectionProcess = await getDNACollectionProcess()
+      const link = dnaCollectionProcess.filter(e => e.collectionProcess === val)[0].link
+      window.open(link, "_blank")
     },
 
     showCancelConfirmation () {

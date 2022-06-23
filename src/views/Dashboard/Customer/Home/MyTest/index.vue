@@ -149,7 +149,7 @@ import metamaskServiceHandler from "@/common/lib/metamask/mixins/metamaskService
 import ConfirmationDialog from "@/common/components/Dialog/ConfirmationDialog"
 import { createSyncEvent, getCategories, getOrderList } from "@/common/lib/api"
 import { queryDnaSamples, queryDnaTestResults, unstakeRequest, unstakeRequestFee } from "@debionetwork/polkadot-provider"
-import DNA_COLLECTION_PROCESS from "@/common/constants/instruction-step.js"
+import { getDNACollectionProcess } from "@/common/lib/api"
 import { ORDER_STATUS_DETAIL } from "@/common/constants/status"
 
 export default {
@@ -368,8 +368,10 @@ export default {
       this.$router.push({ name: "order-history-detail", params: {id}})
     },
 
-    goToInstruction(item) {
-      window.open(DNA_COLLECTION_PROCESS[item], "_blank")
+    async goToInstruction(item) {
+      const dnaCollectionProcess = await getDNACollectionProcess()
+      const link = dnaCollectionProcess.filter(e => e.collectionProcess === item)[0].link
+      window.open(link, "_blank")
     },
 
     async handleSelectedBounty(val) {
