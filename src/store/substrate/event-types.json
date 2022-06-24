@@ -5,7 +5,7 @@
         "OrderPaid": {
           "message": "",
           "value": "id",
-          "value_message": "You successfully submitted your requested test for ",
+          "value_message": "You've successfully submitted your requested test for ",
           "route": "customer-payment-details",
           "params": "id",
           "identity": "customerId"
@@ -15,6 +15,14 @@
           "value": "id",
           "value_message": "Your test results for ",
           "route": "customer-payment-details",
+          "params": "id",
+          "identity": "customerId"
+        },
+        "OrderRefunded": {
+          "message": "",
+          "value": "id",
+          "value_message": "Your service fee from ",
+          "route": "order-history-detail",
           "params": "id",
           "identity": "customerId"
         }

@@ -24,21 +24,20 @@ const handler = {
 
     if (event.method === "OrderFulfilled") {
       wording = `${valueMessage} (${computeId}) are out.  Click here to see your order details.`
-    } else if (event.method === "OrderFulfilled" && data.orderFlow === "StakingRequestService") {
-      wording = `${valueMessage} DBIO as a reward for completing the request test for ${computeId} from the service requested`
+    } else if (event.method === "OrderRefunded") {
+      wording = `${valueMessage} (${computeId}) has been refunded, kindly check your account balance..`
     }
 
     return { data, id, params, wording }
   },
   geneticTesting: async (dataEvent, value, valueMessage) => {
     const data = dataEvent[0]
+    const status = data["status"]
     const id = data[value]
-    const params = { orderId: id }
-
+    const params = { id: id }
+    
     const formatedHash = `${data?.trackingId.substr(0, 4)}...${data?.trackingId?.substr(data?.trackingId?.length - 4)}`
-    const computeWording = `${valueMessage} (${formatedHash}) are out. Click here to see your order details.`
-
-    const wording = computeWording
+    const wording = `${valueMessage} (${formatedHash}) ${status.toLowerCase() === "fulfilled" ? "are out" : status.toLowerCase()}. Click here to see your order details.`
 
     return { data, id, params, wording }
   },
