@@ -20,7 +20,7 @@ export default [
         meta: { pageHeader: "Maintenance" },
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/maintenancePageLayout"),
         beforeEnter: (to, from, next) => {
-          if (from.path === "/") next({ name: "customer-dashboard" })
+          if (from.path === "") next({ name: "customer-dashboard" })
           else next()
         }
       },
