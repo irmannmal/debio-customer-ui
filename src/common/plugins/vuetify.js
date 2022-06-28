@@ -7,7 +7,7 @@ export default new Vuetify({
   theme: {
     themes: {
       light: {
-        primary: "#F006CB",
+        primary: "#C400A5",
         secondary: "#5640a5",
         success: "#52C41B",
         info: "#5640a5",
@@ -16,7 +16,7 @@ export default new Vuetify({
         warning: "#FAAD15"
       },
       dark: {
-        primary: "#F006CB",
+        primary: "#C400A5",
         secondary: "#5640a5",
         success: "#52C41B",
         info: "#5640a5",
