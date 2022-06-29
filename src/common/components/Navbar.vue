@@ -240,7 +240,7 @@ export default {
     metamaskWalletAddress() {
       if (this.metamaskWalletAddress.currentAccount === this.metamaskWalletAddress.accountList[0]) {
         this.loginStatus = true
-        this.getActiveMenu()
+        this.menus.find(menu => menu.active)
         return
       }
       this.loginStatus = false
@@ -348,7 +348,7 @@ export default {
         this.metamaskBalance = balance
         this.setMetamaskBalance(balance)
         this.loginStatus = true
-        this.getActiveMenu()
+        this.menus.find(menu => menu.active)
       }
       this.activeMetamaskAddress = ""
       this.loginStatus = false

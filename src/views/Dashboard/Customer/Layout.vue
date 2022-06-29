@@ -219,6 +219,7 @@ export default {
       { text: "Payment History", disabled: false, active: false, route: "customer-payment-history", icon: creditCardIcon }
     ],
 
+    switchNetwork: false,
     networkName: "",
     currentNetwork: "",
     network: {
@@ -273,7 +274,7 @@ export default {
     }
   },
 
-  async mounted() {
+  async created() {
     if (!this.mnemonicData) this.showModalPassword = true
     await this.getListNotification()
     await this.checkMetamask()

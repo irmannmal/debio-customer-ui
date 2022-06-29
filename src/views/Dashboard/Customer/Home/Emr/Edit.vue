@@ -259,7 +259,8 @@ export default {
       wallet: (state) => state.substrate.wallet,
       lastEventData: (state) => state.substrate.lastEventData,
       mnemonicData: (state) => state.substrate.mnemonicData,
-      web3: (state) => state.metamask.web3
+      web3: (state) => state.metamask.web3,
+      walletBalance: (state) => state.substrate.walletBalance
     }),
 
     computeFiles() {
@@ -410,6 +411,14 @@ export default {
     },
 
     handleNewFile() {
+      if (Number(this.walletBalance) < Number(this.txWeight.split(" ")[0])) {
+        this.error = {
+          title: "Insufficient Balance",
+          message: "Your transaction cannot succeed due to insufficient balance, check your account balance"
+        }
+        return
+      }
+
       this._touchForms("document")
       const { title: docTitle, description: docDescription, file: docFile } = this.isDirty?.document
       if (docTitle || docDescription || docFile) return
@@ -496,6 +505,14 @@ export default {
     },
 
     handleModalPassword() {
+      if (Number(this.walletBalance) < Number(this.txWeight.split(" ")[0])) {
+        this.error = {
+          title: "Insufficient Balance",
+          message: "Your transaction cannot succeed due to insufficient balance, check your account balance"
+        }
+        return
+      }
+
       this._touchForms("emr")
       const isEMRValid = Object.values(this.isDirty?.emr).every(v => v !== null && v === false)
       const isDocumentValid = Object.values(this.isDirty?.document).every(v => v !== null && v === false)
