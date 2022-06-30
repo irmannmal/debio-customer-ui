@@ -102,7 +102,7 @@ export default {
     }
   },
   actions: {
-    async connect({ commit, dispatch, state }) {
+    async connect({ commit }) {
       try {
         commit("SET_IS_CONNECTED", false)
         commit("SET_LOADING_API", true)
@@ -133,7 +133,6 @@ export default {
           "rewards",
           "orders",
           "geneticTesting",
-          "balances",
           "electronicMedicalRecord",
           "geneticData",
           "geneticAnalysisOrders",
@@ -144,28 +143,8 @@ export default {
         api.query.system.events((events) => {
           events.forEach((record) => {
             const { event } = record
-            
             if (allowedSections.includes(event.section)) {
-              const dataEvent = JSON.parse(event.data.toString())
               if (event.method === "OrderPaid") localStorage.removeLocalStorageByName("lastOrderStatus")
-        
-              if (event.method === "OrderRefunded") {
-                const id = dataEvent[0].id
-                const computeId = `${id.substr(0, 4)}...${id.substr(id.length - 4)}`
-                
-                dispatch("addAnyNotification", {
-                  address: state.wallet.address,
-                  dataAdd: {
-                    message: `Your service fee from (${computeId}) has been rejected. Click here to see your order details.`,
-                    data: dataEvent,
-                    route: "order-history-detail",
-                    params: { id: dataEvent[0].id }
-                  },
-                  role: "customer"
-                }) 
-                
-              }
-              
               commit("SET_LAST_EVENT", event)
             }
           })
