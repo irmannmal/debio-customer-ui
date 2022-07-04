@@ -71,7 +71,7 @@ export default {
 
   watch: {
     loadingProgress() {
-      this.progress = `${this.loadingProgress}%`
+      this.progress = `${this.loadingProgress || 0}%`
     }
   },
 

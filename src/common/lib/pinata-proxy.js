@@ -36,10 +36,10 @@ export const uploadFile = val => {
     pinataJwtKey,
     source.token,
     (progressEvent) => {
-      if(!progressEvent.lengthComputable) return
+      if (!progressEvent.lengthComputable) return
 
       let percentCompleted = Math.round( (progressEvent.loaded * 100) / progressEvent.total )
-      store.dispatch("geneticData/getLoadingProgress", { upload: percentCompleted })
+      store.dispatch("geneticData/getLoadingProgress", { upload: percentCompleted || 0 })
     }
   )
 }
@@ -111,7 +111,7 @@ export const downloadWithProgress = async (ipfsLink, withMetaData = false) => {
         const { value } = await reader.read();
         loaded += value.byteLength;
         let percentCompleted = Math.round( (loaded * 100) / total )
-        store.dispatch("geneticData/getLoadingProgress", { download: percentCompleted } )
+        store.dispatch("geneticData/getLoadingProgress", { download: percentCompleted || 0 } )
         controller.enqueue(value);
       } while (loaded < total)
       controller.close();
