@@ -114,7 +114,7 @@ import {
   createGeneticAnalysisOrder, 
   createGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
 import { queryLastGeneticAnalysisOrderByCustomer } from "@/common/lib/polkadot-provider/query/genetic-analysis-orders.js"
-import { downloadWithProgress, uploadFile, getFileUrl } from "@/common/lib/pinata-proxy"
+import { downloadFile, uploadFile, getFileUrl } from "@/common/lib/pinata-proxy"
 // import SpinnerLoader from "@bit/joshk.vue-spinners-css.spinner-loader"
 import UploadingDialog from "@/common/components/Dialog/UploadingDialog"
 
@@ -260,7 +260,7 @@ export default {
       let fileType
       let fileName
       for (let i = 0; i < links.length; i++) {
-        const { name, type, data } = await downloadWithProgress(links[i], true)
+        const { name, type, data } = await downloadFile(links[i], true)
         fileType = type
         fileName = name
         download.push(data)
