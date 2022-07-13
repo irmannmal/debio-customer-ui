@@ -199,52 +199,54 @@ export default {
           })
         }
 
-        if (!Object.hasOwnProperty.call(dataPayment, "genetic_analysis_tracking_id")) {
-          try {
-            isNotGAOrders = true
-            rating = await getRatingService(dataPayment.service_id)
-            txDetails = await this.metamaskDispatchAction(fetchTxHashOrder, dataPayment.id)
-            data = await queryDnaSamples(this.api, dataPayment.dna_sample_tracking_id)
-          } catch (error) {
-            console.error(error)
+        if (Object.values(dataPayment).length) {
+          if (!Object.hasOwnProperty.call(dataPayment, "genetic_analysis_tracking_id")) {
+            try {
+              isNotGAOrders = true
+              rating = await getRatingService(dataPayment.service_id)
+              txDetails = await this.metamaskDispatchAction(fetchTxHashOrder, dataPayment.id)
+              data = await queryDnaSamples(this.api, dataPayment.dna_sample_tracking_id)
+            } catch (error) {
+              console.error(error)
+            }
+
+            this.txHash = txDetails.transaction_hash
+          } else {
+            try {
+              data = await queryGeneticAnalysisByGeneticAnalysisTrackingId(
+                this.api,
+                dataPayment.genetic_analysis_tracking_id
+              )
+            } catch (error) {
+              console.error(error)
+            }
           }
 
-          this.txHash = txDetails.transaction_hash
-        } else {
-          try {
-            data = await queryGeneticAnalysisByGeneticAnalysisTrackingId(
-              this.api,
-              dataPayment.genetic_analysis_tracking_id
-            )
-          } catch (error) {
-            console.error(error)
-          }
+          this.payment = isNotGAOrders
+            ? {
+              ...dataPayment,
+              section: "order",
+              formated_id: `${dataPayment.id.substr(0, 3)}...${dataPayment.id.substr(dataPayment.id.length - 4)}`,
+              test_status: data?.status.replace(/([A-Z]+)/g, " $1").trim(),
+              test_status_class: classes[data?.status.toUpperCase()],
+              rating,
+              status_class: classes[dataPayment.status.toUpperCase()],
+              created_at: parseDate(dataPayment.created_at)
+            }
+            : {
+              ...dataPayment,
+              formated_id: `${dataPayment.id.substr(0, 3)}...${dataPayment.id.substr(dataPayment.id.length - 4)}`,
+              status_class: classes[dataPayment.status.toUpperCase()],
+              test_status: data?.status.replace(/([A-Z]+)/g, " $1").trim(),
+              test_status_class: classes[data?.status.toUpperCase()],
+              genetic_analyst_info: {
+                ...dataPayment.genetic_analyst_info,
+                name: `${dataPayment.genetic_analyst_info.first_name} ${dataPayment.genetic_analyst_info.last_name}`
+              },
+              section: "orderGA",
+              created_at: parseDate(dataPayment.created_at)
+            }
         }
-
-        this.payment = isNotGAOrders
-          ? {
-            ...dataPayment,
-            section: "order",
-            formated_id: `${dataPayment.id.substr(0, 3)}...${dataPayment.id.substr(dataPayment.id.length - 4)}`,
-            test_status: data?.status.replace(/([A-Z]+)/g, " $1").trim(),
-            test_status_class: classes[data?.status.toUpperCase()],
-            rating,
-            status_class: classes[dataPayment.status.toUpperCase()],
-            created_at: parseDate(dataPayment.created_at)
-          }
-          : {
-            ...dataPayment,
-            formated_id: `${dataPayment.id.substr(0, 3)}...${dataPayment.id.substr(dataPayment.id.length - 4)}`,
-            status_class: classes[dataPayment.status.toUpperCase()],
-            test_status: data?.status.replace(/([A-Z]+)/g, " $1").trim(),
-            test_status_class: classes[data?.status.toUpperCase()],
-            genetic_analyst_info: {
-              ...dataPayment.genetic_analyst_info,
-              name: `${dataPayment.genetic_analyst_info.first_name} ${dataPayment.genetic_analyst_info.last_name}`
-            },
-            section: "orderGA",
-            created_at: parseDate(dataPayment.created_at)
-          }
       } catch(e) {
         if (e.response.status === 404)
           this.messageError = "Oh no! We can't find your selected order. Please select another one"
