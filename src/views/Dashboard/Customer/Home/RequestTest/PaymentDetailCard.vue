@@ -90,20 +90,20 @@
         div(v-if="success && status === 'Paid'" class="d-flex justify-space-between align-center pa-4 mt-8 me-3")
           ui-debio-button(
             color="secondary"
-            width="46%"
+            width="50%"
             height="35"
-            @click="toInstruction(dataService.dnaCollectionProcess)"
-            style="font-size: 10px;"
+            style="font-size: 9px;"
+            @click="toPaymentHistory"
             outlined
-            ) View Instruction
+            ) Go To Payment History
 
           ui-debio-button(
             color="secondary"
-            width="46%"
+            width="42%"
             height="35"
-            style="font-size: 10px;"
-            @click="toEtherscan"
-            ) View Etherscan
+            @click="toInstruction(dataService.dnaCollectionProcess)"
+            style="font-size: 9px;"
+            ) View Instruction
 
         div(v-if="status === 'Unpaid'" class="d-flex justify-space-between align-center pa-4 mt-8 me-3")
           ui-debio-button(
@@ -213,7 +213,7 @@ export default {
   async mounted () {
     this.stakingFlow = false
 
-    if(this.$route.params.id) {
+    if(this.$route.params.hash) {
       this.success = true
     }
 
