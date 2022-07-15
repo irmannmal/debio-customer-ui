@@ -1,24 +1,19 @@
-name: Builder
+name: Dev tmp automation
 
 on:
   push:
     branches:
-      - main
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+*'
+      - main-tmp
 
 concurrency:
-  group: builder
+  group: dev-tmp-automation
 
 jobs:
   compute-build-info:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     outputs:
       sha_short: ${{ steps.build-info.outputs.sha_short }}
-      revision_tag: ${{ steps.build-info.outputs.revision_tag }}
-      latest_tag: ${{ steps.build-info.outputs.latest_tag }}
-      pre_release: ${{ steps.build-info.outputs.pre_release }}
-      environment: ${{ steps.build-info.outputs.environment }}
+      date: ${{ steps.build-info.outputs.date }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -28,46 +23,13 @@ jobs:
         id: build-info
         shell: bash
         run: |
-          SHA_SHORT=$(git rev-parse --short HEAD)
-          REVISION_TAG=$SHA_SHORT
-          LATEST_TAG=latest-beta
-          PRE_RELEASE=true
-          ENVIRONMENT=testnet
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "::set-output name=date::$(date +'%Y%m%d')"
 
-          if [[ $GITHUB_REF =~ refs/tags/ ]] ;
-          then
-            TAG=${GITHUB_REF#refs/tags/}
-            VERSION=${TAG%.*}.$((${TAG##*.}))
-            REVISION_TAG=$TAG
-
-            if [[ $TAG =~ [0-9]+.[0-9]+.[0-9]+$ ]] ;
-            then
-                LATEST_TAG=latest
-                PRE_RELEASE=false
-                ENVIRONMENT=mainnet
-            else
-                SUFFIX=$(tmp=${TAG#$VERSION-} ; echo $tmp | sed -r 's/[0-9]//g' )
-                LATEST_TAG=latest-$SUFFIX
-
-                if [[ $TAG =~ [0-9].[0-9].[0-9]-rc* ]] ; then
-                    ENVIRONMENT=mainnet
-                fi
-            fi
-          fi
-          echo "::set-output name=sha_short::$SHA_SHORT"
-          echo "::set-output name=revision_tag::$REVISION_TAG"
-          echo "::set-output name=latest_tag::$LATEST_TAG"
-          echo "::set-output name=pre_release::$PRE_RELEASE"
-          echo "::set-output name=environment::$ENVIRONMENT"
-
-  build:
-    runs-on: ubuntu-20.04
-    needs:
-      - compute-build-info
-    environment: ${{ needs.compute-build-info.outputs.environment }}
-    permissions:
-      contents: 'read'
-      id-token: 'write'
+  build-and-publish-docker-image:
+    environment: development-tmp
+    runs-on: ubuntu-latest
+    needs: compute-build-info
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -94,18 +56,6 @@ jobs:
           VUE_APP_PINATA_KEY=${{ secrets.VUE_APP_PINATA_KEY }}
           VUE_APP_PINATA_SECRET_KEY=${{ secrets.VUE_APP_PINATA_SECRET_KEY }}
           VUE_APP_PINATA_JWT_KEY=${{ secrets.VUE_APP_PINATA_JWT_KEY }}
-          VUE_APP_ETHERSCAN=${{ secrets.VUE_APP_ETHERSCAN }}
-          VUE_APP_PINATA_REQUIRED_DOCUMENT=${{ secrets.VUE_APP_PINATA_REQUIRED_DOCUMENT }}
-          EOF
-      - name: create contract.json file
-        if: ${{ needs.compute-build-info.outputs.environment == 'mainnet' }}
-        shell: bash
-        run: |
-          tee -a .env <<EOF
-          rm -f ./src/store/metamask/contracts/contract.json
-
-          tee -a ./src/store/metamask/contracts/contract.json <<EOF
-          ${{ secrets.CONTRACT_JSON }}
           EOF
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -139,10 +89,10 @@ jobs:
           push: true
           file: .maintain/docker/Dockerfile
           tags: |
-            gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ github.repository }}:${{ needs.compute-build-info.outputs.revision_tag }}
-            gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ github.repository }}:${{ needs.compute-build-info.outputs.latest_tag }}
+            gcr.io/${{ secrets.DEV_GCP_PROJECT_ID }}/${{ github.repository }}:${{ needs.compute-build-info.outputs.sha_short }}-${{ needs.compute-build-info.outputs.date }}
+            gcr.io/${{ secrets.DEV_GCP_PROJECT_ID }}/${{ github.repository }}:latest-pre-alpha-tmp
           cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
       # Temp fix
       # https://github.com/docker/build-push-action/issues/252
       # https://github.com/moby/buildkit/issues/1896
@@ -150,25 +100,54 @@ jobs:
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-  draft-release:
-    if: "startsWith(github.ref, 'refs/tags/')"
-    runs-on: ubuntu-20.04
-    needs: [build, compute-build-info]
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
+
+  deploy:
+    environment: development-tmp
+    runs-on: ubuntu-latest
+    needs: [compute-build-info, build-and-publish-docker-image]
+    env:
+      DEPLOY: ${{ secrets.DEV_DEPLOY }}
     steps:
       - name: Checkout code
+        if: "${{ env.DEPLOY == 'true' }}"
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Build changelog
-        id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Deploy
+        if: "${{ env.DEPLOY == 'true' }}"
+        uses: appleboy/ssh-action@master
         with:
-          configuration: '.github/workflows/rcb_config.json'
-      - name: Create draft release
-        uses: softprops/action-gh-release@v1
-        with:
-          body: ${{ steps.build_changelog.outputs.changelog }}
-          draft: true
-          prerelease: ${{ needs.compute-build-info.outputs.pre_release }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            ./connect.sh
+            helm repo add debio https://charts.debio.network
+            helm repo update
+            helm upgrade debio-customer-ui-tmp debio/debio-customer-ui \
+              --install \
+              --set-string image.repository=gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ github.repository }} \
+              --set-string image.tag=${{ needs.compute-build-info.outputs.sha_short }}-${{ needs.compute-build-info.outputs.date }} \
+              --set-string imagePullSecrets[0].name=gcr-auth \
+              --set ingress.enabled=true \
+              --set-string ingress.annotations."kubernetes\.io/ingress\.class"=nginx \
+              --set-string ingress.annotations."cert-manager\.io/cluster-issuer"=letsencrypt \
+              --set-string ingress.annotations."nginx\.ingress\.kubernetes\.io/limit-rps"="100" \
+              --set-string ingress.hosts[0].host=${{ secrets.INGRESS_HOST }} \
+              --set-string ingress.hosts[0].paths[0].path=/ \
+              --set-string ingress.hosts[0].paths[0].pathType=ImplementationSpecific \
+              --set-string ingress.tls[0].secretName=debio-customer-ui-tmp-tls \
+              --set-string ingress.tls[0].hosts[0]=${{ secrets.INGRESS_HOST }} \
+              --set-string resources.requests.cpu=100m \
+              --set-string resources.requests.memory=256Mi \
+              --set-string resources.limits.cpu=300m \
+              --set-string resources.limits.memory=512Mi \
+              --set replicaCount=1 \
+              --set autoscaling.enabled=true \
+              --set autoscaling.minReplicas=1 \
+              --set autoscaling.maxReplicas=11 \
+              --set-string nodeSelector.pool=general
+            kubectl rollout status deployment/debio-customer-ui-tmp
