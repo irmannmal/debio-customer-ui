@@ -1,7 +1,5 @@
 import CustomerRoutes from "./customer"
 
-const indexRoutes = [
-  ...CustomerRoutes
-]
+const indexRoutes = [...CustomerRoutes]
 
 export default indexRoutes
