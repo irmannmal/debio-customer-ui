@@ -35,7 +35,7 @@
         .menu-card__sub-title Staking Amount
         .menu-card__price
           | {{ stakingAmount }}
-          | {{ currency }}
+          | {{ dataService.currency}}
 
       .menu-card__operation(v-if="stakingFlow") -
       hr.menu-card__line(v-if="stakingFlow")
@@ -43,23 +43,24 @@
       .menu-card__details(v-if="isDeficit && stakingFlow" style="color: red")
         .menu-card__sub-title-medium Remaining Amount
         .menu-card__price-medium
-          | {{ remainingStaking }}
-          | {{ currency }}
+          | {{ remainingAmount }}
+          | {{ dataService.currency}}
 
       .menu-card__details(v-if="isBalanced && stakingFlow")
         .menu-card__sub-title-medium Remaining Amount
         .menu-card__price-medium
           | 0
-          | {{ currency }}
+          | {{ dataService.currency}}
 
       .menu-card__details(v-if="isExcess" style="color: green")
         .menu-card__sub-title-medium Excess Amount
         .menu-card__price-medium
           | {{ excessAmount }}
-          | {{ currency }}
+          | {{ dataService.currency}}
+
 
       div(class="text-center" v-if="status === 'Cancelled'")
-        div(class="d-flex justify-space-between align-center pa-4 mt-8 me-3")
+        div(class="d-flex justify-space-between align-center pa-4 ms-3 me-3")
           ui-debio-button(
             color="secondary"
             width="49%"
@@ -87,7 +88,7 @@
             @click="onSubmit"
             ) Submit Order
 
-        div(v-if="success && status === 'Paid'" class="d-flex justify-space-between align-center pa-4 mt-8 me-3")
+        div(v-if="success && status === 'Paid'" class="d-flex justify-space-between align-center pa-4 ms-3 me-3")
           ui-debio-button(
             color="secondary"
             width="50%"
@@ -105,7 +106,7 @@
             style="font-size: 9px;"
             ) View Instruction
 
-        div(v-if="status === 'Unpaid'" class="d-flex justify-space-between align-center pa-4 mt-8 me-3")
+        div(v-if="status === 'Unpaid'" class="d-flex justify-space-between align-center pa-4 ms-3 me-3")
           ui-debio-button(
             color="primary"
             width="46%"
@@ -121,7 +122,7 @@
             width="46%"
             height="35"
             style="font-size: 10px;"
-            @click="showReceipt = true"
+            @click="onSubmit"
             :disabled="loading"
             ) Pay
             
@@ -143,7 +144,7 @@
       PayRemainingDialog(
         :show="showPayRemainingDialog"
         :amount="remainingDbio"
-        :amountInDai="remainingDai"
+        :amountInDai="remainingAmount"
         @onContinue="onContinue"
         @close="showPayRemainingDialog = false"
       )
@@ -167,7 +168,7 @@ import Kilt from "@kiltprotocol/sdk-js"
 import { u8aToHex } from "@polkadot/util"
 import CancelDialog from "@/common/components/Dialog/CancelDialog"
 import PaymentReceiptDialog from "./PaymentReceiptDialog.vue"
-import { createOrder, cancelOrder } from "@debionetwork/polkadot-provider"
+import { cancelOrder } from "@debionetwork/polkadot-provider"
 import { processRequest } from "@debionetwork/polkadot-provider"
 import { queryLastOrderHashByCustomer, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
 import PayRemainingDialog from "./PayRemainingDialog.vue"
@@ -197,7 +198,7 @@ export default {
     stakingAmount: 0,
     remainingStaking: 0,
     remainingDbio: 0,
-    remainingDai: 0,
+    remainingAmount: 0,
     showPayRemainingDialog: false,
     orderId: "",
     isDeficit: false,
@@ -239,34 +240,27 @@ export default {
     if (this.dataService.serviceFlow === "StakingRequestService") {
       this.stakingFlow = true
       const debioBalance = await getDbioBalance()
-
-      const stakingAmount = Number(this.stakingData.staking_amount.replaceAll(",", "")) * debioBalance.dbioToDai
-
-      this.stakingAmount = Number(formatPrice(stakingAmount)).toFixed(3)
-      const remainingStaking = this.dataService.price - stakingAmount
-      this.remainingDai = remainingStaking
-      this.remainingStaking = Number(formatPrice(remainingStaking)).toFixed(3)
-      this.remainingDbio = Number(formatPrice(remainingStaking / debioBalance.dbioToDai)).toFixed(3)
-
-      const excessAmount = stakingAmount - this.dataService.price
-      this.excessAmount = Number(formatPrice(excessAmount)).toFixed(3)
+      const stakingAmount = Number(formatPrice(this.stakingData.staking_amount))
+      this.stakingAmount = (stakingAmount * debioBalance.dbioToDai).toFixed(3)
+      this.remainingAmount = this.dataService.totalPrice - this.stakingAmount
+      this.excessAmount = this.stakingAmount - this.dataService.totalPrice
 
       if (this.excessAmount > 0) {
         this.isExcess = true
       }
 
-    }
 
-    if (Number(this.stakingAmoung) > Number(this.totalPrice)) {
-      this.isExcess = true
-    }
+      if (Number(this.stakingAmoung) > Number(this.dataService.totalPrice)) {
+        this.isExcess = true
+      }
 
-    if (Number(this.stakingAmount) === Number(this.totalPrice)) {
-      this.isBalanced = true
-    }
+      if (Number(this.stakingAmount) === Number(this.dataService.totalPrice)) {
+        this.isBalanced = true
+      }
 
-    if (Number(this.stakingAmount) < Number(this.totalPrice)) {
-      this.isDeficit = true
+      if (Number(this.stakingAmount) < Number(this.dataService.totalPrice)) {
+        this.isDeficit = true
+      }
     }
 
   },
@@ -336,17 +330,8 @@ export default {
         this.detailOrder = await queryOrderDetailByOrderID(this.api, this.lastOrder)
       }
 
-      if (this.isExcess && this.detailOrder !== "Unpaid") {
-        const customerBoxPublicKey = await this.getCustomerPublicKey()
-        await createOrder(
-          this.api,
-          this.wallet,
-          this.dataService.serviceId,
-          customerBoxPublicKey,
-          this.dataService.serviceFlow,
-          this.dataService.indexPrice,
-          this.processRequestService
-        )
+      if (this.isExcess) {
+        await this.processRequestService()
         return
       }
 
@@ -376,13 +361,6 @@ export default {
         detailOrder.id,
         detailOrder.dnaSampleTrackingId
       )
-
-      this.$router.push({
-        name: "my-test",
-        params: {
-          page: 1
-        }
-      })
 
     },
 
