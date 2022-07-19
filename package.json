@@ -1,7 +1,7 @@
 {
   "name": "debio-web-app",
   "private": true,
-  "version": "2.1.4",
+  "version": "2.1.5",
   "license": "AGPL-3.0",
   "author": "DeBio Dev Team <debio_dev@blocksphere.id>",
   "homepage": "https://www.debio.network",
