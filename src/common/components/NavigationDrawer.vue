@@ -51,6 +51,9 @@
   display: flex
   font-weight: 400
 
+.version
+  @include body-text-3-opensans
+
 .footerDrawer a
   font-size: 13px
   color: grey
@@ -165,6 +168,7 @@
           a(
             href="https://docs.debio.network/"
             target="_blank"
+            rel="noreferrer noopener nofollow"
             style="text-decoration: none"
           )
             div
@@ -176,11 +180,28 @@
                 viewBox="0 0 18 18"
               )
               span Customer Care
+          a.mt-3.d-block(
+            href="https://docs.debio.network/legal/terms-and-condition"
+            target="_blank"
+            rel="noreferrer noopener nofollow"
+            style="text-decoration: none"
+          )
+            div
+              ui-debio-icon.btnDrawerIcon(
+                :icon="alertIcon"
+                size="16"
+                stroke
+                :color="'#757274'"
+              )
+              span Terms and Condition
+          div.version.mt-16.mb-10.d-flex
+            span.mr-12 DeBio Network
+            span {{ version }}
 </template>
 
 <script>
 
-import { bookIcon } from "@debionetwork/ui-icons"
+import { bookIcon, alertIcon } from "@debionetwork/ui-icons"
 
 export default {
   name: "NavigationDrawer",
@@ -192,8 +213,15 @@ export default {
   },
 
   data: () => ({
-    bookIcon
+    bookIcon,
+    alertIcon,
+
+    version: ""
   }),
+
+  created() {
+    this.version = `v${process.env.VUE_APP_VERSION}`
+  },
 
   methods: {
     openHref(href){
@@ -201,9 +229,8 @@ export default {
     },
 
     customClass(active) {
-      if (active) {
-        return "font-weight-bold sidebar-text primary--text activeButton"
-      }
+      if (active) return "font-weight-bold sidebar-text primary--text activeButton"
+
       return "font-weight-bold sidebar-text"
     }
   }
