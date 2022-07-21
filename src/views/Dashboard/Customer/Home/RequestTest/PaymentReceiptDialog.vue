@@ -73,6 +73,25 @@
       @close="showError = false"
     )
 
+    ui-debio-modal.modal-switch-network(
+      :show-title="false"
+      :showCta="true"
+      :show="switchNetwork"
+      class="font-weight-bold"
+      disable-dismiss
+    )
+      h6.modal-switch-network__title Wrong Network
+      p.modal-switch-network__subtitle You need to connect your Metamask to 
+        b {{ networkName }}  
+        | to use this app, currently you are connected to 
+        b {{ currentNetwork }}
+      ui-debio-button(
+        slot="cta"
+        color="secondary"
+        width="427"
+        @click="toChangeNetwork"
+      ) Switch to {{ networkName }}
+
     ui-debio-alert-dialog(
       :show="showAlert"
       :width="289"
@@ -96,7 +115,7 @@ import {
   createOrder,
   createOrderFee
 } from "@debionetwork/polkadot-provider"
-import { startApp, getTransactionReceiptMined } from "@/common/lib/metamask"
+import { startApp, getTransactionReceiptMined, handleSwitchChain } from "@/common/lib/metamask"
 import { getBalanceETH, getBalanceDAI } from "@/common/lib/metamask/wallet.js"
 import { approveDaiStakingAmount, checkAllowance, sendPaymentOrder  } from "@/common/lib/metamask/escrow"
 import CryptoJS from "crypto-js"	
@@ -140,7 +159,14 @@ export default {
     errorTitle: "",
     errorMsg: "",
     txWeight: "",
-    customerBoxPublicKey: null
+    customerBoxPublicKey: null,
+    switchNetwork: false,
+    networkName: "",
+    currentNetwork: "",
+    network: {
+      "Ethereum Mainnet": "0x1",
+      "Rinkeby Test Network": "0x4"
+    }
   }),
 
   computed: {
@@ -203,10 +229,34 @@ export default {
       this.txWeight = this.web3.utils.fromWei(String(txWeight.partialFee), "ether")
     },
 
+    async checkMetamask(){
+      this.metamask = await startApp()
+
+      if (process.env.VUE_APP_ROLE === "development") {
+        this.networkName = "Rinkeby Test Network"
+        if (this.metamask?.network === this.network[this.networkName]) return
+        this.switchNetwork = true
+        this.metamask?.network === "0x1" ? this.currentNetwork = "Ethereum Mainnet" : this.currentNetwork = "other Network"
+        return
+      }
+
+      this.networkName = "Ethereum Mainnet"
+      if (this.metamask?.network === this.network[this.networkName]) return
+      this.switchNetwork = true
+      this.metamask?.network === "0x4" ? this.currentNetwork = "Rinkeby Test Network" : this.currentNetwork = "other Network"
+    },
+
+    async toChangeNetwork() {
+      await handleSwitchChain(this.network[this.networkName])
+    },
+
     async onSubmit () {
       this.isLoading = true
       this.error = ""
+
+      await this.checkMetamask()
       try {
+        if (this.switchNetwork) return
 
         this.lastOrder = await queryLastOrderHashByCustomer(
           this.api,
@@ -427,4 +477,17 @@ export default {
       letter-spacing: -0.0044em
       @include body-text-2
 
+  .modal-switch-network
+    width: 523px
+    gap: 1rem
+    border-radius: 10px
+
+    &__title
+      @include body-text-2-opensans
+
+    &__subtitle 
+      max-width: 427px
+      text-align: center
+      color: #595959
+      @include body-text-3-opensans
 </style>
