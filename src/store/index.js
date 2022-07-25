@@ -6,7 +6,6 @@ import metamask from "./metamask"
 import testRequest from "./test-request"
 import substrate from "./substrate"
 import lab from "./lab"
-import wallet from "./wallet"
 import rating from "./rating"
 import geneticData from "./genetic-data"
 
@@ -23,7 +22,6 @@ export default new Vuex.Store({
     testRequest,
     substrate,
     lab,
-    wallet,
     rating,
     geneticData
   },

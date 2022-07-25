@@ -135,7 +135,8 @@ export default {
           "electronicMedicalRecord",
           "geneticData",
           "geneticAnalysisOrders",
-          "geneticAnalysis"
+          "geneticAnalysis",
+          "userProfile"
         ]
 
         // Example of how to subscribe to events via storage

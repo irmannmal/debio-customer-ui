@@ -131,6 +131,7 @@ import { queryAccountBalance, queryEthAdressByAccountId } from "@debionetwork/po
 import { getBalanceDAI } from "@/common/lib/metamask/wallet"
 import { startApp } from "@/common/lib/metamask"
 import { handleSetWallet } from "@/common/lib/wallet"
+import { walletBinding } from "@/common/lib/api"
 
 export default {
   name: "Navbar",
@@ -331,27 +332,19 @@ export default {
 
     async checkMetamask() {
       this.loginStatus = false
-      this.ethRegisterAddress = await queryEthAdressByAccountId(
-        this.api,
-        this.wallet.address
-      )
+      this.ethRegisterAddress = await queryEthAdressByAccountId(this.api, this.wallet.address)
 
-      if (!this.ethRegisterAddress) {
-        this.loginStatus = false
-        return
+      if (this?.ethRegisterAddress) {
+        const accountDetail = await startApp()
+        if (accountDetail.currentAccount === this.ethRegisterAddress) {
+          this.activeMetamaskAddress = this.ethRegisterAddress
+          const balance = await getBalanceDAI(this.ethRegisterAddress)
+          this.metamaskBalance = balance
+          this.setMetamaskBalance(balance)
+          this.loginStatus = true
+          this.menus.find(menu => menu.active)
+        }
       }
-
-      const accountDetail = await startApp()
-      if (accountDetail.currentAccount === this.ethRegisterAddress) {
-        this.activeMetamaskAddress = this.ethRegisterAddress
-        const balance = await getBalanceDAI(this.ethRegisterAddress)
-        this.metamaskBalance = balance
-        this.setMetamaskBalance(balance)
-        this.loginStatus = true
-        this.menus.find(menu => menu.active)
-      }
-      this.activeMetamaskAddress = ""
-      this.loginStatus = false
     },
 
     async connectToMetamask() {
@@ -365,15 +358,22 @@ export default {
         return
       }
 
-      const account = await handleSetWallet("metamask", this.ethRegisterAddress)
-      this.metamaskBalance = await getBalanceDAI(this.ethRegisterAddress)
-      const accountId = localStorage.getAddress()
-      const ethAddress = account[0].address
+      let account = await handleSetWallet("metamask", this.ethAccount.currentAccount)
+      
+      if (!this.ethRegisterAddress) {
+        account = await handleSetWallet("metamask", this.ethAccount.currentAccount)
+        const accountId = this.wallet.address
+        const ethAddress = account[0].address
+        await walletBinding({accountId, ethAddress})
+        this.activeMetamaskAddress = account[0].address
+        this.metamaskBalance = account[0].daiBalance
+        this.setMetamaskBalance(this.metamaskBalance)
+      }
+      this.metamaskWalletAddress = account[0].address
+      this.menus.find(menu => menu.type === "metamask").active = true
 
-      await this.$store.dispatch("wallet/walletBinding", {accountId, ethAddress})
       this.loading = false
       this.loginStatus = true
-      this.menus.find(menu => menu.type === "metamask").active = true
     },
 
     disconnectWallet() {

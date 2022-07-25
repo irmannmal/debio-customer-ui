@@ -102,6 +102,14 @@
       @click="toPaymentHistory"
       )
 
+    InstallMetamask(
+      :show="showMetamask"
+      :button="metamaskButton"
+      :title="metamaskTitle"
+      :loading="isLoadingButton"
+      @close="showMetamask = false"
+      @onClick="connectWallet"
+    )
 </template>
 
 <script>
@@ -123,13 +131,15 @@ import Kilt from "@kiltprotocol/sdk-js"
 import { u8aToHex } from "@polkadot/util"
 import { errorHandler } from "@/common/lib/error-handler"
 import SpinnerLoader from "@bit/joshk.vue-spinners-css.spinner-loader"
-import { postTxHash } from "@/common/lib/api"
+import InstallMetamask from "@/common/components/Dialog/InstallMetamask.vue"
+import { postTxHash, walletBinding } from "@/common/lib/api"
 
 export default {
   name: "PaymentReceiptDialog",
 
   components: {
-    SpinnerLoader
+    SpinnerLoader,
+    InstallMetamask
   },
 
   mixins: [serviceHandlerMixin],
@@ -141,10 +151,7 @@ export default {
   },
 
   data: () => ({
-    password: "",
     error: "",
-    showPassword: false,
-    showDialog: false,
     ethSellerAddress: null,
     ethAccount: null,
     isCompleted: false,
@@ -166,7 +173,10 @@ export default {
     network: {
       "Ethereum Mainnet": "0x1",
       "Rinkeby Test Network": "0x4"
-    }
+    },
+    showMetamask: false,
+    metamaskButton: "",
+    isLoadingButton: false
   }),
 
   computed: {
@@ -188,13 +198,17 @@ export default {
 
         if (event.method === "OrderPaid") {
           this.isLoading = false
-          this.password = ""
           this.$router.push({ 
             name: "customer-request-test-success",
             params: {
               hash: dataEvent[0].id
             }
           })
+        }
+
+        if (event.method === "EthAddressSet") {
+          this.isLoadingButton = false
+          this.showMetamask = false
         }
       }      
     }
@@ -211,6 +225,15 @@ export default {
   },
 
   methods: {
+    async connectWallet() {
+      this.isLoadingButton = true
+      const accountDetail = await startApp()
+      console.log(accountDetail)
+      const accountId = this.wallet.address
+      const ethAddress = accountDetail.currentAccount
+      await walletBinding({accountId, ethAddress})
+    },
+
     async getCustomerPublicKey() {
       const identity = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
       this.customerBoxPublicKey = u8aToHex(identity.boxKeyPair.publicKey)
@@ -254,7 +277,6 @@ export default {
       this.isLoading = true
       this.error = ""
 
-      await this.checkMetamask()
       try {
         if (this.switchNetwork) return
 
@@ -278,15 +300,20 @@ export default {
 
         if (this.ethAccount.currentAccount === "no_install") {
           this.isLoading = false
-          this.password = ""
-          this.showError = true
+          this.showMetamask = true
+          this.metamaskButton = "Install"
+          this.metamaskTitle = "Metamask Not Found!"
           this.errorMsg = "Please install MetaMask!"
           this.closeDialog()
           return
         }
 
+        await this.checkMetamask()
+
         if (ethAddress !== this.ethAccount.accountList[0]) {
-          this.showError = true
+          this.showMetamask = true
+          this.metamaskButton = "Connect"
+          this.metamaskTitle = "Connect Metamask"
           this.errorMsg = "Please connect your wallet"
           this.closeDialog()
           return
@@ -296,7 +323,6 @@ export default {
         const balance = await getBalanceETH(ethAddress)
         if (balance <= 0 ) {
           this.isLoading = false
-          this.password = ""
           this.showError = true
           this.errorMsg = "You don't have enough ETH"
           this.closeDialog()
@@ -307,7 +333,6 @@ export default {
         const daiBalance = await getBalanceDAI(ethAddress)
         if (Number(daiBalance) < Number(this.selectedService.totalPrice)) {
           this.isLoading = false
-          this.password = ""
           this.showError = true
           this.errorMsg = "You don't have enough DAI"
           this.closeDialog()
@@ -337,7 +362,6 @@ export default {
         }
       } catch (err) {
         this.isLoading = false
-        this.password = ""
         const error = await errorHandler(err.message)
         this.showError = true
         this.errorTitle = error.title
@@ -370,7 +394,6 @@ export default {
         
       } catch (err) {
         this.isLoading = false
-        this.password = ""
         this.showError = true
         const error = await errorHandler(err.message)
         this.error = error.message

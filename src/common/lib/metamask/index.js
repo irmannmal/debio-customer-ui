@@ -1,6 +1,6 @@
 import store from "@/store"
 import detectEthereumProvider from "@metamask/detect-provider"
-import { getBalanceETH } from "./wallet"
+import { getBalanceETH, getBalanceDAI } from "./wallet"
 
 export async function handleAccountsChanged(accounts, currentAccount) {
   if (accounts.length === 0) {
@@ -104,6 +104,8 @@ export async function setMetamaskWallet(address) {
     ethAccount.accountList[0]
   )
 
+  const daiBalance = await getBalanceDAI(ethAccount.accountList[0])
+
   let isActive = false
   if (address == ethAccount.accountList[0]) {
     isActive = true
@@ -113,6 +115,7 @@ export async function setMetamaskWallet(address) {
     address: ethAccount.accountList[0],
     name: "Account 1",
     balance: parseFloat(balance).toFixed(2),
+    daiBalance: parseFloat(daiBalance).toFixed(2),
     active: isActive
   })
 
