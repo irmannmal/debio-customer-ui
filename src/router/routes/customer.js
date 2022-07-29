@@ -25,28 +25,28 @@ export default [
         }
       },
       {
-        path: "emr",
-        name: "customer-emr",
-        meta: { pageHeader: "My EMR" },
-        component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/Emr")
+        path: "phr",
+        name: "customer-phr",
+        meta: { pageHeader: "My PHR" },
+        component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/Phr")
       },
       {
-        path: "emr/upload",
-        name: "customer-emr-create",
-        meta: { pageHeader: "Upload EMR" },
-        component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/Emr/Create")
+        path: "phr/upload",
+        name: "customer-phr-create",
+        meta: { pageHeader: "Upload PHR" },
+        component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/Phr/Create")
       },
       {
-        path: "emr/edit/:id?",
-        name: "customer-emr-edit",
-        meta: { pageHeader: "Edit EMR", parent: "customer-emr" },
-        component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/Emr/Edit")
+        path: "phr/edit/:id?",
+        name: "customer-phr-edit",
+        meta: { pageHeader: "Edit PHR", parent: "customer-phr" },
+        component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/Phr/Edit")
       },
       {
-        path: "emr/details/:id?",
-        name: "customer-emr-details",
-        meta: { pageHeader: "Details", parent: "customer-emr" },
-        component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/Emr/Details")
+        path: "phr/details/:id?",
+        name: "customer-phr-details",
+        meta: { pageHeader: "Details PHR", parent: "customer-phr" },
+        component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/Phr/Details")
       },
       {
         path: "my-test/:page?",

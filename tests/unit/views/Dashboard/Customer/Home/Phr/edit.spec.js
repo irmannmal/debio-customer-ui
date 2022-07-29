@@ -1,5 +1,5 @@
 import { createLocalVue, shallowMount, config } from "@vue/test-utils"
-import CustomerEmrEdit from "@/views/Dashboard/Customer/Home/Emr/Edit"
+import CustomerPHREdit from "@/views/Dashboard/Customer/Home/Phr/Edit"
 import Vuex from "vuex"
 import Vuetify from "vuetify"
 
@@ -9,7 +9,7 @@ config.stubs["ui-debio-modal"] = { template: "<div></div>" }
 config.stubs["ui-debio-banner"] = { template: "<div></div>" }
 config.stubs["ui-debio-dropdown"] = { template: "<div></div>" }
 
-describe("Customer EMR Dashboard", () => {
+describe("Customer PHR Dashboard", () => {
   let container
   let localVue = null
 
@@ -24,12 +24,12 @@ describe("Customer EMR Dashboard", () => {
   })
 
   it("Should render", () => {
-    CustomerEmrEdit.methods = {
+    CustomerPHREdit.methods = {
       initialData: jest.fn(), 
       initialDataKey: jest.fn(), 
       fetchCategories: jest.fn() 
     };
-    container = shallowMount(CustomerEmrEdit, {
+    container = shallowMount(CustomerPHREdit, {
       localVue,
       vuetify: new Vuetify(),
       store: new Vuex.Store({

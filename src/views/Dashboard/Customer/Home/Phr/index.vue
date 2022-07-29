@@ -1,6 +1,5 @@
 <template lang="pug">
-.customer-emr
-
+.customer-phr
   ui-debio-error-dialog(
     :show="!!error"
     :title="error ? error.title : ''"
@@ -15,7 +14,7 @@
   )
     h2.mb-10 Delete
     ui-debio-icon.mb-8(:icon="alertTriangleIcon" stroke size="80")
-    p.modal-password__subtitle(v-if="selectedFile") You might not be retrieved back, are you sure you want to delete this EMR ?
+    p.modal-password__subtitle(v-if="selectedFile") You might not be retrieved back, are you sure you want to delete this PHR ?
 
     p.modal-password__tx-info.mb-0.d-flex
       span.modal-password__tx-text.mr-6.d-flex.align-center
@@ -41,8 +40,8 @@
       ) Delete
 
   ui-debio-banner(
-    title="My EMR"
-    subtitle="Here, you can upload a collection of your Electronic Medical Records (medical history, diagnoses, medications, treatment plans, immunization dates, allergies, radiology images, and laboratory)."
+    title="My PHR"
+    subtitle="Upload a collection of your Personal Health Records that involved in your medical history (diagnoses, treatment plans, immunization, allergies, radiology and laboratory)."
     gradient-color="primary"
     with-decoration
   )
@@ -52,34 +51,34 @@
   ui-debio-data-table(
     :headers="headers"
     :loading="isLoading"
-    :items="emrDocuments"
+    :items="phrDocuments"
   )
     template(slot="prepend")
-      .customer-emr__nav
-        .customer-emr__nav-text
-          h2.customer-emr__title My EMR List
-          p.customer-emr__subtitle.mb-0 Your Electronic Medical Records
+      .customer-phr__nav
+        .customer-phr__nav-text
+          h2.customer-phr__title My PHR List
+          p.customer-phr__subtitle.mb-0 List of My Personal Health Records
     template(v-slot:[`item.title`]="{ item }")
       .d-flex.flex-column
-        span.customer-emr__document-title(:title="item.title") {{ item.title }}
+        span.customer-phr__document-title(:title="item.title") {{ item.title }}
 
     template(v-slot:[`item.category`]="{ item }")
       .d-flex.flex-column
-        span.customer-emr__document-category(:title="item.category") {{ item.category }}
+        span.customer-phr__document-category(:title="item.category") {{ item.category }}
 
     template(v-slot:[`item.documentTitle`]="{ item }")
       .d-flex.flex-column
-        span.customer-emr__file-title(v-for="(file, idx) in item.files" :title="file.title") {{ idx + 1 }}. {{ file.title }}
+        span.customer-phr__file-title(v-for="(file, idx) in item.files" :title="file.title") {{ idx + 1 }}. {{ file.title }}
 
     template(v-slot:[`item.documentDescription`]="{ item }")
       .d-flex.flex-column
-        span.customer-emr__file-description(v-for="(file, idx) in item.files" :title="file.description") {{ idx + 1 }}. {{ file.description }}
+        span.customer-phr__file-description(v-for="(file, idx) in item.files" :title="file.description") {{ idx + 1 }}. {{ file.description }}
 
     template(v-slot:[`item.createdAt`]="{ item }")
       span {{ item.createdAt }}
 
     template(v-slot:[`item.actions`]="{ item }")
-      .customer-emr__actions
+      .customer-phr__actions
         ui-debio-icon(:icon="pencilIcon" size="16" role="button" stroke @click="onEdit(item)")
         ui-debio-icon(:icon="eyeIcon" size="16" role="button" stroke @click="onDetails(item)")
         ui-debio-icon(:icon="trashIcon" size="16" role="button" stroke @click="handleOpenModalDelete(item)")
@@ -111,7 +110,7 @@ import { errorHandler } from "@/common/lib/error-handler"
 import metamaskServiceHandler from "@/common/lib/metamask/mixins/metamaskServiceHandler"
 
 export default {
-  name: "CustomerEmr",
+  name: "CustomerPHR",
   mixins: [metamaskServiceHandler],
 
 
@@ -138,7 +137,7 @@ export default {
     secretKey: null,
     headers: [
       {
-        text: "EMR Title",
+        text: "PHR Title",
         value: "title",
         sortable: true
       },
@@ -169,7 +168,7 @@ export default {
         align: "center"
       }
     ],
-    emrDocuments: []
+    phrDocuments: []
   }),
 
   computed: {
@@ -189,7 +188,7 @@ export default {
         const dataEvent = JSON.parse(this.lastEventData.data.toString())
 
         if (this.lastEventData.method === "ElectronicMedicalRecordRemoved") {
-          if (dataEvent[1] === this.wallet.address) this.getEMRHistory()
+          if (dataEvent[1] === this.wallet.address) this.getPHRHistory()
         }
       }
     },
@@ -208,7 +207,7 @@ export default {
 
   async created() {
     if (this.mnemonicData) this.initialDataKey()
-    await this.metamaskDispatchAction(this.getEMRHistory)
+    await this.metamaskDispatchAction(this.getPHRHistory)
   },
 
   methods: {
@@ -219,30 +218,30 @@ export default {
       this.secretKey = u8aToHex(cred.boxKeyPair.secretKey)
     },
 
-    async getEMRHistory() {
+    async getPHRHistory() {
       this.showModal = false
       this.isLoading = true
       const documents = []
 
       try {
-        const dataEMR = await queryElectronicMedicalRecordByOwnerId(this.api, this.wallet.address)
+        const dataPHR = await queryElectronicMedicalRecordByOwnerId(this.api, this.wallet.address)
 
-        if (dataEMR !== null || !dataEMR.length) {
-          const listEMR = dataEMR.reduce((filtered, current) => {
+        if (dataPHR !== null || !dataPHR?.length) {
+          const listPHR = dataPHR.reduce((filtered, current) => {
             if (filtered.every(v => v.id !== current.id)) filtered.push(current)
 
             return filtered
           }, [])
 
-          listEMR.reverse()
+          listPHR.reverse()
 
-          for (const emrDetail of listEMR) {
-            const documentDetail = await this.prepareEMRData(emrDetail)
+          for (const phrDetail of listPHR) {
+            const documentDetail = await this.preparePHRData(phrDetail)
             documents.push(documentDetail)
           }
         }
 
-        this.emrDocuments = documents
+        this.phrDocuments = documents
         this.isLoading = false
       } catch (error) {
         this.isLoading = false
@@ -250,20 +249,20 @@ export default {
       }
     },
 
-    async prepareEMRData(dataEMR) {
+    async preparePHRData(dataPHR) {
       let files = []
 
-      for (let i = 0; i < dataEMR.files?.length; i++) {
+      for (let i = 0; i < dataPHR.files?.length; i++) {
         const file = await this.metamaskDispatchAction(queryElectronicMedicalRecordFileById,
           this.api,
-          dataEMR.files[i]
+          dataPHR.files[i]
         )
 
-        dataEMR.createdAt = new Date(+file.uploadedAt.replaceAll(",", "")).toLocaleDateString("id", {
+        dataPHR.createdAt = new Date(+file.uploadedAt.replaceAll(",", "")).toLocaleDateString("id", {
           day: "2-digit",
           month: "short",
           year: "numeric"
-        }),
+        })
 
         files.push({
           ...file,
@@ -277,20 +276,20 @@ export default {
       }
 
       return {
-        id: dataEMR.id,
-        title: dataEMR.title,
-        category: dataEMR.category,
-        createdAt: dataEMR.createdAt,
+        id: dataPHR.id,
+        title: dataPHR.title,
+        category: dataPHR.category,
+        createdAt: dataPHR.createdAt,
         files: files?.slice(0, 3)
       }
     },
 
-    onEdit(emr) {
-      this.$router.push({ name: "customer-emr-edit", params: { id: emr.id }})
+    onEdit(phr) {
+      this.$router.push({ name: "customer-phr-edit", params: { id: phr.id }})
     },
 
-    onDetails(emr) {
-      this.$router.push({ name: "customer-emr-details", params: { id: emr.id }})
+    onDetails(phr) {
+      this.$router.push({ name: "customer-phr-details", params: { id: phr.id }})
     },
 
     handleShowPassword() {
@@ -334,7 +333,7 @@ export default {
 <style lang="sass" scoped>
   @import "@/common/styles/mixins.sass"
 
-  .customer-emr
+  .customer-phr
     display: flex
     flex-direction: column
     gap: 30px

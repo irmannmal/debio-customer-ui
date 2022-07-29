@@ -110,13 +110,13 @@
                 outlined
                 height="35px"
                 style="font-size: 13px"
-                @click="goToUploadEMR"
+                @click="goToUploadPHR"
                 class="font-weight-bold sidebar-text mt-4 dg-raleway-font"
                 color="primary"
                 :bind="attrs"
                 :on="on"
-              ) Upload EMR
-            span Upload your Electronic Medical Record
+              ) Upload PHR
+            span Upload Upload Personal Health Records
 
           v-tooltip(bottom)
             template(v-slot:activator="{ on, attrs }")
@@ -192,7 +192,7 @@ export default {
     navs: [
       { text: "Dashboard", disabled: false, active: false, route: "customer-dashboard", icon: gridIcon },
       { text: "My Test", disabled: false, active: false, route: "my-test", icon: boxIcon },
-      { text: "My EMR", disabled: false, active: false, route: "customer-emr", icon: fileTextIcon },
+      { text: "My PHR", disabled: false, active: false, route: "customer-phr", icon: fileTextIcon },
       { text: "My Genetic Data", disabled: false, active: false, route: "customer-genetic-data", icon: geneticDnaIcon},
       { text: "Data Bounty", disabled: false, active: false, route: "customer-data-bounty", icon: databaseIcon },
       { text: "Payment History", disabled: false, active: false, route: "customer-payment-history", icon: creditCardIcon }
@@ -274,8 +274,8 @@ export default {
       this.$router.push({name: "customer-request-test"})
     },
 
-    goToUploadEMR() {
-      this.$router.push({name: "customer-emr-create"})
+    goToUploadPHR() {
+      this.$router.push({name: "customer-phr-create"})
     },
 
     goToRequestAnalysis() {

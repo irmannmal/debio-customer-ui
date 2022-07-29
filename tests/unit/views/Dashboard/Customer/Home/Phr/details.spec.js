@@ -1,15 +1,15 @@
 import { createLocalVue, shallowMount, config } from "@vue/test-utils"
-import CustomerEmrDetails from "@/views/Dashboard/Customer/Home/Emr/Details"
+import CustomerPHRDetails from "@/views/Dashboard/Customer/Home/Phr/Details"
 import Vuex from "vuex"
 import Vuetify from "vuetify"
 
 config.stubs["ui-debio-modal"] = { template: "<div></div>" }
 config.stubs["ui-debio-icon"] = { template: "<div></div>" }
 
-const emrDocument = {
+const phrDocument = {
   "id": "0x6fd2cdd531c056d432d00185a000f19e86ac99c0c5330fd98c02dfec7137ade6",
   "ownerId": "5Da5aHSoy3Bxb7Kxo4HuPLY7kE9FKxEg93dVhCKeXJ5JGY25",
-  "title": "EMR Dicki Maulana Yusuf",
+  "title": "PHR Dicki Maulana Yusuf",
   "category": "Vaccinations",
   "files": [
     {
@@ -39,7 +39,7 @@ const emrDocument = {
   ]
 }
 
-describe("Customer EMR Dashboard Details", () => {
+describe("Customer PHR Dashboard Details", () => {
   let container
   let localVue = null
 
@@ -53,10 +53,10 @@ describe("Customer EMR Dashboard Details", () => {
   })
 
   it("Should render", () => {
-    CustomerEmrDetails.methods = {
+    CustomerPHRDetails.methods = {
       initialData: jest.fn()
     };
-    container = shallowMount(CustomerEmrDetails, {
+    container = shallowMount(CustomerPHRDetails, {
       localVue,
       vuetify: new Vuetify(),
       store: new Vuex.Store({
@@ -75,7 +75,7 @@ describe("Customer EMR Dashboard Details", () => {
         }
       }),
       data() {
-        return { emrDocument }
+        return { phrDocument }
       }
     })
 

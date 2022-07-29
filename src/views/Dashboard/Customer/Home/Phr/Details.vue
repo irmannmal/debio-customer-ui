@@ -1,46 +1,46 @@
 <template lang="pug">
-  .customer-emr-details
+  .customer-phr-details
     ui-debio-modal(
       :show="!!messageError"
       :show-title="false"
       :show-cta="false"
-      @onClose="$router.push({ name: 'customer-emr' })"
+      @onClose="$router.push({ name: 'customer-phr' })"
     )
       | {{ messageError }}
 
-    .customer-emr-details__wrapper
-      .customer-emr-details__emr
-        .customer-emr-details__emr-title List of {{ emrDocument.title }}
-        .customer-emr-details__emr-documents
-          template(v-if="!emrDocument.files.length")
-            .customer-emr-details__document.customer-emr-details__document--skeleton
-            .customer-emr-details__document.customer-emr-details__document--skeleton
-            .customer-emr-details__document.customer-emr-details__document--skeleton
+    .customer-phr-details__wrapper
+      .customer-phr-details__phr
+        .customer-phr-details__phr-title List of {{ phrDocument.title }}
+        .customer-phr-details__phr-documents
+          template(v-if="!phrDocument.files.length")
+            .customer-phr-details__document.customer-phr-details__document--skeleton
+            .customer-phr-details__document.customer-phr-details__document--skeleton
+            .customer-phr-details__document.customer-phr-details__document--skeleton
           template(v-else)
-            .customer-emr-details__document(
-              v-for="(document, idx) in emrDocument.files"
+            .customer-phr-details__document(
+              v-for="(document, idx) in phrDocument.files"
               :key="idx"
               role="button"
               :title="document.title"
-              :class="{ 'customer-emr-details__document--active': selected === idx }"
+              :class="{ 'customer-phr-details__document--active': selected === idx }"
               @click="parseResult(idx, document)"
             )
-              ui-debio-icon.customer-emr-details__document-icon(
+              ui-debio-icon.customer-phr-details__document-icon(
                 :icon="fileTextIcon"
                 size="28"
                 color="#D3C9D1"
                 fill
               )
-              label.customer-emr-details__document-title(
+              label.customer-phr-details__document-title(
                 :aria-label="document.title"
               ) {{ document.title }}
       keep-alive
-        .customer-emr-details__viewer
-          .customer-emr-details__viewer-wrapper(
-            :class="{ 'customer-emr-details__viewer-wrapper--animated': isLoading }"
+        .customer-phr-details__viewer
+          .customer-phr-details__viewer-wrapper(
+            :class="{ 'customer-phr-details__viewer-wrapper--animated': isLoading }"
           )
-            h3.customer-emr-details__viewer-loading.text-center(v-if="isLoading") {{ message }}
-            embed.customer-emr-details__viewer-content(
+            h3.customer-phr-details__viewer-loading.text-center(v-if="isLoading") {{ message }}
+            embed.customer-phr-details__viewer-content(
               v-if="!isLoading && result"
               :src="`${result}#view=fitH`"
               type="application/pdf"
@@ -60,7 +60,7 @@ import {
 } from "@debionetwork/polkadot-provider"
 
 export default {
-  name: "CustomerEmrDetails",
+  name: "CustomerPHRDetails",
 
   data: () => ({
     fileTextIcon,
@@ -73,7 +73,7 @@ export default {
     result: null,
     message: "Please wait",
     selected: null,
-    emrDocument: {}
+    phrDocument: {}
   }),
 
   computed: {
@@ -117,7 +117,7 @@ export default {
         return
       }
 
-      this.emrDocument = data
+      this.phrDocument = data
 
       for (const file of data.files) {
         const dataFile = await queryElectronicMedicalRecordFileById(this.api, file)
@@ -125,11 +125,11 @@ export default {
         files.push(dataFile)
       }
 
-      this.emrDocument.files = files
+      this.phrDocument.files = files
 
-      if (this.emrDocument?.files.length) await this.parseResult(
+      if (this.phrDocument?.files.length) await this.parseResult(
         0,
-        { recordLink: this.emrDocument?.files[0].recordLink }
+        { recordLink: this.phrDocument?.files[0].recordLink }
       )
     },
 
@@ -168,7 +168,7 @@ export default {
 
 <style lang="sass">
   @import "@/common/styles/mixins.sass"
-  .customer-emr-details
+  .customer-phr-details
     padding: 80px 35px
     background: #ffffff
     border-radius: 4px
@@ -177,13 +177,13 @@ export default {
       display: flex
       gap: 35px
 
-    &__emr
+    &__phr
       width: 255px
 
-    &__emr-title
+    &__phr-title
       @include body-text-medium-2
 
-    &__emr-documents
+    &__phr-documents
       display: flex
       flex-direction: column
       gap: 10px

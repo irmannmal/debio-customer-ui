@@ -38,6 +38,10 @@
           validate-on-blur
         )
 
+        .genetic-data-add__files-title.mt-5(v-if="!document.file")
+          p File Information
+          p.mb-0 Before uploading the document make sure to censored the KYC related in uploaded file
+
         ui-debio-file(
           withTooltip
           tooltipDesc="To upload file that bigger than 200 MB, you may compress the file into a .zip, .rar, .7zip file"
@@ -478,6 +482,15 @@ export default {
   .genetic-data-add
     width: 100%
     height: 100%
+
+    &__files-title
+      margin-bottom: 24px
+
+      p:first-of-type
+        @include button-2
+
+      p
+        @include body-text-3-opensans
 
     &__wrapper
       background: #ffffff

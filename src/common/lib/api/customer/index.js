@@ -1,6 +1,6 @@
 export * from "./categories"
 export * from "./debio-balance"
-export * from "./emr"
+export * from "./phr"
 export * from "./gcs"
 export * from "./labs"
 export * from "./location"

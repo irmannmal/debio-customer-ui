@@ -1,5 +1,5 @@
 <template lang="pug">
-  .customer-create-emr
+  .customer-create-phr
     ui-debio-error-dialog(
       :show="!!error"
       :title="error ? error.title : ''"
@@ -9,7 +9,7 @@
 
     ui-debio-modal(
       :show="showModal"
-      :title="isEdit ? 'Edit EMR File' : 'Add EMR File'"
+      :title="isEdit ? 'Edit PHR File' : 'Add PHR File'"
       cta-title="Submit"
       :cta-action="handleNewFile"
       :cta-outlined="false"
@@ -45,22 +45,23 @@
         :rules="$options.rules.document.file"
         variant="small"
         accept=".pdf"
+        label-rules="(.pdf - Maximum file size is 2 MB)"
         label="File input"
         :clearFile="!isEdit && clearFile"
         @isError="handleError"
         validate-on-blur
       )
 
-    .customer-create-emr__wrapper
-      .customer-create-emr__title Upload EMR
-      .customer-create-emr__forms
+    .customer-create-phr__wrapper
+      .customer-create-phr__title.mb-13 Upload Personal Health Records
+      .customer-create-phr__forms
         ui-debio-input(
-          :rules="$options.rules.emr.title"
+          :rules="$options.rules.phr.title"
           variant="small"
-          label="EMR Title"
-          :error="isDirty.emr && isDirty.emr.title"
-          placeholder="Type EMR Title"
-          v-model="emr.title"
+          label="PHR Title"
+          :error="isDirty.phr && isDirty.phr.title"
+          placeholder="Type PHR Title"
+          v-model="phr.title"
           outlined
           block
           validate-on-blur
@@ -69,12 +70,12 @@
 
         ui-debio-dropdown(
           :items="categories"
-          :error="isDirty.emr && isDirty.emr.category"
-          :rules="$options.rules.emr.category"
+          :error="isDirty.phr && isDirty.phr.category"
+          :rules="$options.rules.phr.category"
           variant="small"
-          label="EMR Category"
-          placeholder="Select EMR Category"
-          v-model="emr.category"
+          label="PHR Category"
+          placeholder="Select PHR Category"
+          v-model="phr.category"
           item-text="category"
           item-value="category"
           outlined
@@ -92,26 +93,28 @@
           @click="handleAddFile"
         ) Add file
 
-        .customer-create-emr__files
-          .customer-create-emr__files-title Uploaded Files
-          .customer-create-emr__files-items
-            .customer-create-emr__file-item.customer-create-emr__file-item--no-file.d-flex.align-center(
-              :class="{ 'customer-create-emr__file-item--error': fileEmpty }"
+        .customer-create-phr__files
+          .customer-create-phr__files-title
+            p {{ computeFiles.length ? "Uploaded Files" : "File Information" }}
+            p.mb-0(v-if="!computeFiles.length") Before uploading the document make sure to censored the KYC related in uploaded file
+          .customer-create-phr__files-items
+            .customer-create-phr__file-item.customer-create-phr__file-item--no-file.d-flex.align-center(
+              :class="{ 'customer-create-phr__file-item--error': fileEmpty }"
               v-if="!computeFiles.length"
               @click="showModal = true"
             )
-              .customer-create-emr__file-details.mt-0
-                .customer-create-emr__file-details--left
-                  ui-debio-icon.customer-create-emr__file-icon(
+              .customer-create-phr__file-details.mt-0
+                .customer-create-phr__file-details--left
+                  ui-debio-icon.customer-create-phr__file-icon(
                     :icon="fileTextIcon"
                     size="28"
                     color="#D3C9D1"
                     fill
                   )
-                  .customer-create-emr__file-name No File uploaded, Please add file to upload
+                  .customer-create-phr__file-name No File uploaded, Please add file to upload
 
             template(v-else)
-              .customer-create-emr__file-item(v-for="(item, idx) in computeFiles" :key="item.createdAt")
+              .customer-create-phr__file-item(v-for="(item, idx) in computeFiles" :key="item.createdAt")
                 ui-debio-modal.modal-confirm(
                   :show="showModalConfirm === item.createdAt"
                   title="Do you want to delete ?"
@@ -131,27 +134,27 @@
                       @click="onDelete(item.createdAt)"
                     ) Yes
 
-                .customer-create-emr__file-title(:title="`Title: ${item.title}`") {{ item.title }}
-                .customer-create-emr__file-description(:title="`Description: ${item.description}`") {{ item.description }}
-                .customer-create-emr__file-details
-                  .customer-create-emr__file-details--left
-                    ui-debio-icon.customer-create-emr__file-icon(
+                .customer-create-phr__file-title(:title="`Title: ${item.title}`") {{ item.title }}
+                .customer-create-phr__file-description(:title="`Description: ${item.description}`") {{ item.description }}
+                .customer-create-phr__file-details
+                  .customer-create-phr__file-details--left
+                    ui-debio-icon.customer-create-phr__file-icon(
                       :icon="fileTextIcon"
                       size="28"
                       color="#D3C9D1"
                       fill
                     )
-                    .customer-create-emr__file-name(v-if="item.file" :title="`File: ${item.file.name}`") {{ item.file.name }}
+                    .customer-create-phr__file-name(v-if="item.file" :title="`File: ${item.file.name}`") {{ item.file.name }}
 
-                  .customer-create-emr__file-details--right
-                    ui-debio-icon.customer-create-emr__file-edit(
+                  .customer-create-phr__file-details--right
+                    ui-debio-icon.customer-create-phr__file-edit(
                       :icon="pencilIcon"
                       size="15"
                       color="#989898"
                       stroke
                       @click="onEdit(item)"
                     )
-                    ui-debio-icon.customer-create-emr__file-delete(
+                    ui-debio-icon.customer-create-phr__file-delete(
                       :icon="trashIcon"
                       size="15"
                       color="#989898"
@@ -206,7 +209,7 @@ import { fileTextIcon, alertIcon, pencilIcon, trashIcon, eyeOffIcon, eyeIcon } f
 const englishAlphabet = val => (val && /^[A-Za-z0-9!@#$%^&*\\(\\)\-_=+:;"',.\\/? ]+$/.test(val)) || errorMessage.INPUT_CHARACTER("English alphabet")
 
 export default {
-  name: "CustomerEmrCreate",
+  name: "CustomerPHRCreate",
 
   mixins: [validateForms],
 
@@ -233,7 +236,7 @@ export default {
     publicKey: null,
     secretKey: null,
     txWeight: null,
-    emr: {
+    phr: {
       title: "",
       category: "",
       files: []
@@ -257,7 +260,7 @@ export default {
     }),
 
     computeFiles() {
-      return this.emr.files.map(file => ({ ...file, percent: 0 })).reverse()
+      return this.phr.files.map(file => ({ ...file, percent: 0 })).reverse()
     },
 
     disabledDocumentForm() {
@@ -277,7 +280,7 @@ export default {
           if (dataEvent[1] === this.wallet.address) {
             this.resetState()
             this.isLoading = false
-            this.$router.push({ name: "customer-emr" })
+            this.$router.push({ name: "customer-phr" })
           }
         }
       }
@@ -287,7 +290,7 @@ export default {
       if (val) this.initialDataKey()
     },
 
-    emr: {
+    phr: {
       deep: true,
       immediate: true,
       handler: generalDebounce(async function (val) {
@@ -301,7 +304,7 @@ export default {
 
   rules: {
     password: [ val => !!val || errorMessage.PASSWORD(8) ],
-    emr: {
+    phr: {
       title: [
         val => !!val || errorMessage.REQUIRED,
         val => val && val.length < 50 || errorMessage.MAX_CHARACTER(50),
@@ -346,7 +349,7 @@ export default {
     },
 
     resetState() {
-      Object.assign(this.emr, { title: "", category: "", files: [] })
+      Object.assign(this.phr, { title: "", category: "", files: [] })
       Object.assign(this.document, { title: "", description: "", file: null })
 
       this.password = ""
@@ -392,14 +395,14 @@ export default {
           }
 
           if (context.isEdit) {
-            const index = context.emr.files.findIndex(file => file.createdAt === createdAt)
+            const index = context.phr.files.findIndex(phrFile => phrFile.createdAt === createdAt)
 
-            context.emr.files[index] = dataFile
+            context.phr.files[index] = dataFile
 
-            context.emr.files = context.emr.files.map(file => file)
+            context.phr.files = context.phr.files.map(phrFile => phrFile)
             context.isEdit = false
           } else {
-            context.emr.files.push(dataFile)
+            context.phr.files.push(dataFile)
           }
 
         } catch(e) {
@@ -436,7 +439,7 @@ export default {
 
     onDelete(id) {
       this.showModalConfirm = null
-      this.emr.files = this.emr.files.filter(file => file.createdAt !== id)
+      this.phr.files = this.phr.files.filter(file => file.createdAt !== id)
     },
 
     handleAddFile() {
@@ -453,13 +456,13 @@ export default {
         }
         return
       }
-      
-      this._touchForms("emr")
-      const isEMRValid = Object.values(this.isDirty?.emr).every(v => v !== null && v === false)
+
+      this._touchForms("phr")
+      const isPHRValid = Object.values(this.isDirty?.phr).every(v => v !== null && v === false)
       const isDocumentValid = Object.values(this.isDirty?.document).every(v => v !== null && v === false)
 
-      if (!isEMRValid || (!isDocumentValid && this.emr.files.length < 1)) {
-        if (!this.emr.files.length) this.fileEmpty = true
+      if (!isPHRValid || (!isDocumentValid && this.phr.files.length < 1)) {
+        if (!this.phr.files.length) this.fileEmpty = true
 
         return
       }
@@ -479,9 +482,9 @@ export default {
       this.disabledButton = true
 
       try {
-        if (this.emr.files.length === 0) return
+        if (this.phr.files.length === 0) return
 
-        for await (let [index, value] of this.emr.files.entries()) {
+        for await (let [index, value] of this.phr.files.entries()) {
           const dataFile = await this.setupFileReader({ value })
           await this.upload({
             encryptedFileChunks: dataFile.chunks,
@@ -492,7 +495,7 @@ export default {
           })
         }
 
-        await registerElectronicMedicalRecord(this.api, this.wallet, this.emr)
+        await registerElectronicMedicalRecord(this.api, this.wallet, this.phr)
       } catch (e) {
         const error = await errorHandler(e.message)
         this.error = error
@@ -525,7 +528,7 @@ export default {
         publicKey: this.publicKey
       }
 
-      return await new Promise((resolve, reject) => {
+      const data = await new Promise((resolve, reject) => {
         try {
           cryptWorker.workerEncryptFile.postMessage({ pair, text, fileType }) // Access this object in e.data in worker
           cryptWorker.workerEncryptFile.onmessage = async (event) => {
@@ -552,6 +555,8 @@ export default {
           reject(new Error(err.message))
         }
       })
+
+      return data
     },
 
     async upload({ encryptedFileChunks, index, fileType, fileName, fileSize }) {
@@ -567,7 +572,7 @@ export default {
 
       const link = getFileUrl(result.IpfsHash)
 
-      this.emr.files[index].recordLink = link
+      this.phr.files[index].recordLink = link
     },
 
     setPercent(file) {
@@ -602,7 +607,7 @@ export default {
 <style lang="sass" scoped>
   @import "@/common/styles/mixins.sass"
 
-  .customer-create-emr
+  .customer-create-phr
     width: 100%
     height: 100%
 
@@ -611,6 +616,7 @@ export default {
       padding: 50px 0
 
     &__title
+      @include h6
       text-align: center
 
     &__forms
@@ -624,7 +630,13 @@ export default {
       margin: 10px 0 20px
 
     &__files-title
-      margin-bottom: 20px
+      margin-bottom: 24px
+
+      p:first-of-type
+        @include button-2
+
+      p
+        @include body-text-3-opensans
 
     &__files-items
       display: flex
@@ -668,10 +680,10 @@ export default {
         border-color: #c400a5
 
         &::v-deep
-          .customer-create-emr__file-icon > svg
+          .customer-create-phr__file-icon > svg
             color: #c400a5 !important
 
-        .customer-create-emr__file-name
+        .customer-create-phr__file-name
           color: #c400a5
 
     &__file-title
