@@ -52,6 +52,7 @@
             color="secondary"
             @click="toRequestTest(item)"
             :disabled="item.request.status === 'Open'"
+            :loading="loading"
           ) Proceed
 
         .customer-staking-tab__actions(v-else)
@@ -75,7 +76,10 @@ import { mapState, mapMutations } from "vuex"
 import { getServiceRequestByCustomer } from "@/common/lib/api"
 import { getLocations } from "@/common/lib/api"
 import { STAKE_STATUS_DETAIL } from "@/common/constants/status"
-
+import { createOrder, queryLastOrderHashByCustomer } from "@debionetwork/polkadot-provider"
+import CryptoJS from "crypto-js"
+import Kilt from "@kiltprotocol/sdk-js"
+import { u8aToHex } from "@polkadot/util"
 
 export default {
   name: "StakingServiceTab",
@@ -132,9 +136,18 @@ export default {
     showDialog: false,
     requestId: "",
     countries: [],
-    isLoadingData: false
+    isLoadingData: false,
+    loading: false
 
   }),
+
+  watch: {
+    lastEventData(event) {
+      if (!event) return
+      
+      if (event.method === "OrderCreated") this.toCheckout()
+    }
+  },
 
   computed: {
     ...mapState({
@@ -206,6 +219,7 @@ export default {
     },
 
     async toRequestTest(service) {
+      this.loading = true
       const request = service.request
       const country = request.country
       const region = request.region
@@ -215,9 +229,29 @@ export default {
       this.setStakingService(request)
       this.setCategory(category)
       await this.$store.dispatch("lab/setCountryRegionCity", {country, region, city})
-      await this.$store.dispatch("lab/getServicesByCategory", {category, status})
-      
-      this.$router.push({ name: "customer-request-test-service"})
+      const servicesAvailable = await this.$store.dispatch("lab/getServicesByCategory", {category, status})
+      const proceedService = servicesAvailable.find(s => s.lab_id === service.request.lab_address)
+      await this.createOrder(proceedService)
+    },
+
+    getCustomerPublicKey() {
+      const identity = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
+      this.publicKey = u8aToHex(identity.boxKeyPair.publicKey)
+      this.secretKey = u8aToHex(identity.boxKeyPair.secretKey)
+      return u8aToHex(identity.boxKeyPair.publicKey)
+    },
+
+    async createOrder(service) {
+      const customerBoxPublicKey = await this.getCustomerPublicKey()        
+      const indexPrice = 0
+      await createOrder(
+        this.api,
+        this.pair,
+        this.service.id,
+        indexPrice,
+        customerBoxPublicKey,
+        service.serviceFlow
+      )
     },
 
     async getUnstakingDialog(id) {
@@ -243,6 +277,18 @@ export default {
     
     formatId(id) {
       return `${id.slice(0, 4)}...${id.slice(id.length - 3, id.length)}`
+    },
+
+    async toCheckout() {
+      const lastOrder = await queryLastOrderHashByCustomer(
+        this.api,
+        this.wallet.address
+      )
+      
+      this.$router.push({ 
+        name: "customer-request-test-checkout", params: { id: lastOrder }
+      })
+      this.loading = false
     }
   }
 }

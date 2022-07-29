@@ -60,6 +60,7 @@ export default {
         commit("SET_SERVICES", result)
       }
       commit("SET_SERVICES", data.result)
+      return data.result
     }
   },
 
