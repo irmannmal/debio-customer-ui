@@ -30,6 +30,7 @@
           | {{ dataService.totalPrice }} 
           | {{ dataService.currency}}
 
+      .menu-card__rate ( {{ (this.usdRate * dataService.totalPrice).toFixed(3) }} USD )
 
       .menu-card__details(v-if="stakingFlow")
         .menu-card__sub-title Staking Amount
@@ -58,7 +59,7 @@
           | {{ excessAmount }}
           | {{ dataService.currency}}
 
-
+      
       div(class="text-center" v-if="status === 'Cancelled'")
         div(class="d-flex justify-space-between align-center pa-4 ms-3 me-3")
           ui-debio-button(
@@ -208,11 +209,14 @@ export default {
     showAlert: false,
     isCreated: false,
     success: false,
-    loading: false
+    loading: false,
+    rate: null,
+    usdRate: null
   }),
 
   async mounted () {
     this.stakingFlow = false
+    this.getUsdRate()
 
     if(this.$route.params.hash) {
       this.success = true
@@ -304,6 +308,11 @@ export default {
     ...mapMutations({
       setProductsToRequest: "testRequest/SET_PRODUCTS"
     }),
+
+    async getUsdRate() {
+      this.rate = await getDbioBalance()
+      if (this.rate) this.usdRate = this.rate.daiToUsd
+    },
 
     async toEtherscan () {
       const { transaction_hash } = await fetchTxHashOrder(this.$route.params.hash)
@@ -481,6 +490,13 @@ export default {
       margin-top: 5px
       display: flex
       justify-content: space-between
+
+    &__rate
+      display: flex
+      align-items: center
+      justify-content: flex-end
+      margin-right: 38px
+      @include tiny-reg
 
     &__operation
       margin-right: 24px
