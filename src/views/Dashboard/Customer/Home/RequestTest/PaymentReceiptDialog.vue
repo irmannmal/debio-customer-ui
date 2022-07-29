@@ -176,6 +176,7 @@ export default {
     },
     showMetamask: false,
     metamaskButton: "",
+    metamaskTitle: "",
     isLoadingButton: false
   }),
 
@@ -311,6 +312,7 @@ export default {
         await this.checkMetamask()
 
         if (ethAddress !== this.ethAccount.accountList[0]) {
+          this.isLoading = false
           this.showMetamask = true
           this.metamaskButton = "Connect"
           this.metamaskTitle = "Connect Metamask"
