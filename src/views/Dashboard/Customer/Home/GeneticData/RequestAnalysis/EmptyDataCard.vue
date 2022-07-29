@@ -1,5 +1,7 @@
 <template lang="pug">
   .no-data-card
+    .no-data-card__alert Oops! Looks like you haven't submitted any genetic data!
+    .no-data-card__message You can add your genetic data by clicking the "Add Genetic Data" button.
     .no-data-card__illustration
       ui-debio-icon(
         :icon="emptyDataIllustration"
@@ -7,9 +9,6 @@
         view-box="10 0 245 175"
         fill
       )
-
-    .no-data-card__alert Oops! Looks like you haven't submitted any genetic data!
-    .no-data-card__message You can add your genetic data by clicking the "Add Genetic Data" button.
 
     .no-data-card__button
       ui-debio-button(
@@ -74,7 +73,5 @@ export default {
       justify-content: center
       align-items: center
       padding: 5px 17px
-      margin-top: 30px
-      
 
 </style>

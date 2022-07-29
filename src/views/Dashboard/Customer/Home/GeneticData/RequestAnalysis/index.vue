@@ -12,7 +12,7 @@
             :items="stepperItems"
           )
 
-        .customer-request-analysis__title Select Genetic Data
+        .customer-request-analysis__title {{ !isEmpty ? "Select Genetic Data" : "" }}
 
         EmptyDataCard(v-if="isEmpty" )
         ui-debio-data-table.customer-request-analysis__table(v-if="!isEmpty"
