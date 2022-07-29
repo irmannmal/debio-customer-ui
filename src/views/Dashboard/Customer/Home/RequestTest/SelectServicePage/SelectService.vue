@@ -1,6 +1,6 @@
 <template lang="pug">
   .customer-select-service
-    .customer-select-service__title Select your preferred Service
+    .customer-select-service__title Select your preferred service
 
     template(v-if="showNoLab")
       NoLab

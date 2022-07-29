@@ -1,17 +1,26 @@
 <template lang="pug">
   v-card.no-lab-card
     div.card-title Oops!
-    div.card-sub-title There are no available labs provide this service in your area.
-    div.card-body 
-      div 1. There's no locking period. Your fund can be unstaked anytime with your consent but there will be a period of 6 days to process it.
-      div 2. Upon receiving your test result, you will be rewarded with DBIO as a token of gratitude for using our service. By unstaking your fund, you will lose this privilege.
-      div 3. You will receive notification when requested service is available. You can proceed to request a test. If the staked amount is bigger than the service price, you will get refund for overpayment. If staked amount is smaller than the service price, to complete the purchase, you should pay for the outstanding amount to complete the purchase.
+    div.card-sub-title.d-flex
+      ui-debio-icon.mr-2.mt-1(
+        :icon="alertIcon"
+        size="14"
+        stroke
+        color="#F5222D"
+      )
+      span There is no available lab providing this service in your area.
+
+    ol.card-body
+      li You can request a lab to register to DeBio by clicking the "Request a Service" button.
+      li Additionally, you can stake any amount of DBIO, which will be given as an incentive to labs registering in your location.
+      li Labs will use the result of this form, filled-in by you and other DeBio users, to evaluate the demand in the area you designated. 
 
     v-row(class="d-flex justify-center mt-16")
       ui-debio-button.mt-5.mb-10(
         color="secondary" 
-        width="560"
-        height="38"
+        width="150"
+        height="35"
+        style="font-size: 12px;"
         @click="showingAgreementDialog"
         ) Request a service
 
@@ -37,6 +46,7 @@
 
 <script>
 import { mapState } from "vuex"
+import { alertIcon } from "@debionetwork/ui-icons"
 import AgreementDialog from "./AgreementDialog.vue"
 
 
@@ -49,7 +59,8 @@ export default {
 
   data: () => ({
     showAgreement: false,
-    showSuccessDialog: false
+    showSuccessDialog: false,
+    alertIcon
   }),
 
   computed: {
@@ -99,10 +110,10 @@ export default {
   .card-no-lab
     display: flex
     flex-direction: column
-    align-items: center  
+    align-items: center
 
   .card-title 
-    @include body-text-2
+    @include h6-opensans
 
   .card-sub-title 
     margin-bottom: 2%
@@ -111,7 +122,7 @@ export default {
     @include body-text-2
 
   .card-body 
-    @include body-text-3
+    @include body-text-2
     
   .no-lab-card 
     padding: 5%

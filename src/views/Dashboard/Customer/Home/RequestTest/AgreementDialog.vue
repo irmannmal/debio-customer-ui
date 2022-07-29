@@ -2,16 +2,16 @@
   v-dialog.staking-dialog(:value="show" width="400" persistent rounded )
     v-card.staking-dialog__dialog
       v-app-bar(flat dense color="white" )
-        v-toolbar-title.staking-dialog__title Staking Coin
+        v-toolbar-title.staking-dialog__title Staking Coin Agreement
         v-spacer
         v-btn(icon @click="closeDialog")
           v-icon mdi-close
 
       .staking-dialog__card
-        .staking-dialog__card-text 
-          .staking-dialog__card-text-content 1. There's no locking period. Your fund can be unstaked anytime with your consent but there will be a period of 6 days to process it.
-          .staking-dialog__card-text-content 2. Upon receiving your test result, you will be rewarded with DBIO as a token of gratitude for using our service. By unstaking your fund, you will lose this privilege.
-          .staking-dialog__card-text-content 3. You will receive notification when requested service is available. You can proceed to request a test. If the staked amount is bigger than the service price, you will get refund for overpayment. If staked amount is smaller than the service price, to complete the purchase, you should pay for the outstanding amount to complete the purchase.
+        ol.staking-dialog__card-text.ml-3
+          li.staking-dialog__card-text-content There's no locking period. Your fund can be unstaked anytime with your consent but there will be a period of 6 days to process it.
+          li.staking-dialog__card-text-content Upon receiving your test result, you will be rewarded with DBIO as a token of gratitude for using our service. By unstaking your fund, you will lose this privilege.
+          li.staking-dialog__card-text-content You will receive notification when requested service is available. You can proceed to request a test. If the staked amount is bigger than the service price, you will get refund for overpayment. If staked amount is smaller than the service price, to complete the purchase, you should pay for the outstanding amount to complete the purchase.
 
       .staking-dialog__input
         .staking-dialog__input-label Enter your Amount 
@@ -26,6 +26,11 @@
           placeholder="Amount (DBIO)"
           outlined
         )
+
+        v-checkbox(v-model="agree")
+          template(v-slot:label) 
+            div(style="font-size: 12px;") I have read and agree to the 
+              a.link(href="https://docs.debio.network/legal/terms-and-condition" target="_blank" rel="noreferrer noopener nofollow") terms and conditions
 
         .staking-dialog__trans-weight 
           .staking-dialog__trans-weight-text Estimated transaction weight
@@ -50,6 +55,7 @@
           height="35" 
           @click="submitServiceRequestStaking"
           :loading="isLoading"
+          :disabled="!agree"
         ) Stake
 
         v-progress-linear(
@@ -89,7 +95,6 @@ export default {
     dialogAlert: false,
     isLoading: false,
     transactionStep: "",
-    agreement: true,
     txWeight: 0,
     showError: false,
     errorTitle: "",
@@ -189,6 +194,7 @@ export default {
       letter-spacing: -0.004em
 
     &__card-text-content
+      margin-bottom: 4px
       @include body-text-3-opensans
 
     &__input
@@ -204,11 +210,10 @@ export default {
     &__input-field
       max-height: 18px
       letter-spacing: -0.004em
-      margin-bottom: 50px
+      margin-bottom: 25px
       @include body-text-3-opensans
    
     &__trans-weight
-      margin-top: 20px
       margin-bottom: 20px
       display: flex
       justify-content: space-between
@@ -224,7 +229,6 @@ export default {
       align-items: center
       text-align: center
       letter-spacing: -0.015em
-      margin-top: 20px
       @include tiny-semi-bold
 
     &__trans-weight-icon
