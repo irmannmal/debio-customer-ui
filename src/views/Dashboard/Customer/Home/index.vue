@@ -323,11 +323,12 @@ export default {
           )
         })
   
+        this.isLoadingPayments = false
         if(!this.paymentHistory.length) {
           this.titlePaymentWording = "You haven't made any order yet"
-          return
+        } else {
+          this.titlePaymentWording = "Your recent payments"
         }
-        this.titlePaymentWording = "Your recent payments"
         this.isLoadingPayments = false
       } catch (error) {
         console.error(error)
