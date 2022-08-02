@@ -116,7 +116,7 @@
                 :bind="attrs"
                 :on="on"
               ) Upload PHR
-            span Upload Upload Personal Health Records
+            span Upload Personal Health Records
 
           v-tooltip(bottom)
             template(v-slot:activator="{ on, attrs }")
