@@ -348,11 +348,16 @@ export default {
     },
 
     async connectToMetamask() {
+      const anchor = document.createElement("a")
+      anchor.target = "_blank"
+      anchor.rel = "noreferrer noopener nofollow"
+      anchor.href = `https://metamask.io/download/`
+
       this.loading = true
       this.ethAccount = await startApp()
 
       if (this.ethAccount.currentAccount === "no_install") {
-        window.open("https://metamask.io/download/", "_blank")
+        anchor.click()
         this.ethAccount = null
         this.loading = false
         return

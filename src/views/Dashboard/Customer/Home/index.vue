@@ -1,160 +1,120 @@
 <template lang="pug">
-.customer-home
-  ui-debio-banner(
+.customer-dashboard
+  ui-debio-banner.customer-dashboard__banner(
     title="Dashboard"
     subtitle="DeBio is the Most Privacy secured Platform for Personal Biomedical Testing!"
     with-decoration
     gradient-color="violet"
   )
-    template(slot="illustration")
-      ui-debio-icon(:icon="doctorDashboardIllustrator" :size="cardBlock ? 250 : 180" view-box="0 0 180 180" fill)
 
     template(slot="cta")
-      ui-debio-card(
-        :to="{ name: 'customer-request-test'}"
-        title="Request a Test"
-        sub-title="Get your biological sample tested or stake $DBIO to request a Lab"
-        tiny-card
-        with-icon
-        width="250"
-        :block="cardBlock"
-      )
-        ui-debio-icon(:icon="creditCardIcon" slot="icon" size="34" color="#C400A5" fill)
-      ui-debio-card(
-        :to="{ name: 'customer-phr-create' }"
-        title="Upload PHR"
-        sub-title="Upload Personal Health Records"
-        tiny-card
-        with-icon
-        width="250"
-        :block="cardBlock"
-      )
-        ui-debio-icon(:icon="layersIcon" slot="icon" size="34" color="#C400A5" stroke)
-  .customer-home-__content
-    div.body
-      ui-debio-card.leftTable
-        div.bodyHeader
-          v-row
-            v-col(cols="9")
-              v-row
-                span.topHead Recent Payments
-              v-row
-                span.botomHead {{ titlePaymentWording }}
-            v-col(cols="3")
-              ui-debio-button.btnHead(
-                :width="'75px'"
-                :height="'25px'"
-                color="#5640A5"
-                outlined
-                :to="{ name: 'customer-payment-history' }"
-              ) View All
-
-        div
-          ui-debio-data-table.content(
-            :headers="headers"
-            :items="paymentHistory"
-            :sort-by="[true]"
-            :disableSort="true"
-            :showFooter="false"
-            :loading="isLoadingPayments"
+      .banner-card
+        router-link.banner-card__container(v-for="banner in banners" :key="banner.id" :to="{ name: banner.link}")
+          ui-debio-icon.banner-card__icon(
+            :icon="banner.icon"
+            size="50"
           )
-            template(class="status" v-slot:[`item.serviceName`]="{item}")
-              div(class="d-flex align-center")
-                ui-debio-avatar.serviceImage(
-                  :src="setServiceImage(item.serviceImage)"
-                  size="41"
-                  rounded
+          .banner-card__text {{ banner.text }}
+
+  .customer-dashboard__tables
+    .tables
+      .tables__tabs
+        v-tabs(v-model="tabs")
+          v-tab.tab-section Recent Order
+          v-tab.tab-section Recent Payments
+        v-tabs-items.tables__contents(v-model="tabs")
+          v-tab-item
+            ui-debio-data-table.content(
+              :headers="headers"
+              :items="testList"
+              :page="1"
+              :loading="isLoadingTest"
+            )
+              template(class="status" v-slot:[`item.serviceName`]="{item}")
+                div(class="d-flex align-center")
+                  ui-debio-avatar.serviceImage(
+                    :src="setServiceImage(item.serviceImage)"
+                    size="41"
+                    rounded
+                  )
+                  div(class="fluid")
+                    .d-flex.flex-column.customer-dashboard__order-service-name
+                      span {{ item.serviceName }}
+                    .d-flex.flex-column.customer-dashboard__order-service-sample-id
+                      span {{ item.dnaSampleTrackingId}}
+
+              template(v-slot:[`item.labName`]="{item}")
+                .d-flex.flex-column.customer-dashboard__order
+                  span {{ item.labName }}
+
+              template(v-slot:[`item.orderDate`]="{item}")
+                .d-flex.flex-column.customer-dashboard__order
+                  span {{ item.orderDate }}
+
+              template(class="status" v-slot:[`item.status`]="{item}") 
+                .d-flex.flex-column.customer-dashboard__order
+                  span(:style="{color: setStatusColor(item.status)}") {{ setTestStatus(item.status) }}
+
+              template(v-slot:[`item.actions`]="{item}")
+                ui-debio-icon.iconTable(
+                  :icon="eyeIcon"
+                  role="button"
+                  slot="icon" size="20"
+                  color="#C400A5"
+                  stroke
+                  @click="goToOrderDetail(item)"
                 )
-                div(class="fluid")
-                  .d-flex.flex-column.customer-home__order-service-name
-                    span {{ item.serviceName }}
-                  .d-flex.flex-column.customer-home__order-service-sample-id
-                    span {{ item.dnaSampleTrackingId}}
+          v-tab-item
+            ui-debio-data-table(
+              :headers="headers"
+              :items="paymentHistory"
+              :page="2"
+              :loading="isLoadingPayments"
+            )
+              template(class="status" v-slot:[`item.serviceName`]="{item}")
+                div(class="d-flex align-center")
+                  ui-debio-avatar.serviceImage(
+                    :src="setServiceImage(item.serviceImage)"
+                    size="41"
+                    rounded
+                  )
+                  div(class="fluid")
+                    .d-flex.flex-column.customer-dashboard__order-service-name
+                      span {{ item.serviceName }}
+                    .d-flex.flex-column.customer-dashboard__order-service-sample-id
+                      span {{ item.dnaSampleTrackingId}}
 
-            template(v-slot:[`item.orderDate`]="{item}")
-              .d-flex.flex-column.customer-home__order
-                span {{ item.orderDate }}
+              template(v-slot:[`item.orderDate`]="{item}")
+                .d-flex.flex-column.customer-dashboard__order
+                  span {{ item.orderDate }}
 
-            template(class="status" v-slot:[`item.status`]="{item}") 
-              .d-flex.flex-column.customer-home__order
-                span(:style="{color: setPaymentStatusColor(item.status)}") {{ item.status }}
+              template(class="status" v-slot:[`item.status`]="{item}") 
+                .d-flex.flex-column.customer-dashboard__order
+                  span(:style="{color: setPaymentStatusColor(item.status)}") {{ item.status }}
 
-            template(v-slot:[`item.actions`]="{item}")
-              ui-debio-icon.iconTable(
-                :icon="eyeIcon"
-                role="button"
-                slot="icon"
-                size="20"
-                color="#C400A5"
-                stroke
-                @click="goToPaymentDetail(item)"
-              )
-
-
-      ui-debio-card.rightTable
-        div.bodyHeader
-          v-row
-            v-col(cols="9")
-              v-row
-                span.topHead Recent Tests
-              v-row
-                span.botomHead {{ titleTestWording }}
-            v-col(cols="3")
-              ui-debio-button.btnHead(
-                width="75px"
-                height="25px"
-                outlined
-                color="#5640A5"
-                :to="{ name: 'my-test' }"
-              ) View All
-
-        div
-          ui-debio-data-table.content(
-            :headers="headers"
-            :items="testList"
-            :disableSort="true"
-            :showFooter="false"
-            :loading="isLoadingTest"
-          )
-
-            template(class="status" v-slot:[`item.serviceName`]="{item}")
-              div(class="d-flex align-center")
-                ui-debio-avatar.serviceImage(
-                  :src="setServiceImage(item.serviceImage)"
-                  size="41"
-                  rounded
+              template(v-slot:[`item.actions`]="{item}")
+                ui-debio-icon.iconTable(
+                  :icon="eyeIcon"
+                  role="button"
+                  slot="icon"
+                  size="20"
+                  color="#C400A5"
+                  stroke
+                  @click="goToPaymentDetail(item)"
                 )
-                div(class="fluid")
-                  .d-flex.flex-column.customer-home__order-service-name
-                    span {{ item.serviceName }}
-                  .d-flex.flex-column.customer-home__order-service-sample-id
-                    span {{ item.dnaSampleTrackingId}}
-
-            template(v-slot:[`item.labName`]="{item}")
-              .d-flex.flex-column.customer-home__order
-                span {{ item.labName }}
-
-            template(v-slot:[`item.orderDate`]="{item}")
-              .d-flex.flex-column.customer-home__order
-                span {{ item.orderDate }}
-
-            template(class="status" v-slot:[`item.status`]="{item}") 
-              .d-flex.flex-column.customer-home__order
-                span(:style="{color: setStatusColor(item.status)}") {{ setTestStatus(item.status) }}
-
-            template(v-slot:[`item.actions`]="{item}")
-              ui-debio-icon.iconTable(
-                :icon="eyeIcon"
-                role="button"
-                slot="icon" size="20"
-                color="#C400A5"
-                stroke
-                @click="goToOrderDetail(item)"
-              )
 </template>
 
 <script>
-import { creditCardIcon, layersIcon, labIllustration, doctorDashboardIllustrator, eyeIcon } from "@debionetwork/ui-icons"
+import {
+  creditCardIcon,
+  layersIcon,
+  labIllustration,
+  bookGradient,
+  cardGradient,
+  partialBookGradient,
+  doctorDashboardIllustrator,
+  eyeIcon
+} from "@debionetwork/ui-icons"
 import { queryDnaSamples } from "@debionetwork/polkadot-provider"
 import { mapState } from "vuex"
 import { ORDER_STATUS_DETAIL, PAYMENT_STATUS_DETAIL } from "@/common/constants/status"
@@ -167,14 +127,16 @@ export default {
     creditCardIcon,
     layersIcon,
     labIllustration,
+    doctorDashboardIllustrator,
+    bookGradient,
+    cardGradient,
+    partialBookGradient,
     eyeIcon,
     cardBlock: false,
     orderList: [],
     testList: [],
     paymentHistory: [],
-    titlePaymentWording: "",
-    titleTestWording: "",
-    doctorDashboardIllustrator,
+    tabs: 0,
     headers: [
       { text: "Service Name", value: "serviceName",sortable: true },
       { text: "Lab Name", value: "labName", sortable: true },
@@ -182,9 +144,32 @@ export default {
       { text: "Status", value: "status", sortable: true },
       { text: "Actions", value: "actions", sortable: false, align: "center", width: "5%" }
     ],
+    banners: [
+      {
+        icon: bookGradient,
+        text: "Request Genetic Analysis",
+        link: "customer-request-analysis"
+      },
+      {
+        icon: cardGradient,
+        text: "Request Genetic Test",
+        link: "customer-request-test"
+      },
+      {
+        icon: partialBookGradient,
+        text: "Upload Personal Health Record",
+        link: "customer-emr-create"
+      }
+    ],
     isLoadingPayments: false,
     isLoadingTest: false
   }),
+
+  computed: {
+    ...mapState({
+      api: (state) => state.substrate.api
+    })
+  },
 
   mounted() {
     window.addEventListener("resize", () => {
@@ -239,8 +224,8 @@ export default {
       this.isLoadingTest = true
       try {
         const recentTest = this.orderList.orders.data.filter(test => test._source.status !== "Unpaid" && test._source.status !== "Cancelled")
-        
-        recentTest.forEach(async (order) => {
+
+        for (const order of recentTest) {
           const {
             id: orderId,
             lab_info: {
@@ -254,11 +239,11 @@ export default {
             dna_sample_tracking_id: dnaSampleTrackingId,
             created_at: createdAt
           } = order._source
-  
+
           const dnaSample = await queryDnaSamples(this.api, dnaSampleTrackingId)
           const orderDetail = {
             orderId,
-            dnaSampleTrackingId, 
+            dnaSampleTrackingId,
             labName,
             serviceName,
             serviceImage,
@@ -267,18 +252,11 @@ export default {
             orderDate: this.formatDate(createdAt),
             timestamp: new Date (parseInt(createdAt.replaceAll(",", ""))).getTime().toString()
           }
-  
+
           this.testList.push(orderDetail)
-          this.testList.sort(
-            (a, b) => parseInt(b.timestamp) - parseInt(a.timestamp)
-          )
-  
-          if (!this.testList.length) {
-            this.titleTestWording = "You dont have any test result yet"
-            return
-          }
-          this.titleTestWording = "Your recent tests"
-        })
+        }
+
+        this.testList.sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
         this.isLoadingTest = false
       } catch (error) {
         console.error(error)
@@ -289,12 +267,10 @@ export default {
     async getDataPaymentHistory() {
       this.isLoadingPayments = true
       try {
-        this.orderList.orders.data.forEach(async(payment) => {
+        for (const payment of this.orderList.orders.data) {
           const {
             id: orderId,
-            lab_info: {
-              name: labName
-            },
+            lab_info: { name: labName },
             service_info: {
               name: serviceName,
               image: serviceImage,
@@ -304,7 +280,7 @@ export default {
             created_at: createdAt,
             status
           } = payment._source
-  
+
           const paymentDetail = {
             orderId,
             dnaSampleTrackingId, 
@@ -316,19 +292,15 @@ export default {
             orderDate: this.formatDate(createdAt),
             timestamp: new Date (parseInt(createdAt.replaceAll(",", ""))).getTime().toString()
           }
-  
+
           this.paymentHistory.push(paymentDetail)
-          this.paymentHistory.sort(
-            (a, b) => parseInt(b.timestamp) - parseInt(a.timestamp)
-          )
-        })
-  
-        this.isLoadingPayments = false
-        if(!this.paymentHistory.length) {
-          this.titlePaymentWording = "You haven't made any order yet"
-        } else {
-          this.titlePaymentWording = "Your recent payments"
         }
+
+        this.paymentHistory.sort((a, b) => {
+          if (b.status === "Unpaid") return
+          else return parseInt(b.timestamp) - parseInt(a.timestamp)
+        })
+
         this.isLoadingPayments = false
       } catch (error) {
         console.error(error)
@@ -344,22 +316,80 @@ export default {
       const id = item.orderId
       this.$router.push({ name: "customer-payment-details", params: { id } }) //go to payment detail
     }
-  },
-
-  computed: {
-    ...mapState({ 
-      api: (state) => state.substrate.api
-    })
   }
 }
 </script>
 
 <style lang="sass" scoped>
   @import "@/common/styles/mixins.sass"
+  @import "@/common/styles/function.sass"
 
-  .customer-home
+  ::v-deep
+    .v-tabs-slider-wrapper
+      height: 5px !important
+
+    .v-tab
+      align-items: unset
+
+    .degenics-data-table
+      margin-top: 0
+
+  .banner-card
+    display: flex
+
+    &__container
+      width: toRem(220px)
+      height: toRem(100px)
+      border-radius: toRem(4px)
+      backdrop-filter: blur(20px)
+      -webkit-backdrop-filter: blur(20px)
+      background: rgba(255, 255, 255, .9)
+      position: relative
+      z-index: 2
+      display: inherit
+      text-decoration: none
+      align-items: center
+      justify-content: center
+      overflow: hidden
+      transition: 250ms ease-in-out
+
+      &:hover
+        border: solid 1.9px transparent
+        text-shadow: -3px 4px 5px rgba(0, 0, 0, .1)
+        box-shadow: 0 1px 2px rgba(252, 146, 233, .4), 0 2px 4px rgba(252, 146, 233, .4), 0 4px 8px rgba(252, 146, 233, .4), 0 8px 16px rgba(252, 146, 233, .4) inset
+
+      &:not(:last-of-type)
+        margin-right: toRem(20px)
+
+    &__icon
+      margin-right: toRem(24px)
+
+      &::v-deep
+        svg
+          transition: 250ms ease-in-out
+          filter: drop-shadow(rgba(252, 146, 233, .045) -1px 1px) drop-shadow(rgba(252, 146, 233, .045) -2px 2px) drop-shadow(rgba(252, 146, 233, .045) -3px 3px) drop-shadow(rgba(252, 146, 233, .045) -3px 3px) drop-shadow(rgba(252, 146, 233, .045) -4px 4px) drop-shadow(rgba(252, 146, 233, .045) -5px 5px) drop-shadow(rgba(252, 146, 233, .045) -6px 6px) drop-shadow(rgba(252, 146, 233, .045) -7px 7px) drop-shadow(rgba(252, 146, 233, .045) -8px 8px) drop-shadow(rgba(252, 146, 233, .045) -9px 9px) drop-shadow(rgba(252, 146, 233, .045) -10px 10px) drop-shadow(rgba(252, 146, 233, .045) -11px 11px) drop-shadow(rgba(252, 146, 233, .045) -12px 12px) drop-shadow(rgba(252, 146, 233, .045) -13px 13px) drop-shadow(rgba(252, 146, 233, .045) -14px 14px) drop-shadow(rgba(252, 146, 233, .045) -15px 15px) drop-shadow(rgba(252, 146, 233, .045) -16px 16px) drop-shadow(rgba(252, 146, 233, .045) -17px 17px) drop-shadow(rgba(252, 146, 233, .045) -18px 18px) drop-shadow(rgba(252, 146, 233, .045) -19px 19px) drop-shadow(rgba(252, 146, 233, .045) -20px 20px) drop-shadow(rgba(252, 146, 233, .045) -21px 21px) drop-shadow(rgba(252, 146, 233, .045) -22px 22px) drop-shadow(rgba(252, 146, 233, .045) -23px 23px)
+
+    &__text
+      color: #595959
+      max-width: toRem(115px)
+      @include button-2
+
+  .tables
+    &__tabs
+      margin-top: toRem(30px)
+      background: #fff
+      border-radius: toRem(4px)
+      padding: toRem(30px)
+
+  .customer-dashboard
     &::v-deep
-      .banner__illustration
+      .banner__subtitle
+        max-width: toRem(322px)
+        margin-top: toRem(24px)
+        @include body-text-medium-1
+
+      .banner__content
+        align-items: center
 
       .body
         margin-top: 25px
