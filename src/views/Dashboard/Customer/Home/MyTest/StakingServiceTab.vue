@@ -52,7 +52,6 @@
             color="secondary"
             @click="toRequestTest(item)"
             :disabled="item.request.status === 'Open'"
-            :loading="loading"
           ) Proceed
 
         .customer-staking-tab__actions(v-else)
@@ -144,7 +143,7 @@ export default {
   watch: {
     lastEventData(event) {
       if (!event) return
-      
+
       if (event.method === "OrderCreated") this.toCheckout()
     }
   },
@@ -154,7 +153,8 @@ export default {
       api: (state) => state.substrate.api,
       pair: (state) => state.substrate.wallet,
       web3: (state) => state.metamask.web3,
-      lastEventData: (state) => state.substrate.lastEventData
+      lastEventData: (state) => state.substrate.lastEventData,
+      mnemonicData: (state) => state.substrate.mnemonicData
     })
   },
 
@@ -230,24 +230,27 @@ export default {
       this.setCategory(category)
       await this.$store.dispatch("lab/setCountryRegionCity", {country, region, city})
       const servicesAvailable = await this.$store.dispatch("lab/getServicesByCategory", {category, status})
+      if (!servicesAvailable) {
+        this.$emit("error")
+        return
+      }
+      this.$emit("loading")
       const proceedService = servicesAvailable.find(s => s.lab_id === service.request.lab_address)
       await this.createOrder(proceedService)
     },
 
     getCustomerPublicKey() {
       const identity = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
-      this.publicKey = u8aToHex(identity.boxKeyPair.publicKey)
-      this.secretKey = u8aToHex(identity.boxKeyPair.secretKey)
       return u8aToHex(identity.boxKeyPair.publicKey)
     },
 
     async createOrder(service) {
-      const customerBoxPublicKey = await this.getCustomerPublicKey()        
+      const customerBoxPublicKey = await this.getCustomerPublicKey() 
       const indexPrice = 0
       await createOrder(
         this.api,
         this.pair,
-        this.service.id,
+        service.id,
         indexPrice,
         customerBoxPublicKey,
         service.serviceFlow
@@ -288,7 +291,7 @@ export default {
       this.$router.push({ 
         name: "customer-request-test-checkout", params: { id: lastOrder }
       })
-      this.loading = false
+      this.$emit("closeLoading")
     }
   }
 }

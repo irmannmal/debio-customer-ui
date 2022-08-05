@@ -121,6 +121,9 @@
             StakingServiceTab(
               ref="staking"
               @unstake="showDialog = true"
+              @loading="loadingDialog = true"
+              @closeLoading="loadingDialog = false"
+              @error="showError"
             )
             ConfirmationDialog(
               :show="showDialog"
@@ -133,6 +136,17 @@
               this.isLoding = true
               @close="showDialog=false"
             )
+
+          LoadingDialog(
+            :show="loadingDialog"
+          )
+
+          ui-debio-error-dialog(
+            :show="!!error"
+            :title="error ? error.title : ''"
+            :message="error ? error.message : ''"
+            @close="error = null"
+          )
 </template>
 
 <script>
@@ -147,6 +161,7 @@ import { u8aToHex } from "@polkadot/util"
 import { syncDecryptedFromIPFS } from "@/common/lib/ipfs"
 import metamaskServiceHandler from "@/common/lib/metamask/mixins/metamaskServiceHandler"
 import ConfirmationDialog from "@/common/components/Dialog/ConfirmationDialog"
+import LoadingDialog from "@/common/components/Dialog/LoadingDialog.vue"
 import { createSyncEvent, getCategories, getOrderList } from "@/common/lib/api"
 import { queryDnaSamples, queryDnaTestResults, unstakeRequest, unstakeRequestFee } from "@debionetwork/polkadot-provider"
 import { getDNACollectionProcess } from "@/common/lib/api"
@@ -160,7 +175,8 @@ export default {
   components: {
     StakingServiceTab,
     modalBounty,
-    ConfirmationDialog
+    ConfirmationDialog,
+    LoadingDialog
   },
 
   data: () => ({
@@ -181,8 +197,10 @@ export default {
     medicalResearchIllustration,
     isLoding: false,
     isLoadingData: false,
+    loadingDialog: false,
     txWeight: 0,
     testList: [],
+    error:null,
     headers: [
       { text: "Service Name", value: "serviceName", sortable: true },
       { text: "Lab Name", value: "labName", sortable: true },
@@ -443,6 +461,13 @@ export default {
       this.$refs.staking.fetchData()
       this.isLoading = false
       this.showDialog = false
+    },
+
+    showError() {
+      this.error = {
+        title: "Error",
+        message: "No Service Available"
+      }
     }
   }
 }

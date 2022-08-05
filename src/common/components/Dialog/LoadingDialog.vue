@@ -15,7 +15,7 @@
             b Loading...
           
           .dialog-loading__desc
-            b Please wait while we're processing your payment
+            b Please wait while we're processing your order
 
 </template>
 
@@ -72,7 +72,7 @@ export default {
       text-align: center
       letter-spacing: -0.0075em
       @include body-text-2
-      margin-bottom: 25px
+      margin-bottom: 85px
 
 
     
