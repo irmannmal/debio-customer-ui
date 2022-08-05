@@ -164,6 +164,13 @@ export default {
   },
 
   watch: {
+    $route: {
+      deep: true,
+      immediate: true,
+      handler: async function () {
+        await this.fetchDetails()
+      }
+    },
     lastEventData: async function (e) {
       if (e.section === "geneticTesting" || e.section === "orders") await this.fetchDetails()
     }
@@ -261,7 +268,7 @@ export default {
 
       clearTimeout(timeout)
       timeout = setTimeout(() => {
-        this.payment.formated_id = `${this.payment.id.substr(0, 3)}...${this.payment.id.substr(this.payment.id.length - 4)}`
+        this.payment.formated_id = `${this.payment.id.slice(0, 3)}...${this.payment.id.slice(-4)}`
       }, 1000)
     },
 
