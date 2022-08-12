@@ -3,6 +3,7 @@
 export default Object.freeze({
   REQUIRED: "This field is required",
   EMAIL: "Email is invalid. It should contain @ followed by a domain",
+  AMOUNT: "Amount should be more than 0",
   INCORRECT: (type) => {
     const message = `The ${type} you entered is incorrect`
     return message

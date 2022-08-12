@@ -55,7 +55,7 @@
           height="35" 
           @click="submitServiceRequestStaking"
           :loading="isLoading"
-          :disabled="!agree"
+          :disabled="disable"
         ) Stake
 
         v-progress-linear(
@@ -116,8 +116,13 @@ export default {
     amountRules() {
       return [
         val => !!val || this.errorMessage.REQUIRED,
-        val => !!/^[0-9]\d*(\.\d{0,9})?$/.test(val) || this.errorMessage.INPUT_CHARACTER("Numbers (e.g. 20.005)")
+        val => !!/^[0-9]\d*(\.\d{0,9})?$/.test(val) || this.errorMessage.INPUT_CHARACTER("Numbers (e.g. 20.005)"),
+        val => val > 0 || this.errorMessage.AMOUNT
       ]
+    },
+
+    disable() {
+      return !this.amount || !this.agree || this.amount < 1
     }
   },
 
@@ -210,7 +215,7 @@ export default {
     &__input-field
       max-height: 18px
       letter-spacing: -0.004em
-      margin-bottom: 25px
+      margin-bottom: 50px
       @include body-text-3-opensans
    
     &__trans-weight
