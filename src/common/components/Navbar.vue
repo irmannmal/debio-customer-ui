@@ -391,6 +391,16 @@ export default {
     },
 
     signOut () {
+      const accounts = Object.keys(window.localStorage).filter((v) =>
+        /account:/.test(v)
+      )
+      accounts.forEach((a) => {
+        const detail = JSON.parse(window.localStorage.getItem(a))
+        if (detail.address !== this.wallet.address) {
+          window.localStorage.removeItem(a)
+        }
+      })
+
       localStorage.clear()
       this.$router.push({ name: "sign-in"})
       this.clearAuth()
