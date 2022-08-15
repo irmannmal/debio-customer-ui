@@ -30,26 +30,18 @@
               :page="1"
               :loading="isLoadingTest"
             )
-              template(class="status" v-slot:[`item.serviceName`]="{item}")
+              template(class="status" v-slot:[`item.service_info.name`]="{item}")
                 div(class="d-flex align-center")
                   ui-debio-avatar.serviceImage(
-                    :src="setServiceImage(item.serviceImage)"
+                    :src="setServiceImage(item.service_info.image)"
                     size="41"
                     rounded
                   )
                   div(class="fluid")
                     .d-flex.flex-column.customer-dashboard__order-service-name
-                      span {{ item.serviceName }}
+                      span {{ item.service_info.name }}
                     .d-flex.flex-column.customer-dashboard__order-service-sample-id
-                      span {{ item.dnaSampleTrackingId}}
-
-              template(v-slot:[`item.labName`]="{item}")
-                .d-flex.flex-column.customer-dashboard__order
-                  span {{ item.labName }}
-
-              template(v-slot:[`item.orderDate`]="{item}")
-                .d-flex.flex-column.customer-dashboard__order
-                  span {{ item.orderDate }}
+                      span {{ item.dna_sample_tracking_id}}
 
               template(class="status" v-slot:[`item.status`]="{item}") 
                 .d-flex.flex-column.customer-dashboard__order
@@ -71,22 +63,18 @@
               :page="2"
               :loading="isLoadingPayments"
             )
-              template(class="status" v-slot:[`item.serviceName`]="{item}")
+              template(class="status" v-slot:[`item.service_info.name`]="{item}")
                 div(class="d-flex align-center")
                   ui-debio-avatar.serviceImage(
-                    :src="setServiceImage(item.serviceImage)"
+                    :src="setServiceImage(item.provider_service_image)"
                     size="41"
                     rounded
                   )
                   div(class="fluid")
                     .d-flex.flex-column.customer-dashboard__order-service-name
-                      span {{ item.serviceName }}
+                      span {{ item.service_info.name }}
                     .d-flex.flex-column.customer-dashboard__order-service-sample-id
-                      span {{ item.dnaSampleTrackingId}}
-
-              template(v-slot:[`item.orderDate`]="{item}")
-                .d-flex.flex-column.customer-dashboard__order
-                  span {{ item.orderDate }}
+                      span {{ item.tracking_id}}
 
               template(class="status" v-slot:[`item.status`]="{item}") 
                 .d-flex.flex-column.customer-dashboard__order
@@ -138,9 +126,9 @@ export default {
     paymentHistory: [],
     tabs: 0,
     headers: [
-      { text: "Service Name", value: "serviceName",sortable: true },
-      { text: "Lab Name", value: "labName", sortable: true },
-      { text: "Date", value: "orderDate", sortable: true },
+      { text: "Service Name", value: "service_info.name", sortable: true },
+      { text: "Service Provider", value: "provider", sortable: true },
+      { text: "Date", value: "created_at", sortable: true },
       { text: "Status", value: "status", sortable: true },
       { text: "Actions", value: "actions", sortable: false, align: "center", width: "5%" }
     ],
@@ -158,7 +146,7 @@ export default {
       {
         icon: partialBookGradient,
         text: "Upload Personal Health Record",
-        link: "customer-emr-create"
+        link: "customer-phr-create"
       }
     ],
     isLoadingPayments: false,
@@ -179,7 +167,9 @@ export default {
   },
 
   async created() {
-    await this.getOrderList()
+    if (this.$route.query.currentTab === "recent order") this.tabs = 0
+    if (this.$route.query.currentTab === "recent payments") this.tabs = 1
+    await this.fetchOrders()
     await this.fetchRecentTest()
     await this.getDataPaymentHistory()
   },
@@ -216,47 +206,39 @@ export default {
       return PAYMENT_STATUS_DETAIL[status.toUpperCase()]
     },
 
-    async getOrderList() {
+    async fetchOrders() {
       this.orderList = await getOrderList()
     },
 
     async fetchRecentTest() {
+      this.testList = []
       this.isLoadingTest = true
+
+      const filteredData = this.orderList.orders.data.filter(recentTest => {
+        return recentTest._source.status !== "Unpaid" && recentTest._source.status !== "Cancelled"
+      })
+
       try {
-        const recentTest = this.orderList.orders.data.filter(test => test._source.status !== "Unpaid" && test._source.status !== "Cancelled")
-
-        for (const order of recentTest) {
-          const {
-            id: orderId,
-            lab_info: {
-              name: labName
-            },
-            service_info: {
-              name: serviceName,
-              image: serviceImage,
-              dna_collection_process: dnaCollectionProcess
-            },
-            dna_sample_tracking_id: dnaSampleTrackingId,
-            created_at: createdAt
-          } = order._source
-
-          const dnaSample = await queryDnaSamples(this.api, dnaSampleTrackingId)
-          const orderDetail = {
-            orderId,
-            dnaSampleTrackingId,
-            labName,
-            serviceName,
-            serviceImage,
-            dnaCollectionProcess,
-            status: dnaSample.status,
-            orderDate: this.formatDate(createdAt),
-            timestamp: new Date (parseInt(createdAt.replaceAll(",", ""))).getTime().toString()
+        for (const result of filteredData) {
+          const { status } = await queryDnaSamples(this.api, result._source.dna_sample_tracking_id)
+          const dataDetail =  {
+            ...result._source,
+            id: result._id,
+            provider: result._source?.lab_info?.name ?? "Unknown Lab Provider",
+            timestamp: parseInt(result._source.created_at.replaceAll(",", "")),
+            created_at: new Date(parseInt(result._source.created_at.replaceAll(",", ""))).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric"
+            }),
+            status
           }
 
-          this.testList.push(orderDetail)
+          this.testList.push(dataDetail)
         }
 
         this.testList.sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
+
         this.isLoadingTest = false
       } catch (error) {
         console.error(error)
@@ -265,35 +247,44 @@ export default {
     },
 
     async getDataPaymentHistory() {
-      this.isLoadingPayments = true
-      try {
-        for (const payment of this.orderList.orders.data) {
-          const {
-            id: orderId,
-            lab_info: { name: labName },
-            service_info: {
-              name: serviceName,
-              image: serviceImage,
-              dna_collection_process: dnaCollectionProcess
-            },
-            dna_sample_tracking_id: dnaSampleTrackingId,
-            created_at: createdAt,
-            status
-          } = payment._source
+      this.paymentHistory = []
 
-          const paymentDetail = {
-            orderId,
-            dnaSampleTrackingId, 
-            labName,
-            serviceName,
-            serviceImage,
-            status,
-            dnaCollectionProcess,
-            orderDate: this.formatDate(createdAt),
-            timestamp: new Date (parseInt(createdAt.replaceAll(",", ""))).getTime().toString()
+      try {
+        this.isLoadingPayments = true
+        const { orders, ordersGA } = this.orderList
+        const results = [...orders.data, ...ordersGA.data]
+        for (const result of results) {
+          const analystName = `
+            ${result._source?.genetic_analyst_info?.first_name ?? ""}
+            ${result?._source?.genetic_analyst_info?.last_name ?? ""}
+          `
+
+          const computeAnalystName = !/^\s*$/.test(analystName)
+            ? analystName
+            : "Unknown Analyst Provider"
+
+          const dataDetail =  {
+            ...result._source,
+            type: result._index,
+            id: result._id,
+            provider: result._index === "orders"
+              ? result._source?.lab_info?.name ?? "Unknown Lab Provider"
+              : computeAnalystName,
+            timestamp: parseInt(result._source.created_at.replaceAll(",", "")),
+            created_at: new Date(parseInt(result._source.created_at.replaceAll(",", ""))).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric"
+            }),
+            provider_service_image: result._index === "genetic-analysis-order"
+              ? result._source.genetic_analyst_info.profile_image
+              : result._source.service_info.image,
+            tracking_id: result._index === "genetic-analysis-order"
+              ? result._source.genetic_analysis_tracking_id
+              : result._source.dna_sample_tracking_id
           }
 
-          this.paymentHistory.push(paymentDetail)
+          this.paymentHistory.push(dataDetail)
         }
 
         this.paymentHistory.sort((a, b) => {
@@ -308,12 +299,11 @@ export default {
       }
     },
 
-    goToOrderDetail(item) {
-      this.$router.push({ name: "order-history-detail", params: { id: item.orderId }}) //go to order history detail page
+    goToOrderDetail({ id }) {
+      this.$router.push({ name: "order-history-detail", params: { id }}) //go to order history detail page
     },
 
-    goToPaymentDetail(item) {
-      const id = item.orderId
+    goToPaymentDetail({ id }) {
       this.$router.push({ name: "customer-payment-details", params: { id } }) //go to payment detail
     }
   }
