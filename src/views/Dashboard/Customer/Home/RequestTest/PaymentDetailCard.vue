@@ -344,7 +344,7 @@ export default {
         return
       }
 
-      if (this.remainingStaking && this.remainingStaking > 0) {
+      if (this.remainingAmount && this.remainingAmount > 0) {
         this.showPayRemainingDialog = true
         return
       }
@@ -487,7 +487,6 @@ export default {
       margin: 1px 24px
 
     &__details
-      margin-top: 5px
       display: flex
       justify-content: space-between
 

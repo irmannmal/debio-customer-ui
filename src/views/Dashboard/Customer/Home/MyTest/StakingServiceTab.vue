@@ -285,7 +285,7 @@ export default {
     async toCheckout() {
       const lastOrder = await queryLastOrderHashByCustomer(
         this.api,
-        this.wallet.address
+        this.pair.address
       )
       
       this.$router.push({ 
