@@ -106,7 +106,8 @@ export default {
     
     ...mapState({
       substrateApi: (state) => state.substrate.api,
-      isLoading: (state) => state.substrate.isLoadingWallet
+      isLoading: (state) => state.substrate.isLoadingWallet,
+      wallet: (state) => state.substrate.wallet
     }),
 
     sitekey() {
@@ -143,7 +144,7 @@ export default {
 
         accounts.forEach((a) => {
           const detail = JSON.parse(window.localStorage.getItem(a))
-          if (detail.address !== this.wallet.address) {
+          if (detail?.address !== this.wallet?.address) {
             window.localStorage.removeItem(a)
           }
         })
