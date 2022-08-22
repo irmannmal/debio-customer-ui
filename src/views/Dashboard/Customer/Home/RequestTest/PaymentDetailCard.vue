@@ -197,7 +197,6 @@ export default {
     labDetail: null,
     stakingFlow: false,
     stakingAmount: 0,
-    remainingStaking: 0,
     remainingDbio: 0,
     remainingAmount: 0,
     showPayRemainingDialog: false,
@@ -247,6 +246,7 @@ export default {
       const stakingAmount = Number(formatPrice(this.stakingData.staking_amount))
       this.stakingAmount = (stakingAmount * debioBalance.dbioToDai).toFixed(3)
       this.remainingAmount = this.dataService.totalPrice - this.stakingAmount
+      this.remainingDbio = (this.remainingAmount / debioBalance.dbioToDai).toFixed(3)
       this.excessAmount = this.stakingAmount - this.dataService.totalPrice
 
       if (this.excessAmount > 0) {
