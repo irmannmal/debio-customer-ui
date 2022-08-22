@@ -12,7 +12,7 @@
       ui-debio-icon(:icon="cableErrorIcon" fill size="100")
       h6.modal-error__title Aw, Snap!
       p.modal-error__subtitle An Internal error occured during your request! try again later!
-    
+
     ui-debio-modal(
       :show="showModalPassword"
       title="Unlock Wallet"
@@ -70,22 +70,6 @@
         .modal-password__cta-change-account(
           @click="signOut"
         ) Not you? Try different account
-
-    v-expansion-panels.main-layout__expantion(
-      v-model="panel"
-      flat
-    )
-      v-expansion-panel
-        v-expansion-panel-header.main-layout__expantion-title
-          span Announcement for users who stake $DBIO for a service request with the "Others" category.
-        v-expansion-panel-content.main-layout__expantion-content
-          p Due to the medical lab establishment and medical equipment procurement executing according to a specific service category, we will take down the “Others” option from the list of service categories. DAOGenics, Ltd will determine the available specific service categories. 
-          p If you had staked $DBIO for request service with the "Others" category, please unstake your $DBIO by canceling your request.  Once unstaked, the $DBIO will be returned to your wallet after six days. After receiving your $DBIO, you can make another service request within the categories determined by DAOGenics, Ltd.
-          p If you have any categories you want to add, feel free to contact science@debio.network.
-          v-btn.main-layout__expantion-button(
-            outlined
-            @click="doClose"
-          ) OK
 
     .layout-dashboard
       NavigationDrawer.layout-dashboard__sidebar(:items="computeNavs")
@@ -162,7 +146,6 @@ import Navbar from "@/common/components/Navbar.vue"
 import maintenancePageLayout from "@/views/Dashboard/maintenancePageLayout"
 import errorMessage from "@/common/constants/error-messages"
 import localStorage from "@/common/lib/local-storage"
-import VueRouter from "@/router"
 
 export default {
   name: "MainPage",
@@ -187,7 +170,6 @@ export default {
     success: false,
     error: null,
     password: null,
-    panel: -1,
 
     navs: [
       { text: "Dashboard", disabled: false, active: false, route: "customer-dashboard", icon: gridIcon },
@@ -226,13 +208,10 @@ export default {
   },
 
   watch: {
-    $route() {
-      const query = VueRouter?.history?.current?.query
-      
+    $route(val) {
       this.pageError = null
-      if (query?.error) this.showModalError = true
+      if (val?.query?.error) this.showModalError = true
     },
-    
 
     lastEventData(event) {
       if (event !== null) {
@@ -323,10 +302,6 @@ export default {
       localStorage.clear()
       this.clearAuth()
       this.clearWallet()
-    },
-
-    doClose () {
-      this.panel = -1;
     }
   }
 }
@@ -340,22 +315,6 @@ export default {
 .main-layout
   display: flex
   flex-direction: column
-
-  &__expantion-title,
-  &__expantion-content
-    background-color: #E3E3E3
-
-  &__expantion-title
-    font-weight: 600
-    font-size: 14px
-
-  &__expantion-content
-    font-size: 13px
-    font-weight: 400
-
-  &__expantion-button
-    width: 140px
-    border-color: #5640A5
 
 .layout-dashboard
   width: 100%
@@ -414,15 +373,15 @@ export default {
     opacity: 0
     transform: translateX(-12.813rem)
 
-.modal-error 
-  .ui-debio-modal__card 
+.modal-error
+  .ui-debio-modal__card
     width: 300px
     gap: 1rem
 
   &__title
     @include h6-opensans
-  
-  &__subtitle 
+
+  &__subtitle
     max-width: 200px
     text-align: center
     color: #595959

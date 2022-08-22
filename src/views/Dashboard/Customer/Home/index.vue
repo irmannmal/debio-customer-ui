@@ -30,6 +30,9 @@
               :page="1"
               :loading="isLoadingTest"
             )
+              template(class="status" v-slot:[`item.formated_id`]="{item}")
+                span(:aria-label="item.id" :title="item.id") {{ item.formated_id }}
+
               template(class="status" v-slot:[`item.service_info.name`]="{item}")
                 div(class="d-flex align-center")
                   ui-debio-avatar.serviceImage(
@@ -126,6 +129,7 @@ export default {
     paymentHistory: [],
     tabs: 0,
     headers: [
+      { text: "Order ID", value: "formated_id", sortable: true },
       { text: "Service Name", value: "service_info.name", sortable: true },
       { text: "Service Provider", value: "provider", sortable: true },
       { text: "Date", value: "created_at", sortable: true },
@@ -224,6 +228,7 @@ export default {
           const dataDetail =  {
             ...result._source,
             id: result._id,
+            formated_id: `${result._id.slice(0, 4)}...${result._id.slice(-4)}`,
             provider: result._source?.lab_info?.name ?? "Unknown Lab Provider",
             timestamp: parseInt(result._source.created_at.replaceAll(",", "")),
             created_at: new Date(parseInt(result._source.created_at.replaceAll(",", ""))).toLocaleDateString("en-GB", {
@@ -267,6 +272,7 @@ export default {
             ...result._source,
             type: result._index,
             id: result._id,
+            formated_id: `${result._id.slice(0, 4)}...${result._id.slice(-4)}`,
             provider: result._index === "orders"
               ? result._source?.lab_info?.name ?? "Unknown Lab Provider"
               : computeAnalystName,
