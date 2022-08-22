@@ -110,7 +110,8 @@ export default {
       city: state => state.lab.city,
       category: state => state.lab.category,
       lastEventData: (state) => state.substrate.lastEventData,
-      web3: (state) => state.metamask.web3
+      web3: (state) => state.metamask.web3,
+      walletBalance: (state) => state.substrate.walletBalance
     }),
 
     amountRules() {
@@ -149,6 +150,16 @@ export default {
     },
 
     async submitServiceRequestStaking() {
+      const sufficientBalance = (Number(this.amount) + Number(this.txWeight)) <= Number(this.walletBalance)
+      
+      if (!sufficientBalance) {
+        const error = await errorHandler("Insufficient Balance")
+        this.errorTitle = error.title
+        this.errorMsg = error.message
+        this.showError = true
+        return 
+      }
+
       this.isLoading = true
 
       try {

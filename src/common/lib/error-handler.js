@@ -2,6 +2,7 @@ export async function errorHandler(err) {
   let error 
 
   switch (err) {
+  case "Insufficient Balance":
   case "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low":
     error = {
       title: "Insufficient Balance",
