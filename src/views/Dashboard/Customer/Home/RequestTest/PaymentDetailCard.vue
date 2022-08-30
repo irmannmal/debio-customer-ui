@@ -173,7 +173,7 @@ import { cancelOrder } from "@debionetwork/polkadot-provider"
 import { processRequest } from "@debionetwork/polkadot-provider"
 import { queryLastOrderHashByCustomer, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
 import PayRemainingDialog from "./PayRemainingDialog.vue"
-import { getDbioBalance, getOrderDetail, fetchTxHashOrder } from "@/common/lib/api"
+import { getConversion, getOrderDetail, fetchTxHashOrder } from "@/common/lib/api"
 import { getDNACollectionProcess } from "@/common/lib/api"
 import { formatPrice } from "@/common/lib/price-format.js"
 
@@ -242,7 +242,7 @@ export default {
 
     if (this.dataService.serviceFlow === "StakingRequestService") {
       this.stakingFlow = true
-      const debioBalance = await getDbioBalance()
+      const debioBalance = await getConversion()
       const stakingAmount = Number(formatPrice(this.stakingData.staking_amount))
       this.stakingAmount = (stakingAmount * debioBalance.dbioToDai).toFixed(3)
       this.remainingAmount = this.dataService.totalPrice - this.stakingAmount
@@ -310,7 +310,7 @@ export default {
     }),
 
     async getUsdRate() {
-      this.rate = await getDbioBalance()
+      this.rate = await getConversion()
       if (this.rate) this.usdRate = this.rate.daiToUsd
     },
 

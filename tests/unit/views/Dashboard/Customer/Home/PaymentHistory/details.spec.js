@@ -28,7 +28,7 @@ const defaultOrder = {
     "customer_box_public_key": "0x35aa27206bdb36f0e5cc892170ec3dd97630c86786be8cbbb71d6b0ebf76a832",
     "seller_id": "5Hj284yPGCrxjh7CHw5o1CFJXKf1DYfgbYk6CPrm1pPyCiYM",
     "dna_sample_tracking_id": "AE9T58X2KSWI1HUJ476E1",
-    "currency": "DAI",
+    "currency": "USN",
     "prices": [
       {
         "component": "testing_price",
@@ -61,7 +61,7 @@ const defaultOrder = {
     "service_info": {
       "prices_by_currency": [
         {
-          "currency": "DAI",
+          "currency": "USN",
           "total_price": "2,000,000,000,000,000,000",
           "price_components": [
             {
@@ -112,7 +112,7 @@ const defaultOrder = {
     "seller_id": "5DcWiG6XUcBtoG9XRRoay3LRzGWATbNuWppYyPfeMDEYaeYN",
     "genetic_data_id": "0x4c981b074d9380417ebf8fb90289500fceca23c05ed114488feb1f693dbb0132",
     "genetic_analysis_tracking_id": "M8O4UGZQTU7NT2QN0FMFD",
-    "currency": "DBIO",
+    "currency": "USN",
     "prices": [
       {
         "component": "analyze_price",
@@ -127,7 +127,7 @@ const defaultOrder = {
       "name": "A Genome Services",
       "prices_by_currency": [
         {
-          "currency": "DBIO",
+          "currency": "USN",
           "total_price": "10,000,000,000,000,000,000",
           "price_components": [
             {

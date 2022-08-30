@@ -18,7 +18,7 @@ const myTest = {
   "customer_box_public_key": "",
   "seller_id": "",
   "dna_sample_tracking_id": "",
-  "currency": "DAI",
+  "currency": "USN",
   "prices": [
     {
       "component": "testing_price",
@@ -51,7 +51,7 @@ const myTest = {
   "service_info": {
     "prices_by_currency": [
       {
-        "currency": "DAI",
+        "currency": "USN",
         "total_price": "2,000,000,000,000,000,000",
         "price_components": [
           {

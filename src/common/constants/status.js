@@ -48,7 +48,7 @@ export const ORDER_STATUS_DETAIL = Object.freeze({
   },
 
   REJECTED: (amount) => {
-    const detail = `Your sample has failed quality control. Your service fee of ${amount} DAI will be refunded to your account.`
+    const detail = `Your sample has failed quality control. Your service fee of ${amount} will be refunded to your account.`
     return {
       name: "Rejected",
       color: "#F5222D",

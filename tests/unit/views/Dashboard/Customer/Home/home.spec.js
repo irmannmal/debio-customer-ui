@@ -25,7 +25,7 @@ jest.mock("@debionetwork/polkadot-provider", () => ({
       customerBoxPublicKey: "0x43b0644e304ef46dcf4cf4fd196504684f90513d8bee1bcfeb6d9565b764f068",
       sellerId: "5FFEr8P3DnLHzVybCYV4JsM9d9SmHCJZcMEMB9dBowcnUx4z",
       dnaSampleTrackingId: "S0PWOZERFRWCCJMAQZT10",
-      currency: "DAI",
+      currency: "USN",
       prices: [
         {
           component: "testing_price",
@@ -76,7 +76,7 @@ jest.mock("@debionetwork/polkadot-provider", () => ({
         name: "Whole Genome Sequencing",
         pricesByCurrency: [
           {
-            currency: "DAI",
+            currency: "USN",
             totalPrice: "4,000,000,000,000,000,000",
             priceComponents: [
               {

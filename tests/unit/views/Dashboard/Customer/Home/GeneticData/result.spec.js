@@ -15,7 +15,7 @@ const dataSample = {
     "name": "test",
     "pricesByCurrency": [
       {
-        "currency": "DBIO",
+        "currency": "USN",
         "totalPrice": "10,000,000,000,000,000,000",
         "priceComponents": [
           {

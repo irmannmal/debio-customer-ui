@@ -88,7 +88,7 @@
 
 import { mapState } from "vuex"
 import ConfirmationDialog from "@/common/components/Dialog/ConfirmationDialog"
-import { getDbioBalance, setGeneticAnalysisPaid } from "@/common/lib/api"
+import { getConversion, setGeneticAnalysisPaid } from "@/common/lib/api"
 import { errorHandler } from "@/common/lib/error-handler"
 import PaymentDialog from "@/common/components/Dialog/PaymentDialog"
 import { 
@@ -178,8 +178,6 @@ export default {
   },
 
   async mounted() {
-    await this.getUsdRate()
-
     if (this.$route.params.id) {
       this.isCreated = true
       this.orderId = this.$route.params.id
@@ -187,6 +185,7 @@ export default {
       await this.getGeneticAnalysisOrderDetail()
       await this.getGeneticData()
       await this.getAnalysisStatus()
+      await this.getRate()
     }
 
     if (Number(this.walletBalance) < Number(this.orderPrice)) {
@@ -220,7 +219,7 @@ export default {
     },
 
     formatPriceInUsd(val) {
-      const priceInUsd = Number(val.replaceAll(",", "") * this.rate.dbioToUsd )
+      const priceInUsd = Number(val.replaceAll(",", "") * this.rate )
       const formatedBalance = this.web3.utils.fromWei(String(priceInUsd), "ether")
       return Number(formatedBalance).toFixed(4)
     },
@@ -232,8 +231,15 @@ export default {
       return formattedDate
     },
 
-    async getUsdRate() {
-      this.rate = await getDbioBalance()
+    async getRate() {
+      if (this.orderCurrency?.toUpperCase() === "DBIO") {
+        const rate = await getConversion()
+        this.rate = rate.dbioToUsd
+        return
+      }
+
+      this.rate = await getConversion(this.orderCurrency, "USD")
+
     },
 
     async cancelOrder() {
