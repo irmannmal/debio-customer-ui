@@ -48,6 +48,15 @@
     template(slot="illustration")
       ui-debio-icon.banner-illustration(:icon="analiticIllustration" :size="cardBlock ? 250 : 180" view-box="0 0 252 252" fill)
 
+    template(slot="cta")
+      .banner-card
+        router-link.banner-card__container(:to="{name: 'customer-phr-create'}")
+          ui-debio-icon.banner-card__icon(
+            :icon="partialBookGradient"
+            size="50"
+          )
+          .banner-card__text Upload Personal Health Record
+
   ui-debio-data-table(
     :headers="headers"
     :loading="isLoading"
@@ -95,7 +104,8 @@ import {
   alertTriangleIcon,
   alertIcon,
   trashIcon,
-  downloadIcon
+  downloadIcon,
+  partialBookGradient
 } from "@debionetwork/ui-icons"
 import {
   queryElectronicMedicalRecordByOwnerId,
@@ -124,7 +134,7 @@ export default {
     downloadIcon,
     alertIcon,
     alertTriangleIcon,
-
+    partialBookGradient,
     cardBlock: false,
     showModal: false,
     showModalPassword: false,
@@ -332,6 +342,7 @@ export default {
 
 <style lang="sass" scoped>
   @import "@/common/styles/mixins.sass"
+  @import "@/common/styles/function.sass"
 
   .customer-phr
     display: flex
@@ -410,4 +421,46 @@ export default {
 
       &__cta
         gap: 20px
+
+  .banner-card
+    display: flex
+
+    &__container
+      margin-left: 80px
+      width: toRem(220px)
+      height: toRem(100px)
+      border-radius: toRem(4px)
+      backdrop-filter: blur(20px)
+      -webkit-backdrop-filter: blur(20px)
+      background: rgba(255, 255, 255, .9)
+      position: relative
+      z-index: 2
+      display: inherit
+      text-decoration: none
+      align-items: center
+      justify-content: center
+      overflow: hidden
+      transition: 250ms ease-in-out
+
+      &:hover
+        border: solid 1.9px transparent
+        text-shadow: -3px 4px 5px rgba(0, 0, 0, .1)
+        box-shadow: 0 1px 2px rgba(252, 146, 233, .4), 0 2px 4px rgba(252, 146, 233, .4), 0 4px 8px rgba(252, 146, 233, .4), 0 8px 16px rgba(252, 146, 233, .4) inset
+
+      &:not(:last-of-type)
+        margin-right: toRem(20px)
+
+    &__icon
+      margin-right: toRem(24px)
+
+      &::v-deep
+        svg
+          transition: 250ms ease-in-out
+          filter: drop-shadow(rgba(252, 146, 233, .045) -1px 1px) drop-shadow(rgba(252, 146, 233, .045) -2px 2px) drop-shadow(rgba(252, 146, 233, .045) -3px 3px) drop-shadow(rgba(252, 146, 233, .045) -3px 3px) drop-shadow(rgba(252, 146, 233, .045) -4px 4px) drop-shadow(rgba(252, 146, 233, .045) -5px 5px) drop-shadow(rgba(252, 146, 233, .045) -6px 6px) drop-shadow(rgba(252, 146, 233, .045) -7px 7px) drop-shadow(rgba(252, 146, 233, .045) -8px 8px) drop-shadow(rgba(252, 146, 233, .045) -9px 9px) drop-shadow(rgba(252, 146, 233, .045) -10px 10px) drop-shadow(rgba(252, 146, 233, .045) -11px 11px) drop-shadow(rgba(252, 146, 233, .045) -12px 12px) drop-shadow(rgba(252, 146, 233, .045) -13px 13px) drop-shadow(rgba(252, 146, 233, .045) -14px 14px) drop-shadow(rgba(252, 146, 233, .045) -15px 15px) drop-shadow(rgba(252, 146, 233, .045) -16px 16px) drop-shadow(rgba(252, 146, 233, .045) -17px 17px) drop-shadow(rgba(252, 146, 233, .045) -18px 18px) drop-shadow(rgba(252, 146, 233, .045) -19px 19px) drop-shadow(rgba(252, 146, 233, .045) -20px 20px) drop-shadow(rgba(252, 146, 233, .045) -21px 21px) drop-shadow(rgba(252, 146, 233, .045) -22px 22px) drop-shadow(rgba(252, 146, 233, .045) -23px 23px)
+
+    &__text
+      color: #595959
+      max-width: toRem(115px)
+      @include button-2
+      
 </style>
