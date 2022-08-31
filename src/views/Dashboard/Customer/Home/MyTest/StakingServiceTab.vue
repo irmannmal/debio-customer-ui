@@ -253,7 +253,7 @@ export default {
         service.id,
         indexPrice,
         customerBoxPublicKey,
-        service.serviceFlow
+        service.service_flow
       )
     },
 
