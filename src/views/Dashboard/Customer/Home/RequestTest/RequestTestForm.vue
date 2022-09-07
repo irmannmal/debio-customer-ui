@@ -30,7 +30,6 @@
         item-text="name"
         item-value="state_code"
         placeholder="Select State/Province"
-        :rules="[val => !!val]"
         :disabled="!country"
         @change="onStateChange"
         autocomplete="off"
@@ -51,7 +50,6 @@
         item-text="name"
         return-object
         placeholder="Select City"
-        :rules="[val => !!val]"
         :disabled="!state"
         @change="onCityChange"
         autocomplete="off"
@@ -70,8 +68,7 @@
         item-text="service_categories"
         item-value="service_categories"
         menu-props="auto"
-        placeholder="Select Test Category"
-        :rules="[val => !!val]"
+        placeholder="Select Category"
         :disabled="!city"
         @change="onCategoryChange"
         autocomplete="off"
@@ -120,7 +117,7 @@ export default {
 
     disable() {
       const {country} = this
-      return !(country)
+      return !country
     }
   },
   
