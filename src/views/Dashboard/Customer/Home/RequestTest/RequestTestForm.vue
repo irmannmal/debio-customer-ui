@@ -16,6 +16,12 @@
         outlined)
 
       label.request-test-form State/Province
+        ui-debio-button.request-test-form__label-desc(
+          disabled
+          style="font-size: 8px;"
+          width="40"
+          height="20"          
+          ) Optional
       v-autocomplete.request-test-form(
         dense
         key="state"
@@ -24,13 +30,19 @@
         item-text="name"
         item-value="state_code"
         placeholder="Select State/Province"
-        :rules="[val => !!val || errorMessage.REQUIRED]"
+        :rules="[val => !!val]"
         :disabled="!country"
         @change="onStateChange"
         autocomplete="off"
         outlined)
 
       label.request-test-form City
+        ui-debio-button.request-test-form__label-desc(
+          disabled
+          style="font-size: 8px;"
+          width="40"
+          height="20"          
+          ) Optional
       v-autocomplete.request-test-form(
         dense
         key="city"
@@ -39,21 +51,27 @@
         item-text="name"
         return-object
         placeholder="Select City"
-        :rules="[val => !!val || errorMessage.REQUIRED]"
+        :rules="[val => !!val]"
         :disabled="!state"
         @change="onCityChange"
         autocomplete="off"
         outlined)
 
-      label.request-test-form Category
+      label.request-test-form Test Category
+        ui-debio-button.request-test-form__label-desc(
+          disabled
+          style="font-size: 8px;"
+          width="40"
+          height="20"
+          ) Optional
       v-select.request-test-form(
         dense
         :items="categories"
         item-text="service_categories"
         item-value="service_categories"
         menu-props="auto"
-        placeholder="Select Category"
-        :rules="[val => !!val || errorMessage.REQUIRED]"
+        placeholder="Select Test Category"
+        :rules="[val => !!val]"
         :disabled="!city"
         @change="onCategoryChange"
         autocomplete="off"
@@ -101,8 +119,8 @@ export default {
     }),
 
     disable() {
-      const {country, state, city, category} = this
-      return !(country && state && city && category)
+      const {country} = this
+      return !(country)
     }
   },
   
@@ -211,7 +229,12 @@ export default {
   @import "@/common/styles/mixins.sass"
 
   .request-test-form
+    margin-bottom: 6px
     @include body-text-3-opensans
+
+    &__label-desc
+      margin-left: 8px
+      margin-bottom: 6px
   
   .request-test-button
     @include button-2

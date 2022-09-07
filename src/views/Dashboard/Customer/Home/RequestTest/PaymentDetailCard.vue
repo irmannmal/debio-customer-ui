@@ -385,6 +385,13 @@ export default {
     },
 
     async toInstruction (val) {
+      const description = this.dataServices.split("||")
+
+      if (description.length > 1) {
+        window.open(description[1], "_blank")
+        return
+      }
+
       const dnaCollectionProcess = await getDNACollectionProcess()
       const link = dnaCollectionProcess.filter(e => e.collectionProcess === val)[0].link
       window.open(link, "_blank")

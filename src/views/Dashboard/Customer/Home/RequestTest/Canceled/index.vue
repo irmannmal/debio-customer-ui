@@ -30,7 +30,7 @@ export default {
 
   data: () => ({
     stepperItems: [
-      { number: 1, title: "Select Location and Service Category", active: false },
+      { number: 1, title: "Select Location and Test Category", active: false },
       { number: 2, title: "Select Service", active: false },
       { number: 3, title: "Checkout & Payment", active: false },
       { number: 4, title: "Canceled", active: true }

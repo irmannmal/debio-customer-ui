@@ -23,6 +23,7 @@
             :city="service.city"
             :region="service.region"
             :country="service.country"
+            :category="service.serviceCategory"
             @click="getDetailService(service)"
           )
       
@@ -84,7 +85,7 @@ export default {
       wallet: (state) => state.substrate.wallet,
       country: (state) => state.lab.country,
       city: (state) => state.lab.city,
-      category: (state) => state.lab.category,
+      serviceCategory: (state) => state.lab.serviceCategory,
       dataServices: (state) => state.lab.services
     })
   },
@@ -93,7 +94,7 @@ export default {
     this.services = this.dataServices
     await this.getServices()
 
-    if (!this.country && !this.city && !this.category) {
+    if (!this.country) {
       this.$router.push({ name: "customer-request-test"})
     }
 
@@ -107,7 +108,9 @@ export default {
     }),
 
     async getServices () {
-      if (!this.services) return
+
+
+      
       for (let i = 0; i < this.services.length; i++) {
         let {
           id: serviceId,
@@ -122,7 +125,7 @@ export default {
           },
           info: {
             name: serviceName,
-            category: serviceCategory,
+            serviceCategory: serviceCategory,
             description: serviceDescription,
             long_description: longDescription,
             image: serviceImage,
@@ -153,10 +156,6 @@ export default {
         const totalPrice = formatPrice(detailPrice.total_price.replaceAll(",", ""))
         const servicePrice = formatPrice(detailPrice.price_components[0].value.replaceAll(",", ""))
         const qcPrice =  formatPrice(detailPrice.additional_prices[0].value.replaceAll(",", ""))
-
-        if (durationType === "WorkingDays") {
-          durationType = "Days"
-        }
 
         const service = {
           serviceId,
@@ -199,10 +198,10 @@ export default {
       if (!this.serviceList.length) {
         this.showNoLab = true
       }
-
     },
     
     async getDetailService(service) {
+
       this.lastOrder = await queryLastOrderHashByCustomer(
         this.api,
         this.wallet.address

@@ -102,7 +102,7 @@ export default {
         sortable: true
       },
       {
-        text: "Service Category",
+        text: "Test Category",
         value: "category",
         sortable: true
       },

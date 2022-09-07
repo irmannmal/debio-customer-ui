@@ -41,7 +41,7 @@ export default {
       { number: 1, title: "Select Genetic Data", active: false },
       { number: 2, title: "Select Service & Analyst", active: false },
       { number: 3, title: "Checkout and Payment", active: true },
-      { number: 4, title: "Success", active: false }
+      { number: 4, title: "Summary/Instruction", active: false }
     ],
     isloading: false
   }),

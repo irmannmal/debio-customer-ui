@@ -90,7 +90,7 @@ export default [
       {
         path: "request-test/success/:hash?",
         name: "customer-request-test-success",
-        meta: { pageHeader: "Success", parent: "customer-request-test" },
+        meta: { pageHeader: "Summary/Instruction", parent: "customer-request-test" },
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/RequestTest/Success")
       },
       {

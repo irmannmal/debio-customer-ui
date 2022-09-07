@@ -14,10 +14,14 @@
       div.dialog-service__service-body
         div.dialog-service__service-description
           .dialog-service__sub-title Description
-          .dialog-service__description {{ selectedService.longDescription }}
+          .dialog-service__description {{ computeLongDescription }}
 
-        div.dialog-service__service-description
-          .dialog-service__sub-title Expected Duration
+          .dialog-service__link 
+            b Link Purchase Kit: 
+            a {{ computePurchaseLink }}
+
+        div.dialog-service__service-duration
+          .dialog-service__sub-title Maximum Duration
           .dialog-service__description          
             div {{ selectedService.duration }} {{ selectedService.durationType}}
       
@@ -95,6 +99,14 @@ export default {
 
     computeAvatar() {
       return this.selectedService.serviceImage ? this.selectedService.serviceImage : require("@/assets/debio-logo.png")
+    },
+
+    computeLongDescription () {
+      return this.selectedService.longDescription.split("||")[0]
+    },
+
+    computePurchaseLink () {
+      return this.selectedService.longDescription.split("||")[1]
     }
   },
 
@@ -181,6 +193,8 @@ export default {
       margin: 0rem 2.25rem
 
     &__service-description
+      max-height: 160px
+      overflow: scroll
       margin-bottom: 1.125rem
 
     &__title
@@ -199,6 +213,10 @@ export default {
       @include button-2
 
     &__description
+      @include body-text-3-opensans
+
+    &__link
+      margin-top: 10px
       @include body-text-3-opensans
     
     &__address

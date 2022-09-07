@@ -13,13 +13,15 @@
               b {{ title }}
             .menu-card__price 
               b {{ price }} {{ currency.toUpperCase() }}
-
+          .menu-card__category Test Category : {{ category }}
           .menu-card__description {{ description }}
           
           ui-debio-rating.menu-card__rating(:rating="rate" :total-reviews="countRate" size="12")
 
           .menu-card__lab-name
             b {{ labName }}
+
+          .menu-card__lab-address {{ city }}, {{ region }}, {{ country}}
 
 </template>
 
@@ -43,7 +45,11 @@ export default {
     currency: String,
     rate: Number,
     countRate: Number,
-    description: String
+    description: String,
+    category: String,
+    city: String,
+    region: String,
+    country: String
   },
 
   async mounted() {
@@ -89,7 +95,7 @@ export default {
       height:32px
 
     &__name
-      width: 230px
+      width: 200px
       @include body-text-3-opensans-medium
   
     &__price
@@ -101,13 +107,21 @@ export default {
       width: 240px
       @include body-text-3-opensans-medium
 
+    &__category
+      margin-top: 4px
+      color: #757274
+      @include tiny-reg
+
     &__description
-      margin-top: 16px
+      margin-top: 12px
       width: 270px
-      color: gray
+      color: #363636
+      @include tiny-reg
+
+    &__lab-address
+      color: #5640A5
       @include tiny-reg
 
     &__rating
       margin-top: 10px
 </style>
-
