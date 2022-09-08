@@ -1,64 +1,131 @@
 <template lang="pug">
-  v-dialog.staking-dialog(:value="show" width="400" persistent rounded )
+  v-dialog.staking-dialog(:value="show" width="775" persistent rounded )
     v-card.staking-dialog__dialog
       v-app-bar(flat dense color="white" )
         v-toolbar-title.staking-dialog__title Staking Coin Agreement
         v-spacer
         v-btn(icon @click="closeDialog")
           v-icon mdi-close
+  
+      v-card-text
+        v-row.staking-dialog__row
+          v-col.staking-dialog__card
+            ol.staking-dialog__card-text.ml-3
+              li.staking-dialog__card-text-content There's no locking period. Your fund can be unstaked anytime with your consent but there will be a period of 6 days to process it.
+              li.staking-dialog__card-text-content Upon receiving your test result, you will be rewarded with DBIO as a token of gratitude for using our service. By unstaking your fund, you will lose this privilege.
+              li.staking-dialog__card-text-content You will receive notification when requested service is available. You can proceed to request a test. If the staked amount is bigger than the service price, you will get refund for overpayment. If staked amount is smaller than the service price, to complete the purchase, you should pay for the outstanding amount to complete the purchase.
 
-      .staking-dialog__card
-        ol.staking-dialog__card-text.ml-3
-          li.staking-dialog__card-text-content There's no locking period. Your fund can be unstaked anytime with your consent but there will be a period of 6 days to process it.
-          li.staking-dialog__card-text-content Upon receiving your test result, you will be rewarded with DBIO as a token of gratitude for using our service. By unstaking your fund, you will lose this privilege.
-          li.staking-dialog__card-text-content You will receive notification when requested service is available. You can proceed to request a test. If the staked amount is bigger than the service price, you will get refund for overpayment. If staked amount is smaller than the service price, to complete the purchase, you should pay for the outstanding amount to complete the purchase.
+          v-col.staking-dialog__form
+            label.staking-dialog__form-label Country
+            v-autocomplete.staking-dialog__form-field(
+              dense
+              key="country"
+              v-model="country"
+              :items="countries"
+              item-text="name"
+              item-value="iso2"
+              placeholder="Select Country"
+              @change="onCountryChange"
+              autocomplete="off"
+              outlined
+            )
 
-      .staking-dialog__input
-        .staking-dialog__input-label Enter your Amount 
-        ui-debio-input.staking-dialog__input-field(
-          :rules="amountRules"
-          variant="small"
-          width="100%"
-          type="number"
-          min="0"
-          step=".001"
-          v-model="amount"
-          placeholder="Amount (DBIO)"
-          outlined
-        )
+            label.staking-dialog__form-label State/Province
+            v-autocomplete.staking-dialog__form-field(
+              dense
+              key="state"
+              v-model="state"
+              :items="states"
+              item-text="name"
+              item-value="state_code"
+              placeholder="Select State/Province"
+              :disabled="!country"
+              @change="onStateChange"
+              autocomplete="off"
+              outlined
+            )
 
-        v-checkbox(v-model="agree")
-          template(v-slot:label) 
-            div(style="font-size: 12px;") I have read and agree to the 
-              a.link(href="https://docs.debio.network/legal/terms-and-condition" target="_blank" rel="noreferrer noopener nofollow") terms and conditions
+            label.staking-dialog__form-label City
+            v-autocomplete.staking-dialog__form-field(
+              dense
+              key="city"
+              v-model="city"
+              :items="cities"
+              item-text="name"
+              return-object
+              placeholder="Select City"
+              :disabled="!state"
+              @change="onCityChange"
+              autocomplete="off"
+              outlined
+            )
 
-        .staking-dialog__trans-weight 
-          .staking-dialog__trans-weight-text Estimated transaction weight
-            v-tooltip.visible(bottom )
-              template(v-slot:activator="{ on, attrs }")
-                v-icon.staking-dialog__trans-weight-icon(
-                  style="font-size: 12px;"
-                  color="primary"
-                  dark
-                  v-bind="attrs"
-                  v-on="on"
-                ) mdi-alert-circle-outline 
-              span(style="font-size: 10px;") Total fee paid in DBIO to execute this transaction.
+            label.staking-dialog__form-label Category
+            v-select.staking-dialog__form-field(
+              dense
+              :items="categories"
+              v-model="category"
+              item-text="service_categories"
+              item-value="service_categories"
+              menu-props="auto"
+              placeholder="Select Category"
+              :disabled="!city"
+              @change="onCategoryChange"
+              autocomplete="off"
+              outlined
+            )
 
-          div( style="font-size: 12px;" ) {{ Number(txWeight).toFixed(4) }} DBIO
+            label.staking-dialog__form-label Staking Amount
+            v-text-field.staking-dialog__form-field(
+              v-model="amount"
+              type="number"
+              dense
+              min="0"
+              step=".001"
+              placeholder="Amount (DBIO)"
+              outlined
+            )
 
-        v-btn.staking-dialog__input-button(
-          depressed
-          color="secondary"
-          large
-          width="100%"
-          height="35" 
-          @click="submitServiceRequestStaking"
-          :loading="isLoading"
-          :disabled="disable"
-        ) Stake
+            v-checkbox.staking-dialog__checkbox(v-model="agree")
+              template(v-slot:label) 
+                div(style="font-size: 12px;") I have read and agree to the 
+                  a.link(href="https://docs.debio.network/legal/terms-and-condition" target="_blank" rel="noreferrer noopener nofollow") terms and conditions
 
-        v-progress-linear(
+            .staking-dialog__trans-weight
+              .staking-dialog__trans-weight-text Estimated transaction weight
+                v-tooltip.visible(bottom )
+                  template(v-slot:activator="{ on, attrs }")
+                    v-icon.staking-dialog__trans-weight-icon(
+                      style="font-size: 12px;"
+                      color="primary"
+                      dark
+                      v-bind="attrs"
+                      v-on="on"
+                    ) mdi-alert-circle-outline 
+                  span(style="font-size: 10px;") Total fee paid in DBIO to execute this transaction.
+
+              div( style="font-size: 12px;" ) {{ Number(txWeight).toFixed(4) }} DBIO
+
+            .staking-dialog__input-button
+              ui-debio-button(
+                color="secondary"
+                width=140
+                height=32
+                outlined
+              ) Cancel
+
+              ui-debio-button(
+                depressed
+                color="secondary"
+                large
+                height=32
+                width=140
+                @click="submitServiceRequestStaking"
+                :loading="isLoading"
+                :disabled="disable"
+              ) Stake
+
+      v-progress-linear(
         v-if="isLoading"
         indeterminate
         color="primary"
@@ -78,6 +145,8 @@ import { createRequest } from "@/common/lib/polkadot-provider/command/service-re
 import { createRequestFee } from "@debionetwork/polkadot-provider"
 import errorMessage from "@/common/constants/error-messages"
 import {errorHandler} from "@/common/lib/error-handler"
+import { getLocations, getStates, getCities, getCategories } from "@/common/lib/api"
+
 
 export default {
   name: "AgreementDialog",
@@ -98,17 +167,31 @@ export default {
     txWeight: 0,
     showError: false,
     errorTitle: "",
-    errorMsg: ""
+    errorMsg: "",
+
+    country: "",
+    state: "",
+    city: "",
+    category: "",
+
+    states: [],
+    cities: [],
+    categories: [],
+    countries: [],
+    noState: false,
+    noCity: false,
+    countryName: ""
+
   }),
 
   computed: {
     ...mapState({
       api: (state) => state.substrate.api,
       pair: (state) => state.substrate.wallet,
-      country: state => state.lab.country,
-      region: state => state.lab.region,
-      city: state => state.lab.city,
-      category: state => state.lab.category,
+      setCountry: (state) => state.lab.country,
+      setState: (state) => state.lab.region,
+      setCity: (state) => state.lab.city,
+      setCategory: (state) => state.lab.category,
       lastEventData: (state) => state.substrate.lastEventData,
       web3: (state) => state.metamask.web3,
       walletBalance: (state) => state.substrate.walletBalance
@@ -123,11 +206,15 @@ export default {
     },
 
     disable() {
-      return !this.amount || !this.agree || this.amount < 1
+      const {country, state, city, category} = this
+      return !(country && state && city && category && this.amount && this.agree && this.amount > 0)
     }
   },
 
   async mounted () {
+    await this.getCountries()
+    await this.getServiceCategory()
+
     const txWeight = await createRequestFee(this.api, this.pair, this.country, this.region, this.city, this.category)
     this.txWeight = this.web3.utils.fromWei(String(txWeight.partialFee), "ether")
   },
@@ -147,6 +234,91 @@ export default {
   methods: {
     closeDialog() {
       this.$emit("close")
+    },
+
+    async getServiceCategory() {
+      const data = await getCategories()
+      this.categories = data
+
+      if (this.setCategory) {
+        this.category = this.setCategory
+      }
+    },
+
+    async getCountries() {
+      this.noState = false
+      this.noCity = false
+
+      const { data : { data }} = await getLocations()
+      this.countries = data
+
+      if (this.setCountry) {
+        this.country = this.setCountry
+        await this.onCountryChange(this.country)
+      }
+    },
+
+    async onCountryChange(selectedCountry) {
+      this.states = []
+      this.cities = []
+
+      this.countryName = this.countries.filter((c) => c.iso2 === selectedCountry)[0].name
+      const { data : { data }} = await getStates(selectedCountry)
+
+      if (data.length < 1) {
+        this.states.push(this.countryName)
+        this.noState = true
+        this.country = selectedCountry
+        return
+      }
+
+      this.states = data
+      this.country = selectedCountry
+      this.noState = false
+
+      if (this.setState) {
+        this.state = this.setState
+        await this.onStateChange(this.state)
+      }
+    },
+
+    async onStateChange(selectedState) {
+      this.noCity = false
+
+      if (this.noState) {
+        this.state = this.country
+        this.cities.push(this.countryName)
+        return
+      }
+
+      const { data : { data }} = await getCities(this.country, selectedState)
+
+      if (data.length < 1) {
+        this.noCity = true
+        this.stateName = this.states.filter((s) => s.state_code === selectedState)[0].name
+        this.cities.push(this.stateName)
+      } else {
+        this.cities = data
+      }
+      
+      this.state = selectedState
+
+      if (this.setCity) {
+        this.city = this.setCity
+      }
+    },
+
+    async onCityChange(selectedCity) {
+      if (this.noState || this.noCity) {
+        this.city = selectedCity
+        return
+      }
+
+      this.city = selectedCity.name
+    },
+
+    async onCategoryChange(selectedCategory) {
+      this.category = selectedCategory
     },
 
     async submitServiceRequestStaking() {
@@ -190,6 +362,9 @@ export default {
   @import "@/common/styles/mixins.sass"
   
   .staking-dialog
+    height: 565px
+    background-color: #FF0000
+
     &__title
       display: flex
       align-items: center
@@ -198,12 +373,10 @@ export default {
       margin-top: 10px
       @include button-1
     
-    &__dialog
-      padding-bottom: 20px
-
     &__card
       background-color: #F5F7F9
-      margin: 0px 30px
+      margin: 26px 30px
+      height: 465px
 
     &__card-text
       padding: 18px 12px
@@ -213,28 +386,31 @@ export default {
       margin-bottom: 4px
       @include body-text-3-opensans
 
-    &__input
-      margin: 11px 30px
+    &__form
+      margin-top: 6px
+      height: 465px
+      gap: 10px
+      padding: 12px 8px
 
-    &__input-label
-      display: flex
-      align-items: center
-      letter-spacing: -0.0075em
-      margin-bottom: 11px
-      @include button-2
-    
-    &__input-field
-      max-height: 18px
-      letter-spacing: -0.004em
-      margin-bottom: 50px
-      @include body-text-3-opensans
+    &__form-label
+      font-size: 12px
+
+    &__form-field
+      font-size: 12px
+      max-width: 340px
+      max-height: 48px
+
+    &__checkbox
+      margin-top: 12px
+      margin-bottom: -10px
    
     &__trans-weight
-      margin-bottom: 20px
       display: flex
       justify-content: space-between
 
     &__trans-weight-text
+      max-width: 330px
+      margin-bottom: 10px
       letter-spacing: -0.004em
       display: flex
       align-items: center
@@ -243,7 +419,7 @@ export default {
     &__input-button
       display: flex
       align-items: center
-      text-align: center
+      justify-content: space-between
       letter-spacing: -0.015em
       @include tiny-semi-bold
 

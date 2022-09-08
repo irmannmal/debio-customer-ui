@@ -85,8 +85,7 @@
 
 <script>
 import { mapState, mapMutations } from "vuex"
-import { getLocations, getStates, getCities } from "@/common/lib/api"
-import { getCategories } from "@/common/lib/api"
+import { getLocations, getStates, getCities, getCategories } from "@/common/lib/api"
 import errorMessage from "@/common/constants/error-messages"
 
 
