@@ -28,6 +28,9 @@
   &::before
     background-color: #FFFFFF
 
+  &__sub
+    padding-left: 5%
+
 .btnDrawerIcon
   margin: 0 16px 0 0
 
@@ -37,6 +40,9 @@
 .navTitle
   font-size: 15px
   font-weight: 600
+
+.subMenu
+  margin-left: 52px
 
 .lineDivider
   margin-left: 35px
@@ -159,6 +165,17 @@
           )
           span.navTitle {{ item.text }}
 
+        ui-debio-button.btn-drawer.font-weight-bold.sidebar-text(v-for="(sub, key) in item.subMenu" :key="key"
+          :class="$route.name === sub.route ? customClass(item.active) : ''" 
+          v-if="item.withSub"
+          :to="{ name: sub.route }"
+          :height="'50px'"
+          :color="'none'"
+          text
+          block
+        )
+          span.navTitle.subMenu {{ sub.text }}
+          
       v-divider.lineDivider
       .d-flex.flex-column.align-center
         slot

@@ -174,7 +174,9 @@ export default {
     navs: [
       { text: "Dashboard", disabled: false, active: false, route: "customer-dashboard", icon: gridIcon },
       { text: "My Test", disabled: false, active: false, route: "my-test", icon: boxIcon },
-      { text: "My PHR", disabled: false, active: false, route: "customer-phr", icon: fileTextIcon },
+      { text: "My PHR", disabled: false, active: false, route: "customer-phr", icon: fileTextIcon, withSub: true, 
+        subMenu: [{text: "Menstrual Calendar", route: "menstrual-calendar", active: false}]
+      },
       { text: "My Genetic Data", disabled: false, active: false, route: "customer-genetic-data", icon: geneticDnaIcon},
       { text: "Data Bounty", disabled: false, active: false, route: "maintenance", icon: databaseIcon }, // TO ADJUST ONCE THE FEATURE IS READY
       { text: "Payment History", disabled: false, active: false, route: "customer-payment-history", icon: creditCardIcon }
