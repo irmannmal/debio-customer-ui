@@ -44,9 +44,9 @@
           @click="toPaymentHistory"
           )
 
-      .customer-select-service__text Could not find a test category that you’re looking for? 
-        a(@click="showNoLab = false") request a service
-      
+      .customer-select-service__text.mt-10 Could not find a test category that you’re looking for? 
+        a(@click="showNoLab = true") request a service
+
 
 </template>
 
