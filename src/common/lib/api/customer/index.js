@@ -11,3 +11,5 @@ export * from "./tx-hash"
 export * from "./genetic-analysis-order"
 export * from "./dna-collection-process"
 export * from "./wallet"
+export * from "./notifications"
+

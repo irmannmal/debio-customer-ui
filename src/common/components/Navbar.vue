@@ -132,6 +132,9 @@ import { getBalanceDAI } from "@/common/lib/metamask/wallet"
 import { startApp } from "@/common/lib/metamask"
 import { handleSetWallet } from "@/common/lib/wallet"
 import { walletBinding } from "@/common/lib/api"
+import { setReadNotification } from "@/common/lib/api"
+
+let timeout
 
 export default {
   name: "Navbar",
@@ -158,7 +161,7 @@ export default {
     searchQuery: "",
     contentHover: false,
     loginStatus: false,
-    debounce: null,
+    notifReads: [],
     arrowPosition: "",
     showMetamaskDialog: false,
     walletAddress: "",
@@ -260,13 +263,17 @@ export default {
       return balance
     },
 
-    handleNotificationRead(notif) {
+    async handleNotificationRead(notif) {
+
+      clearTimeout(timeout)
+      if (notif.read) return
+
       notif.read = true
-      this.$store.dispatch("substrate/updateDataListNotification", {
-        address: this.wallet.address,
-        role: "customer",
-        data: this.notifications
-      })
+      this.notifReads.push(notif.id)
+      timeout = setTimeout(async () => {
+        await setReadNotification(this.notifReads)
+      }, 2000)
+
     },
 
     async handleCopy(text) {

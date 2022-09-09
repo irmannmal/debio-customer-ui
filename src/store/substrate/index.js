@@ -6,6 +6,7 @@ import { Keyring } from "@polkadot/keyring"
 import localStorage from "@/common/lib/local-storage"
 import { ApiPromise, WsProvider } from "@polkadot/api"
 import { processEvent, eventTypes } from "@debionetwork/polkadot-provider"
+import { getUnlistedNotification } from "@/common/lib/notification"
 
 const {
   cryptoWaitReady
@@ -90,6 +91,9 @@ export default {
     SET_LAST_EVENT(state, event) {
       state.lastEventData = event
     },
+    SET_LAST_BLOCK(state, event) {
+      state.lastBlockData = event
+    },
     SET_LIST_NOTIFICATION(state, event) {
       state.localListNotification = event
     },
@@ -139,16 +143,41 @@ export default {
           "userProfile"
         ]
 
+        const block =  await api.rpc.chain.getBlock()
+        const lastBlockData = block.toHuman()
+
+
+        const role = "customer"
+        const notifications = JSON.parse(localStorage.getLocalStorageByName(
+          `LOCAL_NOTIFICATION_BY_ADDRESS_${localStorage.getAddress()}_${role}`
+        ))
+
+
+
+        let newBlock = parseInt((lastBlockData.block.header.number).replaceAll(",", ""))
+        let lastBlock
+
+  
+        if(notifications) {
+          lastBlock = parseInt((notifications[notifications.length-1].block).replaceAll(",", ""))
+        } else {
+          lastBlock = 0
+        }
+
+        if (newBlock > lastBlock) {
+          getUnlistedNotification(newBlock, lastBlock)
+        }
+        
         // Example of how to subscribe to events via storage
-        api.query.system.events((events) => {
-          events.forEach((record) => {
+        api.query.system.events(async (events) => {
+          for (const record of events) {
             const { event } = record
 
             if (allowedSections.includes(event.section)) {
-              if (event.method === "OrderPaid") localStorage.removeLocalStorageByName("lastOrderStatus")
               commit("SET_LAST_EVENT", event)
+              commit("SET_LAST_BLOCK", lastBlockData)
             }
-          })
+          }
         })
 
         await api.isReady
@@ -272,7 +301,7 @@ export default {
         console.error(err)
       }
     },
-    async addListNotification({ commit }, { address, event, role }) {
+    async addListNotification({ commit }, { address, event, block, role }) {
       try {
         const storageName = "LOCAL_NOTIFICATION_BY_ADDRESS_" + address + "_" + role
         const listNotificationJson = localStorage.getLocalStorageByName(storageName)
@@ -301,6 +330,7 @@ export default {
               message: message,
               timestamp: timestamp,
               data: data,
+              block: block,
               route: route,
               params: params,
               read: false,

@@ -187,6 +187,7 @@ export default {
       wallet: (state) => state.substrate.wallet,
       localListNotification: (state) => state.substrate.localListNotification,
       mnemonicData: (state) => state.substrate.mnemonicData,
+      lastBlockData: (state) => state.substrate.lastBlockData,
       api: (state) => state.api
     }),
 
@@ -218,6 +219,7 @@ export default {
         this.$store.dispatch("substrate/addListNotification", {
           address: this.wallet.address,
           event: event,
+          block: this.lastBlockData?.block.header.number,
           role: "customer"
         })
       }
