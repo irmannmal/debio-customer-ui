@@ -145,20 +145,15 @@ export default {
 
         const block =  await api.rpc.chain.getBlock()
         const lastBlockData = block.toHuman()
-
-
         const role = "customer"
         const notifications = JSON.parse(localStorage.getLocalStorageByName(
           `LOCAL_NOTIFICATION_BY_ADDRESS_${localStorage.getAddress()}_${role}`
         ))
 
-
-
         let newBlock = parseInt((lastBlockData.block.header.number).replaceAll(",", ""))
         let lastBlock
-
   
-        if(notifications) {
+        if(notifications.length > 0) {
           lastBlock = parseInt((notifications[notifications.length-1].block).replaceAll(",", ""))
         } else {
           lastBlock = 0
