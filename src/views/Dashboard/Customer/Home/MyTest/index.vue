@@ -113,7 +113,7 @@
                       width="50%"
                       dark
                       color="secondary"
-                      @click="goToInstruction(item.dnaCollectionProcess)"
+                      @click="goToInstruction(item)"
                     ) Instruction
 
                     ui-debio-button.pa-4(
@@ -325,7 +325,8 @@ export default {
             service_info: {
               name: serviceName,
               image: serviceImage,
-              dna_collection_process: dnaCollectionProcess
+              dna_collection_process: dnaCollectionProcess,
+              long_description: description
             },
             dna_sample_tracking_id: dnaSampleTrackingId,
             created_at: createdAt,
@@ -350,6 +351,7 @@ export default {
             orderStatus: dnaSample.status,
             paymentStatus,
             dnaCollectionProcess,
+            description,
             dnaTestResults,
             timestamp: new Date (parseInt(dnaSample.updatedAt.replaceAll(",", ""))).getTime().toString()
           }
@@ -398,8 +400,14 @@ export default {
     },
 
     async goToInstruction(item) {
+
+      if(item.description.split("||").length > 1) {
+        window.open(item.description.split("||")[1], "_blank")
+        return
+      }
+
       const dnaCollectionProcess = await getDNACollectionProcess()
-      const link = dnaCollectionProcess.filter(e => e.collectionProcess === item)[0].link
+      const link = dnaCollectionProcess.filter(e => e.collectionProcess === item.dnaCollectionProcess)[0].link
       window.open(link, "_blank")
     },
 

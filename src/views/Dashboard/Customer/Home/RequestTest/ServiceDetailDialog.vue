@@ -16,9 +16,9 @@
           .dialog-service__sub-title Description
           .dialog-service__description {{ computeLongDescription }}
 
-          .dialog-service__link 
+          .dialog-service__link(v-if="computePurchaseLink")
             b Link Purchase Kit: 
-            a {{ computePurchaseLink }}
+            a(:href="computePurchaseLink" target="_blank") {{ computePurchaseLink }}
 
         div.dialog-service__service-duration
           .dialog-service__sub-title Maximum Duration
@@ -94,6 +94,7 @@ export default {
       mnemonicData: (state) => state.substrate.mnemonicData,
       stakingData: (state) => state.lab.stakingData,
       selectedService: (state) => state.testRequest.products,
+      web3: (state) => state.metamask.web3,
       lastEventData: (state) => state.substrate.lastEventData
     }),
 
@@ -102,7 +103,11 @@ export default {
     },
 
     computeLongDescription () {
-      return this.selectedService.longDescription.split("||")[0]
+      const description = this.selectedService.longDescription.split("||")[0]
+      if (this.web3.utils.isHex(description)) {
+        return this.web3.utils.hexToUtf8(description) 
+      }
+      return description  
     },
 
     computePurchaseLink () {

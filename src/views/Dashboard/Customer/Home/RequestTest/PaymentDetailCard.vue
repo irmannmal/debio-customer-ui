@@ -1,6 +1,12 @@
 <template lang="pug">
   v-container.container-card
-    v-card.menu-card
+    v-skeleton-loader(
+      v-if="fetching"
+      type="card"
+      width="300"
+    )
+
+    v-card.menu-card(v-if=!fetching)
       .menu-card__title Order Summary
 
       .menu-card__sub-title-medium Details
@@ -214,6 +220,10 @@ export default {
     usdRate: null
   }),
 
+  props: {
+    fetching: { type: Boolean, default: false }
+  },
+
   async mounted () {
     this.stakingFlow = false
     this.getUsdRate()
@@ -386,7 +396,8 @@ export default {
     },
 
     async toInstruction (val) {
-      const description = this.dataServices.split("||")
+
+      const description = this.dataService.longDescription.split("||")
 
       if (description.length > 1) {
         window.open(description[1], "_blank")
