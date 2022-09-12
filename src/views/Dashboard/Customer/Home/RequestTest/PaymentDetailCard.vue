@@ -176,6 +176,7 @@ import PayRemainingDialog from "./PayRemainingDialog.vue"
 import { getConversion, getOrderDetail, fetchTxHashOrder } from "@/common/lib/api"
 import { getDNACollectionProcess } from "@/common/lib/api"
 import { formatPrice } from "@/common/lib/price-format.js"
+import getEnv from "@/common/lib/utils/env"
 
 export default {
   name: "PaymentDetailCard",
@@ -321,7 +322,7 @@ export default {
       anchor.target = "_blank"
       anchor.rel = "noreferrer noopener nofollow"
       // eslint-disable-next-line camelcase
-      anchor.href = `${process.env.VUE_APP_ETHERSCAN}${transaction_hash}`
+      anchor.href = `${getEnv("VUE_APP_ETHERSCAN")}${transaction_hash}`
       anchor.click()
     },
 

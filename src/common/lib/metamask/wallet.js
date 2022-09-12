@@ -1,5 +1,6 @@
 import store from "@/store"
 import BigNumber from "bignumber.js"
+import getEnv from "../utils/env"
 
 export async function getWalletAddress() {
   const accounts = await window.ethereum.request({ method: "eth_requestAccounts" })
@@ -30,7 +31,7 @@ export async function changeChain() {
 }
 
 export async function addTokenDAI() {
-  const contractAddress = process.env.VUE_APP_DEBIO_DAI_TOKEN_ADDRESS
+  const contractAddress = getEnv("VUE_APP_DEBIO_DAI_TOKEN_ADDRESS")
   try {
     const wasAdded = await window.ethereum.request({
       method: "wallet_watchAsset",
@@ -135,7 +136,7 @@ export async function sendTransaction(to, data, from) {
 }
 
 export async function transfer(data) {
-  const contractAddress = process.env.VUE_APP_DEBIO_DAI_TOKEN_ADDRESS
+  const contractAddress = getEnv("VUE_APP_DEBIO_DAI_TOKEN_ADDRESS")
   const contractERC20Interface = store.getters["metamask/contracts/getERC20InterfaceContract"]
   let raw = contractERC20Interface.methods.transfer(data.seller, data.amount).encodeABI()
   let receipt

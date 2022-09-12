@@ -1,6 +1,7 @@
 import axios from "axios"
 import VueRouter from "@/router"
 import * as Sentry from "@sentry/vue"
+import getEnv from "../utils/env"
 
 // EXPORT API COLLECTIONS HERE
 export * from "./customer"
@@ -8,14 +9,14 @@ export * from "./customer"
 // AXIOS INSTANCE EXPORT BY DEFAULT
 // PLEASE DISCUSS BEFORE YOU WANT TO EDIT THIS SCRIPT
 const apiClientRequest = axios.create({
-  baseURL: process.env.VUE_APP_BACKEND_API,
+  baseURL: getEnv("VUE_APP_BACKEND_API"),
   headers: {
     "Content-Type": "application/json",
-    "debio-api-key": process.env.VUE_APP_DEBIO_API_KEY
+    "debio-api-key": getEnv("VUE_APP_DEBIO_API_KEY")
   },
   auth: {
-    username: process.env.VUE_APP_USERNAME,
-    password: process.env.VUE_APP_PASSWORD
+    username: getEnv("VUE_APP_USERNAME"),
+    password: getEnv("VUE_APP_PASSWORD")
   }
 })
 

@@ -99,6 +99,7 @@ import {
 } from "@debionetwork/polkadot-provider"
 import { mapState } from "vuex"
 import metamaskServiceHandler from "@/common/lib/metamask/mixins/metamaskServiceHandler"
+import getEnv from "@/common/lib/utils/env"
 
 // NOTE: Use anchor tag with "noreferrer noopener nofollow" for security
 let timeout
@@ -286,7 +287,7 @@ export default {
         return
       }
 
-      anchor.href = `${process.env.VUE_APP_ETHERSCAN}${this.txHash}`
+      anchor.href = `${getEnv("VUE_APP_ETHERSCAN")}${this.txHash}`
       anchor.click()
     }
   }

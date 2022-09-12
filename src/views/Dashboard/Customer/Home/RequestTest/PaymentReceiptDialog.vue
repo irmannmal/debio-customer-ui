@@ -133,6 +133,7 @@ import { errorHandler } from "@/common/lib/error-handler"
 import SpinnerLoader from "@bit/joshk.vue-spinners-css.spinner-loader"
 import InstallMetamask from "@/common/components/Dialog/InstallMetamask.vue"
 import { postTxHash, walletBinding } from "@/common/lib/api"
+import getEnv from "@/common/lib/utils/env"
 
 export default {
   name: "PaymentReceiptDialog",
@@ -256,7 +257,7 @@ export default {
     async checkMetamask(){
       this.metamask = await startApp()
 
-      if (process.env.VUE_APP_ROLE === "development") {
+      if (getEnv("VUE_APP_ROLE") === "development") {
         this.networkName = "Rinkeby Test Network"
         if (this.metamask?.network === this.network[this.networkName]) return
         this.switchNetwork = true
