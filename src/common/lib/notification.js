@@ -2,6 +2,7 @@
 import localStorage from "./local-storage"
 import { getNotifications } from "./api"
 import store from "@/store"
+import { fmtReferenceFromHex } from "./string-format"
 
 const routes = {
   "New Order": "customer-order-details"
@@ -35,8 +36,10 @@ export async function getUnlistedNotification (end_block, start_block) {
       minute: "numeric"
     })
 
+
+
     const referenceFormater = event?.reference_id?.includes("0x")
-      ? `${reference_id.slice(0, 4)}...${reference_id.slice(-4)}`
+      ? `${fmtReferenceFromHex(event?.reference_id)}`
       : reference_id
 
     const message = description.replace("[]", referenceFormater)

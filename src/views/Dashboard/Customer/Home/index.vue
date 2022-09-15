@@ -110,6 +110,7 @@ import { queryDnaSamples } from "@debionetwork/polkadot-provider"
 import { mapState } from "vuex"
 import { ORDER_STATUS_DETAIL, PAYMENT_STATUS_DETAIL } from "@/common/constants/status"
 import { getOrderList } from "@/common/lib/api"
+import { fmtReferenceFromHex } from "@/common/lib/string-format"
 
 export default {
   name: "CustomerHome",
@@ -228,7 +229,7 @@ export default {
           const dataDetail =  {
             ...result._source,
             id: result._id,
-            formated_id: `${result._id.slice(0, 4)}...${result._id.slice(-4)}`,
+            formated_id: fmtReferenceFromHex(result._id),
             provider: result._source?.lab_info?.name ?? "Unknown Lab Provider",
             timestamp: parseInt(result._source.created_at.replaceAll(",", "")),
             created_at: new Date(parseInt(result._source.created_at.replaceAll(",", ""))).toLocaleDateString("en-GB", {
@@ -272,7 +273,7 @@ export default {
             ...result._source,
             type: result._index,
             id: result._id,
-            formated_id: `${result._id.slice(0, 4)}...${result._id.slice(-4)}`,
+            formated_id: fmtReferenceFromHex(result._id),
             provider: result._index === "orders"
               ? result._source?.lab_info?.name ?? "Unknown Lab Provider"
               : computeAnalystName,

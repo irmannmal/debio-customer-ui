@@ -79,6 +79,7 @@ import { createOrder, queryLastOrderHashByCustomer } from "@debionetwork/polkado
 import CryptoJS from "crypto-js"
 import Kilt from "@kiltprotocol/sdk-js"
 import { u8aToHex } from "@polkadot/util"
+import { fmtReferenceFromHex } from "@/common/lib/string-format"
 
 export default {
   name: "StakingServiceTab",
@@ -279,7 +280,7 @@ export default {
     },
     
     formatId(id) {
-      return `${id.slice(0, 4)}...${id.slice(id.length - 3, id.length)}`
+      return fmtReferenceFromHex(id)
     },
 
     async toCheckout() {

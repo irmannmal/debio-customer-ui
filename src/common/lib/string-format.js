@@ -5,3 +5,8 @@ export function fmtSpecimenNumber(specimenNumber) {
   
   return `${first}-${second}-${third}`
 }
+
+
+export function fmtReferenceFromHex(hex) {
+  return `${hex.slice(0, 4)}...${hex.slice(-4)}`
+}
