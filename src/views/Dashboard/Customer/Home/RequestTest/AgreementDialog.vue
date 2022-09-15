@@ -215,7 +215,7 @@ export default {
     await this.getCountries()
     await this.getServiceCategory()
 
-    const txWeight = await createRequestFee(this.api, this.pair, this.country, this.region, this.city, this.category)
+    const txWeight = await createRequestFee(this.api, this.pair, this.country, this.state, this.city, this.category)
     this.txWeight = this.web3.utils.fromWei(String(txWeight.partialFee), "ether")
   },
 
@@ -339,7 +339,7 @@ export default {
           this.api,
           this.pair,
           this.country,
-          this.region,
+          this.state,
           this.city,
           this.category,
           this.amount
