@@ -5,7 +5,7 @@
         template
           .menstrual-calendar__banner
             .menstrual-calendar__content
-              .menstrual-calendar__title Menstrual Calendar  Payment
+              .menstrual-calendar__title Menstrual Calendar
               .menstrual-calendar__sub-title Smart way to track menstrual cycles.
 
             v-img(
@@ -92,7 +92,7 @@
               .menstrual-calendar__subscription-plan-header Select Subscription Plan
 
             template(v-if="paymentPreview")
-              v-btn.menstrual-calendar__subscription-payment-back(icon @click="paymentPreview = false")
+              v-btn.menstrual-calendar__subscription-payment-back(icon @click="toSubsPlan")
                 v-icon mdi-chevron-left
               span.menstrual-calendar__subscription-plan-header Select Payment Methods
             
@@ -104,8 +104,8 @@
             template(v-if="!paymentPreview")
               .menstrual-calendar__plan-card
                 v-radio-group(v-model="subscription")
-                  template(v-for="(plan, idx) in plans" )
-                    ui-debio-card(width="410" key="i").my-1
+                  template(v-for="plan in plans" )
+                    ui-debio-card(width="410").my-1
                       .menstrual-calendar__plan-card-wrapper
                         v-radio.menstrual-calendar__plan-card-radio(
                           :label="plan.text" 
@@ -120,7 +120,7 @@
                 ui-debio-button(
                   color="secondary"
                   width="100%"
-                  @click="paymentPreview = true"
+                  @click="toPaymentPreview"
                 ) Select Plan
             
             template(v-if="paymentPreview")
@@ -201,17 +201,18 @@ export default {
     ],
     subscription: "",
     paymentPreview: false,
+    isSuccess: false,
     showAlert: false,
     breadcrumbs: [
       {
         text: "Subscription Plan",
         disabled: false,
-        href: "breadcrumbs-subs"
+        href: ".menstrual-calendar__subscription-plan"
       },
       {
         text: "Payment Preview",
         disabled: true,
-        href: "breadcrumbs-plan"
+        href: ".menstrual-calendar__plan-card"
       }
     ]
   }),
@@ -220,6 +221,18 @@ export default {
     async toPayment() {
       this.showAlert = false
       this.isSuccess = true
+    },
+
+    toPaymentPreview() {
+      this.paymentPreview = true
+      this.breadcrumbs[0].disabled = true
+      this.breadcrumbs[1].disabled = false
+    },
+
+    toSubsPlan() {
+      this.paymentPreview = false
+      this.breadcrumbs[0].disabled = false
+      this.breadcrumbs[1].disabled = true
     }
   }
 }
