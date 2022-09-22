@@ -69,6 +69,7 @@
           width="100%"
           height="35"
           style="font-size: 10px;"
+          @click="$router.push({ name: 'menstrual-calendar-detail'})"
         ) Continue to Menstrual Calendar
 
       .menstrual-calendar__subscription

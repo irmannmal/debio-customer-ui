@@ -166,7 +166,7 @@
           span.navTitle {{ item.text }}
 
         ui-debio-button.btn-drawer.font-weight-bold.sidebar-text(v-for="(sub, key) in item.subMenu" :key="key"
-          :class="$route.name === sub.route ? customClass(item.active) : ''" 
+          :class="$route.name === sub.route || $route.meta.pageHeader === sub.text ? customClass(item.active) : ''" 
           v-if="item.withSub"
           :to="{ name: sub.route }"
           :height="'50px'"
