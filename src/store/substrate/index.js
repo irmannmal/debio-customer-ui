@@ -146,23 +146,27 @@ export default {
         const block =  await api.rpc.chain.getBlock()
         const lastBlockData = block.toHuman()
         const role = "customer"
-        const notifications = JSON.parse(localStorage.getLocalStorageByName(
-          `LOCAL_NOTIFICATION_BY_ADDRESS_${localStorage.getAddress()}_${role}`
-        ))
-
         let newBlock = parseInt((lastBlockData.block.header.number).replaceAll(",", ""))
-        let lastBlock
-
-        if(notifications && notifications.length > 0) {
-          lastBlock = parseInt((notifications[notifications.length-1].block).replaceAll(",", ""))
-        } else {
-          lastBlock = 0
-        }
-
-        if (newBlock > lastBlock) {
-          getUnlistedNotification(newBlock, lastBlock)
-        }
         
+        if (localStorage.getAddress) {
+          let lastBlock
+          const notifications = JSON.parse(localStorage.getLocalStorageByName(
+            `LOCAL_NOTIFICATION_BY_ADDRESS_${localStorage.getAddress()}_${role}`
+          ))
+
+          commit("SET_LAST_BLOCK", newBlock)
+
+          if(notifications && notifications.length > 0) {
+            lastBlock = parseInt((notifications[notifications.length-1].block).replaceAll(",", ""))
+          } else {
+            lastBlock = 0
+          }
+  
+          if (newBlock > lastBlock) {
+            getUnlistedNotification(newBlock, lastBlock)
+          }
+        }
+
         // Example of how to subscribe to events via storage
         api.query.system.events(async (events) => {
           for (const record of events) {
@@ -281,7 +285,9 @@ export default {
         return { success: false }
       }
     },
-    async getListNotification({ commit }, { address, role }) {
+    async getListNotification({ commit }, { address, role, block }) {
+      await getUnlistedNotification(block, 0)
+
       try {
         //localStorage.removeLocalStorageByName("LOCAL_NOTIFICATION_BY_ADDRESS_" + address + "_" + role, null);
         commit("SET_CONFIG_EVENT", eventTypes)

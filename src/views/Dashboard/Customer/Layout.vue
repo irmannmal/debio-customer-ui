@@ -221,8 +221,8 @@ export default {
         this.$store.dispatch("substrate/addListNotification", {
           address: this.wallet.address,
           event: event,
-          block: this.lastBlockData?.block.header.number,
-          role: "customer"
+          block: this.lastBlockData,
+          role: "customer" //TODO: move to global enum variable
         })
       }
     }
@@ -246,10 +246,11 @@ export default {
       this.pageError = error
     },
 
-    async getListNotification() {
+    async getListNotification() {    
       await this.$store.dispatch("substrate/getListNotification", {
         address: this.wallet.address,
-        role: "customer"
+        role: "customer",
+        block: this.lastBlockData
       })
     },
 

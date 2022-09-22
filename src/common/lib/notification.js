@@ -5,7 +5,11 @@ import store from "@/store"
 import { fmtReferenceFromHex } from "./string-format"
 
 const routes = {
-  "New Order": "customer-order-details"
+  "Order Created": "customer-payment-details",
+  "Order Fulfilled": "my-test",
+  "Requested Service Available": "my-test",
+  "Order Refunded": "",
+  "Requested Service Created": "my-test"
 }
 
 export async function getUnlistedNotification (end_block, start_block) {
@@ -13,6 +17,8 @@ export async function getUnlistedNotification (end_block, start_block) {
   const from = "Debio Network"
   const toId = localStorage.getAddress()
 
+  if (!toId) return  
+  
   const { data } = await getNotifications({ toId, start_block, end_block, from })
 
   const storageName = `LOCAL_NOTIFICATION_BY_ADDRESS_${toId}_customer`
@@ -35,8 +41,6 @@ export async function getUnlistedNotification (end_block, start_block) {
       hour: "numeric",
       minute: "numeric"
     })
-
-
 
     const referenceFormater = event?.reference_id?.includes("0x")
       ? `${fmtReferenceFromHex(event?.reference_id)}`
