@@ -234,6 +234,10 @@ export default {
       this.paymentPreview = false
       this.breadcrumbs[0].disabled = false
       this.breadcrumbs[1].disabled = true
+    },
+    
+    toMenstrualCalendar() {
+      this.$router.push({ name: "menstrual-calendar-selection" })
     }
   }
 }
