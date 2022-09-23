@@ -71,15 +71,19 @@
                         )
                           | {{ compareDate(new Date(), new Date(parseInt(notif.timestamp))) }}
 
-                section.navbar__dropdown-content(v-if="getActiveMenu.type === 'settings'")
-                  .navbar__settings
-                    .settings-item(role="button")
-                      .settings-item__wrapper(@click="signOut")
-                        .settings-item__title(aria-label="Signout") Sign Out
-                        ui-debio-icon.settings-item__icon(:icon="logoutIcon" size="24" stroke color="#C400A5")
 
                 section.navbar__dropdown-content(v-if="getActiveMenu.type === 'polkadot' || getActiveMenu.type === 'metamask'")
-                  ui-debio-input(label="Your Address" :data-wallet="walletAddress" ref="polkadot" disabled :value="walletAddress" block)
+                  .navbar__wallet-header(v-if="getActiveMenu.type === 'polkadot'")
+                    ui-debio-icon.mb-5(
+                      :icon="getActiveMenu.icon"
+                      size="24"
+                      :class="{ 'notification-dot': getActiveMenu.type === 'notification' && notifications.some(v => v.read === false) }"
+                      :color="getActiveMenu.active ? '#C400A5' : '#5640A5'"
+                      stroke
+                    )
+                    h4.ml-5 Polkadot
+
+                  ui-debio-input(label="Address" variant="small" :data-wallet="walletAddress" ref="polkadot" disabled :value="walletAddress" block)
                     ui-debio-icon(
                       slot="icon-append"
                       :icon="copyIcon"
@@ -90,7 +94,27 @@
                       role="button"
                       @click="handleCopy(walletAddress)"
                     )
-                  .navbar__balance
+                  .navbar__balance(v-if="getActiveMenu.type === 'polkadot'")
+                    .navbar__balance-wrapper
+                      .navbar__balance-content
+                        .navbar__balance-type Balance
+                        .navbar__balance-instruction 
+                          v-icon(size="10" type="button") mdi-open-in-new
+                          span.ml-2 How to add balance
+
+                    v-divider.navbar__balance-divider
+                    .navbar__balance-amount(v-for="wallet in polkadotWallets")
+                      v-img(
+                        alt="no-list-data"
+                        :src="require(`../../assets/${wallet.icon}.svg`)"
+                        max-width="24px"
+                        max-height="24px"
+                      )
+                      span {{ wallet.balance }} {{ wallet.currency }} 
+
+                    v-divider.navbar__balance-divider-sec
+
+                  .navbar__balance(v-if="getActiveMenu.type === 'metamask'")  
                     .navbar__balance-wrapper
                       .navbar__balance-type {{ getActiveMenu.currency }} Balance
                       .navbar__balance-amount
@@ -98,7 +122,7 @@
                         span {{ getActiveMenu.type === 'polkadot' ? polkadotBalance : metamaskBalance }}
 
               template(slot="footer" v-if="getActiveMenu.action")
-                v-btn.navbar__footer-button(block color="primary" outlined @click="handleDropdownAction(getActiveMenu.type)") {{ getActiveMenu.action }}
+                v-btn.navbar__footer-button(block color="#FE379E" dark @click="handleDropdownAction(getActiveMenu.type)") {{ getActiveMenu.action }}
 
     v-progress-linear.navbar__loading(
       v-if="loading"
@@ -131,8 +155,8 @@ import { queryAccountBalance, queryEthAdressByAccountId } from "@debionetwork/po
 import { getBalanceDAI } from "@/common/lib/metamask/wallet"
 import { startApp } from "@/common/lib/metamask"
 import { handleSetWallet } from "@/common/lib/wallet"
-import { walletBinding } from "@/common/lib/api"
-import { setReadNotification } from "@/common/lib/api"
+import { walletBinding, setReadNotification } from "@/common/lib/api"
+import { queryGetAssetBalance } from "@/common/lib/polkadot-provider/query/octopus-assets"
 
 let timeout
 
@@ -181,26 +205,50 @@ export default {
       },
       {
         id: 2,
-        icon: settingIcon,
-        type: "settings",
+        icon: polkadotIcon,
+        type: "polkadot",
+        title: "Wallet",
+        currency: "DBIO",
+        action: "Sign Out",
         active: false
       },
       {
         id: 3,
-        icon: polkadotIcon,
-        type: "polkadot",
-        title: "Polkadot Wallet",
-        currency: "DBIO",
-        active: false
-      },
-      {
-        id: 4,
         type: "metamask",
         title: "Metamask Wallet",
         currency: "DAI",
         isAvatar: true,
         action: "Disconnect Wallet",
         active: false
+      }
+    ],
+
+    polkadotWallets: [
+      {
+        id: 0,
+        name: "debio",
+        icon: "debio-logo",
+        currency: "DBIO",
+        unit: "ether",
+        balance: 0
+      },
+
+      {
+        id: 1,
+        name: "usdn",
+        icon: "near-logo",
+        currency: "USDN",
+        unit: "ether",
+        balance: 0
+      },
+
+      {
+        id: 2,
+        name: "usdt",
+        icon: "tether-logo",
+        currency: "USDT",
+        unit: "mwei",
+        balance: 0
       }
     ]
   }),
@@ -214,6 +262,7 @@ export default {
       walletBalance: (state) => state.substrate.walletBalance,
       api: (state) => state.substrate.api,
       wallet: (state) => state.substrate.wallet,
+      web3: (state) => state.metamask.web3,
       metamaskWalletAddress: (state) => state.metamask.metamaskWalletAddress,
       lastEventData: (state) => state.substrate.lastEventData
     }),
@@ -232,12 +281,14 @@ export default {
   async mounted () {
     this.checkMetamask()
     this.fetchWalletBalance()
+    this.fetchPolkadotBallance()
   },
 
   watch: {
     lastEventData() {
       if(this.lastEventData) {
         this.fetchWalletBalance()
+        this.fetchPolkadotBallance()
       }
     },
 
@@ -332,9 +383,21 @@ export default {
         )
         this.setWalletBalance(balanceNumber)
         this.polkadotBalance = this.walletBalance
+        this.polkadotWallets[0].balance = this.walletBalance
       } catch (err) {
         console.error(err)
       }
+    },
+
+    async fetchPolkadotBallance() {
+      this.polkadotWallets.forEach(async (w) => {
+        if (w.name !== "debio") {
+          const { balance } = await queryGetAssetBalance(
+            this.api, w.id, this.wallet.address
+          )
+          w.balance = this.web3.utils.fromWei(balance.replaceAll(",", ""), w.unit)
+        }
+      })
     },
 
     async checkMetamask() {
@@ -394,6 +457,7 @@ export default {
     },
 
     handleDropdownAction(type) {
+      if (type === "polkadot") this.signOut()
       if (type === "metamask") this.disconnectWallet()
     },
 
@@ -492,18 +556,31 @@ export default {
       z-index: 9
       top: 3.125rem
       right: 0
+    
+    &__wallet-header
+      display: flex
 
     &__balance
-      margin-top: 0.75rem
+      margin-top: 1.5625rem
       display: flex
       flex-direction: column
 
-    &__balance-wrapper
-      display: inherit
-      align-items: center
+    &__balance-type
+      @include body-text-medium-1
+    
+    &__balance-instruction
+      color: #8F98AA
+      @include tiny-reg
+    
+    &__balance-divider-sec
+      margin-top: 0.75rem
+
+    &__balance-content
+      display: flex
       justify-content: space-between
 
     &__balance-amount
+      padding: 6px
       display: flex
       align-items: center
       gap: 0.375rem
@@ -519,6 +596,10 @@ export default {
 
     &__footer-button
       margin-bottom: 0.938rem
+      
+    &__balance-divider
+      margin-top: 0.75rem
+      margin-bottom: 0.9rem
 
     &__notification
       max-height: 13.55rem
