@@ -5,24 +5,24 @@
       v-for="_ in countDay"
     )
 
-    div(
+    div.day-card(
       v-if="!isLoading"
-      v-for='day in countDay' 
-      :class='{ day: (dates[day - 1] !== undefined && dates[day - 1].thisMonth), none: !(dates[day - 1] !== undefined && dates[day - 1].thisMonth), selected: (dates[day - 1] !== undefined && dates[day - 1].isSelected) }' 
-      @click='dayClick(dates[day - 1] !== undefined && dates[day - 1].thisMonth && dates[day - 1].isPast, dates[day - 1].date, dates[day - 1].index)'
+      v-for="day in countDay" 
+      :class="{ day: (dates[day - 1] !== undefined && dates[day - 1].thisMonth), none: !(dates[day - 1] !== undefined && dates[day - 1].thisMonth), selected: (dates[day - 1] !== undefined && dates[day - 1].isSelected) }" 
+      @click="dayClick(dates[day - 1] !== undefined && dates[day - 1].thisMonth && dates[day - 1].isPast, dates[day - 1].date, dates[day - 1].index)"
     )
       div(
         v-if="dates[day - 1] !== undefined && dates[day - 1].thisMonth"
       )
         v-img.today(
-          v-if='dates[day - 1] !== undefined && dates[day - 1].today'
+          v-if="dates[day - 1] !== undefined && dates[day - 1].today"
           alt="today"
           src="@/assets/today.svg"
           max-width="23px"
           max-height="23px"
         )
         v-img.checked(
-          v-if='(dates[day - 1] !== undefined && dates[day - 1].isSelected)'
+          v-if="(dates[day - 1] !== undefined && dates[day - 1].isSelected) && !menstrualData"
           alt="checked"
           src="@/assets/tick-circle.svg"
           max-width="16px"
@@ -39,7 +39,8 @@ export default {
 
   props: {
     dates: {type: Array},
-    isLoading: {type: Boolean, default: false}
+    isLoading: {type: Boolean, default: false},
+    menstrualData: {type: Object, default: null}
   },
 
   data: () => ({
@@ -71,6 +72,12 @@ export default {
     display: flex;
     gap: 5.33px;
   }
+
+  .day-card {
+    max-width: 92px;
+    max-height: 72px;
+  }
+
   .skeleton-loader {
     position: relative;
     width: 92px;

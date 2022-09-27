@@ -337,6 +337,7 @@ export default {
     padding: 2.5rem 1.563rem 1.563rem !important
 
   &__main
+    margin-left: -28px
     padding: 0 1.563rem 1.563rem !important
 
 

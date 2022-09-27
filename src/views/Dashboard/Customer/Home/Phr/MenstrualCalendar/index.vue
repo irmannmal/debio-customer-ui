@@ -1,19 +1,7 @@
 .<template lang="pug">
   .menstrual-calendar
     .menstrual-calendar__wrapper
-      ui-debio-card(block)
-        template
-          .menstrual-calendar__banner
-            .menstrual-calendar__content
-              .menstrual-calendar__title Menstrual Calendar
-              .menstrual-calendar__sub-title Smart way to track menstrual cycles.
-
-            v-img(
-              alt="no-list-data"
-              src="@/assets/menstrual-calendar-banner.svg"
-              max-width="373px"
-              max-height="132px"
-            )
+      MenstrualCalendarBanner
       ui-debio-modal.menstrual-calendar__modal(
         :show="showAlert"
         :show-title="false"
@@ -69,7 +57,7 @@
           width="100%"
           height="35"
           style="font-size: 10px;"
-          @click="$router.push({ name: 'menstrual-calendar-detail'})"
+          @click="toMenstrualCalendar()"
         ) Continue to Menstrual Calendar
 
       .menstrual-calendar__subscription
@@ -188,7 +176,7 @@
 
 <script>
 import { alertTriangleIcon, checkCircleIcon } from "@debionetwork/ui-icons"
-
+import MenstrualCalendarBanner from "./Banner"
 
 export default {
   name: "MenstrualCalendar",
@@ -215,8 +203,13 @@ export default {
         disabled: true,
         href: ".menstrual-calendar__plan-card"
       }
-    ]
+    ],
+    currency: ""
   }),
+
+  components: {
+    MenstrualCalendarBanner
+  },
 
   methods: {
     async toPayment() {
@@ -249,16 +242,6 @@ export default {
   .menstrual-calendar
     &__wrapper
       height: 100%
-
-    &__banner
-      display: flex
-      justify-content: space-between
-
-    &__title
-      @include h5-opensans
-
-    &__sub-title
-      @include body-text-2
 
     &__subscription
       margin-top: 16px

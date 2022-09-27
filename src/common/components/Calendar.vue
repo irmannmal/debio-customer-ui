@@ -9,6 +9,7 @@
           @on-selected="onSelect" 
           @on-unselected="onUnselect" 
           :isLoading="isLoading"
+          :menstrualData="menstrualData"
         )
 </template>
 
@@ -25,7 +26,8 @@ export default {
   props: {
     month: {type: Number, default: 0},
     year: {type: Number, default: new Date().getFullYear()},
-    isLoading: {type: Boolean, default: false}
+    isLoading: {type: Boolean, default: false},
+    menstrualData: {type: Object, default: null}
   },
 
   data: () => ({

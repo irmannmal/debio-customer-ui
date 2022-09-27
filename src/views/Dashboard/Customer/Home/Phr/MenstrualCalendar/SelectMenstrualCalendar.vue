@@ -1,19 +1,7 @@
 <template lang="pug">
   .select-menstrual-calendar
     .select-menstrual-calendar__wrapper
-      ui-debio-card(block)
-        template
-          .select-menstrual-calendar__banner
-            .select-menstrual-calendar__content
-              .select-menstrual-calendar__title Menstrual Calendar  Payment
-              .select-menstrual-calendar__sub-title Smart way to track menstrual cycles.
-
-            v-img(
-              alt="no-list-data"
-              src="@/assets/menstrual-calendar-banner.svg"
-              max-width="373px"
-              max-height="132px"
-            )
+      MenstrualCalendarBanner
     .select-menstrual-calendar__wrapper
       .select-menstrual-calendar__selection
         template(v-if="selectAverage")
@@ -134,7 +122,7 @@
                   height="44"
                   :disabled="!submitEnabled"
                   class='white--text mnemonic-list-item'
-                  @click="onSubmit"
+                  @click="onSubmit" 
                 ) Submit
         ui-debio-card.select-menstrual-calendar__step(width="394")
           .select-menstrual-calendar__small-head
@@ -157,12 +145,15 @@
 <script>
 import Calendar from "@/common/components/Calendar"
 import DaySelectAverage from "@/common/components/DaySelectAverage"
+import MenstrualCalendarBanner from "./Banner"
+
 export default {
   name: "SelectMenstrualCalendar",
 
   components: {
     Calendar,
-    DaySelectAverage
+    DaySelectAverage,
+    MenstrualCalendarBanner
   },
 
   data: () => ({
@@ -207,6 +198,7 @@ export default {
   methods: {
     onSubmit() {
       this.submitPreview = true
+      this.$router.push({ name: "menstrual-calendar-detail" })
     },
 
     backButton() {
@@ -227,16 +219,6 @@ export default {
     &__wrapper
       height: 100%
       display: flex
-
-    &__banner
-      display: flex
-      justify-content: space-between
-
-    &__title
-      @include h5-opensans
-
-    &__sub-title
-      @include body-text-2
 
     &__selection
       margin-top: 16px

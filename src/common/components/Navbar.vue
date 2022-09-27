@@ -390,12 +390,14 @@ export default {
     },
 
     async fetchPolkadotBallance() {
-      this.polkadotWallets.forEach(async (w) => {
-        if (w.name !== "debio") {
-          const { balance } = await queryGetAssetBalance(
-            this.api, w.id, this.wallet.address
+      this.polkadotWallets.forEach(async (wallet) => {
+        if (wallet.name !== "debio") {
+          const data = await queryGetAssetBalance(
+            this.api, wallet.id, this.wallet.address
           )
-          w.balance = this.web3.utils.fromWei(balance.replaceAll(",", ""), w.unit)
+          if (!data) return
+
+          wallet.balance = this.web3.utils.fromWei(data.balance.replaceAll(",", ""), wallet.unit)
         }
       })
     },
