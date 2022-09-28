@@ -83,7 +83,7 @@
             template(v-if="paymentPreview")
               v-btn.menstrual-calendar__subscription-payment-back(icon @click="toSubsPlan")
                 v-icon mdi-chevron-left
-              span.menstrual-calendar__subscription-plan-header Select Payment Methods
+              .menstrual-calendar__subscription-plan-header Select Payment Methods
             
             .menstrual-calendar__subscription-plan-breadcrumbs
               v-breadcrumbs(:items="breadcrumbs")
@@ -230,6 +230,8 @@ export default {
     },
     
     toMenstrualCalendar() {
+      this.showAlert = false
+      this.isSuccess = false
       this.$router.push({ name: "menstrual-calendar-selection" })
     }
   }

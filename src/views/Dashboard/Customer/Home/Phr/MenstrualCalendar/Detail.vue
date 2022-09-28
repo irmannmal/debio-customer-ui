@@ -1,5 +1,5 @@
 <template lang="pug">
-  .menstual-calendar-detail
+  .menstrual-calendar-detail
     .menstrual-calendar-detail__wrapper
       MenstrualCalendarBanner
       ui-debio-modal(
@@ -178,6 +178,7 @@
               color="#F3F3F3" 
               height="48"
               width="100%"
+              @click="toSubscriptionSetting()"
             ) 
               .menstrual-calendar-detail__button-text Subscription Settings
               v-icon mdi-chevron-right
@@ -232,28 +233,6 @@ export default {
       addressId: "",
       averageCycle: 28,
       cycleLog: [
-        {
-          date: 1661915168,
-          menstruation: 1,
-          symptoms: [
-            "depressed",
-            "hungry",
-            "sad"
-          ]
-        },
-        {
-          date:1661828768, 
-          menstruation:0, 
-          symptoms: [
-            "sex with condim",
-            "happy"
-          ]
-        },
-        {
-          date:1662605496,
-          menstruation:1,
-          symptoms : [] 
-        }
       ],
       createdAt: 1662605496,
       updatedAt: 1662605496
@@ -265,6 +244,7 @@ export default {
       this.selectedMonth = this.monthList.find((value) => value.text === newMonth).value
     },
     selectedDates(newSelected) {
+      console.log(new Date(newSelected.getTime()))
       this.submitEnabled = newSelected !== null && newSelected.length > 0
     }
   },
@@ -274,16 +254,108 @@ export default {
       if (emoji.disabled === "active") {
         emoji.disabled = "inactive"
         emoji.color = "#363636"
+        this.removeSymptoms(this.selectedDates, emoji)
         return
       }
       emoji.disabled = "active"
       emoji.color = "#E27625"
+      this.addSymptoms(this.selectedDates, emoji)
+    },
+
+    addSymptoms(date, emoji) {
+      const newCycleLog = this.menstrualCalendarData.cycleLog.map((item) => {
+        console.log(item.date, date.getTime())
+        if (item.date === date.getTime()) {
+          item.symptoms.push(emoji.name)
+        }
+
+        return item
+      })
+
+      this.menstrualCalendarData.cycleLog = newCycleLog
+
+      console.log(newCycleLog)
+    },
+
+    removeSymptoms(date, emoji) {
+      const newCycleLog = this.menstrualCalendarData.cycleLog.map((item) => {
+        if (item.date === date.getTime()) {
+          item.symptoms = item.symptoms.filter((symptom) => {
+            if (symptom !== emoji.name) {
+              return symptom
+            }
+          })
+        }
+
+        return item
+      })
+
+      this.menstrualCalendarData.cycleLog = newCycleLog
+
+      console.log(newCycleLog)
+    },
+
+    createTestData(year, month) {
+      const today = new Date()
+      const firstDateCurrentMonth = new Date(year, month, 1)
+      const firstDateNextMonth = new Date(year, month + 1, 0)
+
+      const dayFirstDateCurrentMonth = firstDateCurrentMonth.getDay() === 0 ? 6 : firstDateCurrentMonth.getDay() - 1
+      const dayFirstDateNextMonth = firstDateNextMonth.getDay() === 0 ? 6 : firstDateNextMonth.getDay() - 1
+      const startDate = new Date(year, month, -(dayFirstDateCurrentMonth - 1))
+      const endDate = new Date(year, month + 1, (6 - dayFirstDateNextMonth))
+
+      let date = startDate
+      let indexDate = 0
+
+      while (date.getTime() < endDate.getTime()) {
+        date = new Date(year, month, (-(dayFirstDateCurrentMonth - 1) + indexDate))
+        if (date.getDate() <= 5 && date.getMonth() === today.getMonth()) {
+          this.menstrualCalendarData.cycleLog.push({
+            date: date.getTime(),
+            menstruation: 1,
+            prediction: 0,
+            fertility: 0,
+            ovulation: 0,
+            symptoms: []
+          })
+        } else if (date.getDate() >= 10 && date.getDate() < 20 && date.getMonth() === today.getMonth()) {
+          this.menstrualCalendarData.cycleLog.push({
+            date: date.getTime(),
+            menstruation: 0,
+            prediction: 0,
+            fertility: 1,
+            ovulation: indexDate === 14 ? 1 : 0,
+            symptoms: []
+          })
+        } else if (date.getDate() >= 28 && date.getDate() <= 30 && date.getMonth() === today.getMonth()) {
+          this.menstrualCalendarData.cycleLog.push({
+            date: date.getTime(),
+            menstruation: 0,
+            prediction: 1,
+            fertility: 0,
+            ovulation: 0,
+            symptoms: []
+          })
+        }
+
+        indexDate++
+      }
+
+      console.log(this.menstrualCalendarData.cycleLog, this.menstrualCalendarData.cycleLog.length)
+    },
+
+    toSubscriptionSetting() {
+      console.log("to subscription setting")
+      this.$router.push({ name: "menstrual-calendar-subscription-setting" })
     }
   },
   async created() {
     const today = new Date()
     this.selectedMonthText = this.monthList[today.getMonth()].text
     this.currentYear = today.getFullYear().toString()
+
+    this.createTestData(this.selectedYear, this.selectedMonth)
   },
 
   components: {

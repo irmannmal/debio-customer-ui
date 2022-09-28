@@ -7,7 +7,7 @@
         .select-box(:style="{'height': `${size}px`, 'width': `${size}px`}")
         .select-box(:style="{'height': `${size}px`, 'width': `${size}px`}")
         .select-box(
-          v-for='i in 10' :key='i' 
+          v-for='i in limitDay' :key='i' 
           :style="{'height': ((i) === index) ? `${centerSize}px` : `${size}px`, 'width': ((i) === index) ? `${centerSize}px` : `${size}px`}"
           :class="{'selected-box': (i === index), 'first-selext-box': (i - 1 === index || i + 1 === index)}"
         ) {{ i + 20 }} Days
@@ -24,7 +24,8 @@ export default {
   props: {
     gap: { type: Number, default: 12 },
     size: { type: Number, default: 100 },
-    centerSize: { type: Number, default: 120 }
+    centerSize: { type: Number, default: 120 },
+    limitDay: { type: Number, default: 18 }
   },
 
   data: () => ({
@@ -42,7 +43,7 @@ export default {
     },
 
     nextSelection() {
-      if (this.index < 10) {
+      if (this.index < this.limitDay) {
         this.scrollX = this.scrollX - this.size - this.gap
         this.index += 1
         this.$emit("input", this.index)

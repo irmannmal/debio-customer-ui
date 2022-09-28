@@ -61,6 +61,12 @@ export default [
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/Phr/MenstrualCalendar/Detail")
       },
       {
+        path: "phr/menstrual-calendar/subscription-setting",
+        name: "menstrual-calendar-subscription-setting",
+        meta: { pageHeader: "Menstrual Calendar", parent: "customer-phr" },
+        component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/Phr/MenstrualCalendar/SubscriptionSetting")
+      },
+      {
         path: "phr/menstrual-calendar",
         name: "menstrual-calendar-selection",
         meta: { pageHeader: "Menstrual Calendar", parent: "customer-phr" },
