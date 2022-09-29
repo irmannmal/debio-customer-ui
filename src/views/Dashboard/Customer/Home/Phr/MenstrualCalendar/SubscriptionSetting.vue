@@ -50,7 +50,7 @@
           stroke
         )
 
-        .subscription-setting__modal-desc Contratulations! Now you have unlocked menstrual calendar feature
+        .subscription-setting__modal-desc Contratulations! your menstrual calendar have been renewed
 
         ui-debio-button(
           color="secondary" 
