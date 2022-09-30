@@ -129,7 +129,7 @@ export default {
           },
           info: {
             name: serviceName,
-            serviceCategory: serviceCategory,
+            category: serviceCategory,
             description: serviceDescription,
             long_description: longDescription,
             image: serviceImage,
