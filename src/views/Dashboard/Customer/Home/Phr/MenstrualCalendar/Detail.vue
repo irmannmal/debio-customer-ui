@@ -50,7 +50,6 @@
             :year="selectedYear" 
             :month="selectedMonth"
             v-model="selectedDates"
-            :averageCycle="averageCycle"
             :menstrualData="menstrualCalendarData"
           )
 

@@ -73,6 +73,17 @@ export default [
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/Phr/MenstrualCalendar/SelectMenstrualCalendar")
       },
       {
+        path: "phr/maintenance",
+        name: "menstrual-calendar-maintenance",
+        meta: { pageHeader: "Menstrual Calendar", parent: "customer-phr" },
+        component: () => import(/* webpackChunkName */ "@/views/Dashboard/maintenancePageLayout"),
+        beforeEnter: (to, from, next) => {
+          if (from.path === "") next({ name: "customer-dashboard" })
+          else next()
+        }
+      },
+
+      {
         path: "my-test/:page?",
         name: "my-test",
         meta: { pageHeader: "My Test" },
@@ -130,6 +141,16 @@ export default [
         name: "customer-data-bounty",
         meta: { pageHeader: "Data Bounty" },
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/DataBounty")
+      },
+      {
+        path: "maintenance",
+        name: "customer-data-bounty-maintenance",
+        meta: { pageHeader: "Data Bounty" },
+        component: () => import(/* webpackChunkName */ "@/views/Dashboard/maintenancePageLayout"),
+        beforeEnter: (to, from, next) => {
+          if (from.path === "") next({ name: "customer-dashboard" })
+          else next()
+        }
       },
 
       {
