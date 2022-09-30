@@ -27,7 +27,7 @@
       .menstrual-calendar-detail__details
         ui-debio-card(width="740")
           .menstrual-calendar-detail__head-text
-            span.menstrual-calendar-detail__head-text-primary When did your last period start?
+            span.menstrual-calendar-detail__head-text-primary My Menstrual Calendar
             span.menstrual-calendar-detail__head-text-secondary Choose date to perform action
           
           v-divider.menstrual-calendar-detail__divider
@@ -36,9 +36,7 @@
             ui-debio-dropdown(
               :items="monthList"
               variant="small"
-              label=""
               v-model="selectedMonthText"
-              placeholder=""
               item-text="text"
               item-value="text"
               outlined
@@ -48,59 +46,23 @@
 
             span.menstrual-calendar-detail__year {{ selectedYear }}
 
-        
           Calendar.menstrual-calendar-detail__calendar(
             :year="selectedYear" 
             :month="selectedMonth"
             v-model="selectedDates"
+            :averageCycle="averageCycle"
             :menstrualData="menstrualCalendarData"
           )
 
           .menstrual-calendar-detail__icons
-            .menstrual-calendar-detail__icon
+            .menstrual-calendar-detail__icon(v-for="description in descriptions")
               v-img(
-                alt="today"
-                src="@/assets/today.svg"
+                :alt="description.toLowerCase()"
+                :src="require(`../../../../../../assets/${description.toLowerCase()}.svg`)"
                 max-width="16px"
                 max-height="16px"
               )
-              span Today
-            
-            .menstrual-calendar-detail__icon
-              v-img(
-                alt="menstruation"
-                src="@/assets/menstruation.svg"
-                max-width="16px"
-                max-height="16px"
-              )
-              span Menstruation
-
-            .menstrual-calendar-detail__icon
-              v-img(
-                alt="prediction"
-                src="@/assets/prediction.svg"
-                max-width="16px"
-                max-height="16px"
-              )
-              span Prediction
-
-            .menstrual-calendar-detail__icon
-              v-img(
-                alt="fertility"
-                src="@/assets/fertility.svg"
-                max-width="16px"
-                max-height="16px"
-              )
-              span Fertility
-
-            .menstrual-calendar-detail__icon
-              v-img(
-                alt="ovulation"
-                src="@/assets/ovulation.svg"
-                max-width="16px"
-                max-height="16px"
-              )
-              span Ovulation
+              span {{ description}}
 
           .menstrual-calendar-detail__note
             .menstrual-calendar-detail__note-text Note
@@ -121,7 +83,7 @@
                 .menstrual-calendar-detail__summary-desc Today Overview
           
           ui-debio-card(width="394")
-            .menstrual-calendar-detail__text Today is your menstruation day, you have low probabilition of pergancy during sexual intercourse.
+            .menstrual-calendar-detail__text {{ getSummary() }}
 
 
           ui-debio-card.menstrual-calendar-detail__setting(width="394")
@@ -199,14 +161,18 @@
 <script>
 
 import emojis from "@/common/constants/menstrual-symptoms-emoji"
+import moods from "@/common/constants/menstruation-moods"
 import MenstrualCalendarBanner from "./Banner.vue"
 import Calendar from "@/common/components/Calendar"
+import mockData from "./mockData"
+
 
 export default {
   name: "MenstrualCalendarDetail",
 
   data: () => ({
     emojis,
+    moods,
     selectedMonthText: "",
     selectedMonth: new Date().getMonth(),
     selectedYear: new Date().getFullYear(),
@@ -215,6 +181,7 @@ export default {
     submitPreview: false,
     selectAverage: true,
     showStart: true,
+    averageCycle: 0,
     monthList: [
       {value: 0, text: "January"},
       {value: 1, text: "February"},
@@ -229,22 +196,22 @@ export default {
       {value: 10, text: "November"},
       {value: 11, text: "December"}
     ],
-    menstrualCalendarData: {
-      addressId: "",
-      averageCycle: 28,
-      cycleLog: [
-      ],
-      createdAt: 1662605496,
-      updatedAt: 1662605496
-    }
+    menstrualCalendarData: null,
+    menstruationPeriodeIndex: [],
+    todaySum: null,
+
+    days: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+    descriptions: ["Today", "Menstruation", "Prediction", "Fertility", "Ovulation"]
   }),
 
   watch: {
-    selectedMonthText(newMonth) {
+    async selectedMonthText(newMonth) {
+      this.menstruationPeriodeIndex = []
       this.selectedMonth = this.monthList.find((value) => value.text === newMonth).value
+      await this.getMenstruationCalendarData()
     },
+
     selectedDates(newSelected) {
-      console.log(new Date(newSelected.getTime()))
       this.submitEnabled = newSelected !== null && newSelected.length > 0
     }
   },
@@ -264,7 +231,6 @@ export default {
 
     addSymptoms(date, emoji) {
       const newCycleLog = this.menstrualCalendarData.cycleLog.map((item) => {
-        console.log(item.date, date.getTime())
         if (item.date === date.getTime()) {
           item.symptoms.push(emoji.name)
         }
@@ -273,8 +239,6 @@ export default {
       })
 
       this.menstrualCalendarData.cycleLog = newCycleLog
-
-      console.log(newCycleLog)
     },
 
     removeSymptoms(date, emoji) {
@@ -292,7 +256,70 @@ export default {
 
       this.menstrualCalendarData.cycleLog = newCycleLog
 
-      console.log(newCycleLog)
+    },
+
+    getSummary() {
+      for (const key in this.todaySum) {
+        if (key !== "date" && key !== "prediction" && key !== "symptoms" && this.todaySum[key]) {
+          if(key === "menstruation") {
+            return moods.MENSTRUATION(this.todaySum.days)
+          }
+          return moods[key.toUpperCase()]
+        }
+      }
+      return moods.NONE
+    },
+
+    async getMenstruationCalendarData() {
+      const data = mockData
+      const today = new Date()
+      const firstDateCurrentMonth = new Date(this.selectedYear, this.selectedMonth, 1)
+      const firstDateNextMonth = new Date(this.selectedYear, this.selectedMonth + 1, 0)
+      
+      const dayFirstDateCurrentMonth = firstDateCurrentMonth.getDay() === 0 ? 6 : firstDateCurrentMonth.getDay() - 1
+      const dayFirstDateNextMonth = firstDateNextMonth.getDay() === 0 ? 6 : firstDateNextMonth.getDay() - 1
+      
+      const startDate = new Date(this.selectedYear, this.selectedMonth, -(dayFirstDateCurrentMonth - 1))
+      const endDate = new Date(this.selectedYear, this.selectedMonth + 1, (6 - dayFirstDateNextMonth))
+      const menstrualCalendarData = {
+        addressId: data.addressId,
+        averageCycle: data.averageCycle,
+        cycleLog: []
+      }
+
+      let date = startDate
+      let indexDate = 0
+      this.menstruationPeriodeIndex = []
+
+      while(date.getTime() < endDate.getTime()) {
+        date = new Date(this.selectedYear, this.selectedMonth, (-(dayFirstDateCurrentMonth - 1) + indexDate))
+        const log = data.cycleLog.filter(log => log.date === date.getTime())
+        const menstruation = log[0]
+
+        if (menstruation) this.menstruationPeriodeIndex.push(indexDate)
+        const currentData = {
+          date: menstruation ? menstruation.date : date.getTime(),
+          menstruation: menstruation ? menstruation.menstruation: 0,
+          prediction: indexDate >= this.menstruationPeriodeIndex[0] + data.averageCycle &&  indexDate < this.menstruationPeriodeIndex[0] + data.averageCycle + 5 ? 1 : 0,
+          fertility: indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
+          ovulation: indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
+          symptoms: menstruation? menstruation.symptoms : []
+        }
+
+        menstrualCalendarData.cycleLog.push(currentData)
+
+
+        if (today.getDate() === date.getDate()) {
+          this.todaySum = currentData
+          this.menstruationPeriodeIndex.map((num, i) => {
+            this.todaySum.index = num
+            this.todaySum.days = i
+          })
+          
+        }
+        indexDate++
+      }
+      this.menstrualCalendarData = menstrualCalendarData
     },
 
     createTestData(year, month) {
@@ -341,20 +368,19 @@ export default {
 
         indexDate++
       }
-
-      console.log(this.menstrualCalendarData.cycleLog, this.menstrualCalendarData.cycleLog.length)
     },
 
     toSubscriptionSetting() {
-      console.log("to subscription setting")
       this.$router.push({ name: "menstrual-calendar-subscription-setting" })
     }
   },
+
   async created() {
     const today = new Date()
     this.selectedMonthText = this.monthList[today.getMonth()].text
     this.currentYear = today.getFullYear().toString()
 
+    await this.getMenstruationCalendarData()
     this.createTestData(this.selectedYear, this.selectedMonth)
   },
 

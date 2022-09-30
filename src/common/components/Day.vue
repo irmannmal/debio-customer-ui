@@ -9,7 +9,7 @@
       template(v-if="isMenstrualData")
         div.day-card(
           v-for="day in countDay"
-          :class="{'selected-day': (dates[day - 1] !== undefined && dates[day - 1].isSelected), day: (dates[day - 1] !== undefined && dates[day - 1].thisMonth), none: !(dates[day - 1] !== undefined && dates[day - 1].thisMonth), menstruation: (dates[day - 1] !== undefined && dates[day - 1].data.isMenstruation && dates[day - 1].thisMonth),prediction: (dates[day - 1] !== undefined && dates[day - 1].data.isPrediction && dates[day - 1].thisMonth),fertility: (dates[day - 1] !== undefined && dates[day - 1].data.isFertility && dates[day - 1].thisMonth)}"
+          :class="setClass(day)"
           @click="selectDayClick(dates[day - 1] !== undefined && dates[day - 1].thisMonth && dates[day - 1].isPast, dates[day - 1].date, dates[day - 1].index)"
         )
           div(
@@ -78,7 +78,6 @@ export default {
   data: () => ({
     selectedIndex: -1,
     countDay: 7
-
   }),
 
   methods: {
@@ -104,6 +103,16 @@ export default {
         active && this.$emit("on-day-select", date)
         this.selectedIndex = index
       }
+    },
+    
+    setClass(day) {
+      return {
+        "selected-day": (this.dates[day - 1] !== undefined && this.dates[day - 1].isSelected), 
+        day: (this.dates[day - 1] !== undefined && this.dates[day - 1].thisMonth), 
+        none: !(this.dates[day - 1] !== undefined && this.dates[day - 1].thisMonth), 
+        menstruation: (this.dates[day - 1] !== undefined && this.dates[day - 1].data.isMenstruation && this.dates[day - 1].thisMonth),
+        prediction: (this.dates[day - 1] !== undefined && this.dates[day - 1].data.isPrediction && this.dates[day - 1].thisMonth),
+        fertility: (this.dates[day - 1] !== undefined && this.dates[day - 1].data.isFertility && this.dates[day - 1].thisMonth)}
     }
   }
 }
@@ -176,6 +185,16 @@ export default {
   .selected-day {
     border: 2px solid #FF60BF;
   }
+  
+  .prediction {
+    background-color: #E5AEFF;
+    color: #F7F7F7;
+  }
+
+  .fertility {
+    background-color: #D3D5FF;
+    color: #F7F7F7;
+  }
 
   .none {
     position: relative;
@@ -225,17 +244,16 @@ export default {
     height: 16px;
     top: 0;
     left: 0;
+    margin: 4px 0 0 4px;
+  }
+
+  .drop {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 0;
+    left: 0;
     margin: 4px 0 0 4.67px;
-  }
-
-  .fertility {
-    background-color: #D3D5FF;
-    color: #F7F7F7;
-  }
-
-  .prediction {
-    background-color: #E5AEFF;
-    color: #F7F7F7;
   }
 
   .menstruation {

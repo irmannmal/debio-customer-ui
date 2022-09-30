@@ -55,7 +55,7 @@ export default [
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/Phr/MenstrualCalendar")
       },
       {
-        path: "phr/menstrual-calendar/detail",
+        path: "phr/menstrual-calendar/dashboard",
         name: "menstrual-calendar-detail",
         meta: { pageHeader: "Menstrual Calendar", parent: "customer-phr" },
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/Phr/MenstrualCalendar/Detail")
