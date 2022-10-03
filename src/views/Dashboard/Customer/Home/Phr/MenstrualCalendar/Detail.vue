@@ -258,8 +258,9 @@ export default {
     },
 
     getSummary() {
+      console.log(this.todaySum)
       for (const key in this.todaySum) {
-        if (key !== "date" && key !== "prediction" && key !== "symptoms" && this.todaySum[key]) {
+        if (key === "fertility" && key === "ovulation" && key === "menstruation" && this.todaySum[key]) {
           if(key === "menstruation") {
             return moods.MENSTRUATION(this.todaySum.days)
           }
