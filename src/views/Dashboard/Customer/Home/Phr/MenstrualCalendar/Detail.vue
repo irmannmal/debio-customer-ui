@@ -131,6 +131,7 @@
               color="#F3F3F3" 
               height="48"
               width="100%"
+              @click="toMenstrualSelectionUpdate()"
             ) 
               .menstrual-calendar-detail__button-text Update Menstruation Day
               v-icon mdi-chevron-right
@@ -198,6 +199,8 @@ export default {
     menstrualCalendarData: null,
     menstruationPeriodeIndex: [],
     todaySum: null,
+    emojiDays: {},
+    emojiSelected: [],
 
     days: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
     descriptions: ["Today", "Menstruation", "Prediction", "Fertility", "Ovulation"]
@@ -207,54 +210,68 @@ export default {
     async selectedMonthText(newMonth) {
       this.menstruationPeriodeIndex = []
       this.selectedMonth = this.monthList.find((value) => value.text === newMonth).value
-      await this.getMenstruationCalendarData()
+      // await this.getMenstruationCalendarData()
+      this.createTestData(this.selectedYear, this.selectedMonth)
     },
 
     selectedDates(newSelected) {
       this.submitEnabled = newSelected !== null && newSelected.length > 0
+      this.emojiSelected = this.emojiDays[newSelected.getTime()] ?? []
+    },
+
+    emojiSelected(newValue) {
+      console.log(newValue)
+      this.updateEmojis()
+    },
+
+    async emojiDays() {
+      // await this.getMenstruationCalendarData()
+      this.createTestData(this.selectedYear, this.selectedMonth)
     }
   },
 
   methods: {
-    addEmoji(emoji) {
+    async addEmoji(emoji) {
       if (emoji.disabled === "active") {
         emoji.disabled = "inactive"
         emoji.color = "#363636"
         this.removeSymptoms(this.selectedDates, emoji)
-        return
+      } else {
+        emoji.disabled = "active"
+        emoji.color = "#E27625"
+        this.addSymptoms(this.selectedDates, emoji)
       }
-      emoji.disabled = "active"
-      emoji.color = "#E27625"
-      this.addSymptoms(this.selectedDates, emoji)
     },
 
-    addSymptoms(date, emoji) {
-      const newCycleLog = this.menstrualCalendarData.cycleLog.map((item) => {
-        if (item.date === date.getTime()) {
-          item.symptoms.push(emoji.name)
-        }
+    async addSymptoms(date, emoji) {
+      let emojiDaysCopy = {...this.emojiDays}
+      let emojiCollection = []
+      const time = date.getTime()
+      if (emojiDaysCopy[time]) {
+        emojiCollection.push(...emojiDaysCopy[time], emoji)
+        emojiDaysCopy[time] = emojiCollection
+      } else {
+        emojiCollection.push(emoji)
+        emojiDaysCopy[time] = emojiCollection
+      }
 
-        return item
-      })
-
-      this.menstrualCalendarData.cycleLog = newCycleLog
+      this.emojiDays = emojiDaysCopy
     },
 
     removeSymptoms(date, emoji) {
-      const newCycleLog = this.menstrualCalendarData.cycleLog.map((item) => {
-        if (item.date === date.getTime()) {
-          item.symptoms = item.symptoms.filter((symptom) => {
-            if (symptom !== emoji.name) {
-              return symptom
-            }
-          })
-        }
+      let emojiDaysCopy = {...this.emojiDays}
+      let emojiCollection = []
+      const time = date.getTime()
+      if (emojiDaysCopy[time]) {
+        emojiCollection = emojiDaysCopy[time].filter((val) => {
+          if (val.name !== emoji.name) {
+            return val
+          }
+        })
+        emojiDaysCopy[time] = emojiCollection
+      }
 
-        return item
-      })
-
-      this.menstrualCalendarData.cycleLog = newCycleLog
-
+      this.emojiDays = emojiDaysCopy
     },
 
     getSummary() {
@@ -270,57 +287,59 @@ export default {
       return moods.NONE
     },
 
-    async getMenstruationCalendarData() {
-      const data = mockData
-      const today = new Date()
-      const firstDateCurrentMonth = new Date(this.selectedYear, this.selectedMonth, 1)
-      const firstDateNextMonth = new Date(this.selectedYear, this.selectedMonth + 1, 0)
+    // async getMenstruationCalendarData() {
+    //   const data = mockData
+    //   const today = new Date()
+    //   const firstDateCurrentMonth = new Date(this.selectedYear, this.selectedMonth, 1)
+    //   const firstDateNextMonth = new Date(this.selectedYear, this.selectedMonth + 1, 0)
       
-      const dayFirstDateCurrentMonth = firstDateCurrentMonth.getDay() === 0 ? 6 : firstDateCurrentMonth.getDay() - 1
-      const dayFirstDateNextMonth = firstDateNextMonth.getDay() === 0 ? 6 : firstDateNextMonth.getDay() - 1
+    //   const dayFirstDateCurrentMonth = firstDateCurrentMonth.getDay() === 0 ? 6 : firstDateCurrentMonth.getDay() - 1
+    //   const dayFirstDateNextMonth = firstDateNextMonth.getDay() === 0 ? 6 : firstDateNextMonth.getDay() - 1
       
-      const startDate = new Date(this.selectedYear, this.selectedMonth, -(dayFirstDateCurrentMonth - 1))
-      const endDate = new Date(this.selectedYear, this.selectedMonth + 1, (6 - dayFirstDateNextMonth))
-      const menstrualCalendarData = {
-        addressId: data.addressId,
-        averageCycle: data.averageCycle,
-        cycleLog: []
-      }
+    //   const startDate = new Date(this.selectedYear, this.selectedMonth, -(dayFirstDateCurrentMonth - 1))
+    //   const endDate = new Date(this.selectedYear, this.selectedMonth + 1, (6 - dayFirstDateNextMonth))
+    //   const menstrualCalendarData = {
+    //     addressId: data.addressId,
+    //     averageCycle: data.averageCycle,
+    //     cycleLog: []
+    //   }
 
-      let date = startDate
-      let indexDate = 0
-      this.menstruationPeriodeIndex = []
+    //   let date = startDate
+    //   let indexDate = 0
+    //   this.menstruationPeriodeIndex = []
 
-      while(date.getTime() < endDate.getTime()) {
-        date = new Date(this.selectedYear, this.selectedMonth, (-(dayFirstDateCurrentMonth - 1) + indexDate))
-        const log = data.cycleLog.filter(log => log.date === date.getTime())
-        const menstruation = log[0]
+    //   while(date.getTime() < endDate.getTime()) {
+    //     date = new Date(this.selectedYear, this.selectedMonth, (-(dayFirstDateCurrentMonth - 1) + indexDate))
+    //     const log = this.emojiDays[date.getTime()]
+    //     const menstruation = log
 
-        if (menstruation) this.menstruationPeriodeIndex.push(indexDate)
-        const currentData = {
-          date: menstruation ? menstruation.date : date.getTime(),
-          menstruation: menstruation ? menstruation.menstruation: 0,
-          prediction: indexDate >= this.menstruationPeriodeIndex[0] + data.averageCycle &&  indexDate < this.menstruationPeriodeIndex[0] + data.averageCycle + 5 ? 1 : 0,
-          fertility: indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
-          ovulation: indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
-          symptoms: menstruation? menstruation.symptoms : []
-        }
+    //     if (menstruation) this.menstruationPeriodeIndex.push(indexDate)
+    //     const currentData = {
+    //       date: menstruation ? menstruation.date : date.getTime(),
+    //       menstruation: menstruation ? menstruation.menstruation: 0,
+    //       prediction: indexDate >= this.menstruationPeriodeIndex[0] + data.averageCycle &&  indexDate < this.menstruationPeriodeIndex[0] + data.averageCycle + 5 ? 1 : 0,
+    //       fertility: indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
+    //       ovulation: indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
+    //       symptoms: menstruation.length > 0 ? menstruation : []
+    //     }
 
-        menstrualCalendarData.cycleLog.push(currentData)
+    //     menstrualCalendarData.cycleLog.push(currentData)
 
 
-        if (today.getDate() === date.getDate()) {
-          this.todaySum = currentData
-          this.menstruationPeriodeIndex.map((num, i) => {
-            this.todaySum.index = num
-            this.todaySum.days = i
-          })
+    //     if (today.getDate() === date.getDate()) {
+    //       this.todaySum = currentData
+    //       this.menstruationPeriodeIndex.map((num, i) => {
+    //         this.todaySum.index = num
+    //         this.todaySum.days = i
+    //       })
           
-        }
-        indexDate++
-      }
-      this.menstrualCalendarData = menstrualCalendarData
-    },
+    //     }
+    //     indexDate++
+    //   }
+
+    //   console.log(menstrualCalendarData)
+    //   this.menstrualCalendarData = menstrualCalendarData
+    // },
 
     createTestData(year, month) {
       const today = new Date()
@@ -334,53 +353,88 @@ export default {
 
       let date = startDate
       let indexDate = 0
+      const menstrualCalendarData = {...this.menstrualCalendarData}
+      menstrualCalendarData.cycleLog = []
 
       while (date.getTime() < endDate.getTime()) {
         date = new Date(year, month, (-(dayFirstDateCurrentMonth - 1) + indexDate))
+        const symptoms = this.emojiDays[date.getTime()] ?? []
+
         if (date.getDate() <= 5 && date.getMonth() === today.getMonth()) {
-          this.menstrualCalendarData.cycleLog.push({
+          menstrualCalendarData.cycleLog.push({
             date: date.getTime(),
             menstruation: 1,
             prediction: 0,
             fertility: 0,
             ovulation: 0,
-            symptoms: []
+            symptoms: symptoms
           })
         } else if (date.getDate() >= 10 && date.getDate() < 20 && date.getMonth() === today.getMonth()) {
-          this.menstrualCalendarData.cycleLog.push({
+          menstrualCalendarData.cycleLog.push({
             date: date.getTime(),
             menstruation: 0,
             prediction: 0,
             fertility: 1,
             ovulation: indexDate === 14 ? 1 : 0,
-            symptoms: []
+            symptoms: symptoms
           })
         } else if (date.getDate() >= 28 && date.getDate() <= 30 && date.getMonth() === today.getMonth()) {
-          this.menstrualCalendarData.cycleLog.push({
+          menstrualCalendarData.cycleLog.push({
             date: date.getTime(),
             menstruation: 0,
             prediction: 1,
             fertility: 0,
             ovulation: 0,
-            symptoms: []
+            symptoms: symptoms
+          })
+        } else {
+          menstrualCalendarData.cycleLog.push({
+            date: date.getTime(),
+            menstruation: 0,
+            prediction: 1,
+            fertility: 0,
+            ovulation: 0,
+            symptoms: symptoms
           })
         }
 
         indexDate++
       }
+
+      this.menstrualCalendarData = menstrualCalendarData
     },
 
     toSubscriptionSetting() {
       this.$router.push({ name: "menstrual-calendar-subscription-setting" })
+    },
+
+    toMenstrualSelectionUpdate() {
+      this.$router.push({ name: "menstrual-calendar-selection-update" })
+    },
+
+    updateEmojis() {
+      const emojies = this.emojis.map((value) => {
+        if (this.emojiSelected.filter((emoji) => emoji.name === value.name ).length > 0) {
+          value.disabled = "active"
+          value.color = "#E27625"
+        } else {
+          value.disabled = "inactive"
+          value.color = "#363636"
+        }
+        return value
+      })
+
+      this.emojis = emojies
     }
   },
 
   async created() {
+    this.menstrualCalendarData = mockData
     const today = new Date()
     this.selectedMonthText = this.monthList[today.getMonth()].text
     this.currentYear = today.getFullYear().toString()
 
-    await this.getMenstruationCalendarData()
+    // await this.getMenstruationCalendarData()
     this.createTestData(this.selectedYear, this.selectedMonth)
   },
 

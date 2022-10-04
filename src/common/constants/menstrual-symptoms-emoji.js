@@ -14,7 +14,7 @@ export default [
   },
   
   {
-    name: "emoji-depressed",
+    name: "emoji-happy",
     text: "Happy",
     disabled: "inactive",
     color: "#363636"

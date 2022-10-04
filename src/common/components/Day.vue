@@ -29,10 +29,24 @@
               max-width="23px"
               max-height="23px"
             )
-            //- .emoticon
-            //-   .emoticon-item(
-            //-     v-for="sympom in dates[day - 1].data.symptoms"
-            //-   )
+            .emoticon
+              .emoticon-item-more-than-one(
+                v-if="dates[day - 1].data.symptoms.length > 1"
+              )
+                v-img.emoticon-item(
+                  alt="emoji-depressed-active"
+                  :src="require(`../../assets/${dates[day - 1].data.symptoms[0].name}-active.svg`)"
+                  max-width="16px"
+                  max-height="16px"
+                )
+                .emoticon-item-count +{{dates[day - 1].data.symptoms.length - 1}}
+              v-img.emoticon-item(
+                v-else-if="dates[day - 1].data.symptoms.length > 0"
+                alt="emoji-depressed-active"
+                :src="require(`../../assets/${dates[day - 1].data.symptoms[0].name}-active.svg`)"
+                max-width="16px"
+                max-height="16px"
+              )
             span(
               :class="{ highlight: (dates[day - 1].data.isFertility || dates[day - 1].data.isPrediction || dates[day - 1].data.isMenstruation), past: (dates[day - 1] !== undefined && dates[day - 1].isPast)}"
             ) {{ dates[day - 1].text.toString().trim() }}
@@ -106,13 +120,14 @@ export default {
     },
     
     setClass(day) {
+      const date = this.dates[day - 1]
       return {
-        "selected-day": (this.dates[day - 1] !== undefined && this.dates[day - 1].isSelected), 
-        day: (this.dates[day - 1] !== undefined && this.dates[day - 1].thisMonth), 
-        none: !(this.dates[day - 1] !== undefined && this.dates[day - 1].thisMonth), 
-        menstruation: (this.dates[day - 1] !== undefined && this.dates[day - 1].data.isMenstruation && this.dates[day - 1].thisMonth),
-        prediction: (this.dates[day - 1] !== undefined && this.dates[day - 1].data.isPrediction && this.dates[day - 1].thisMonth),
-        fertility: (this.dates[day - 1] !== undefined && this.dates[day - 1].data.isFertility && this.dates[day - 1].thisMonth)}
+        "selected-day": (date !== undefined && date.isSelected), 
+        day: (date !== undefined && date.thisMonth), 
+        none: !(date !== undefined && date.thisMonth), 
+        menstruation: (date !== undefined && date.data.isMenstruation && date.thisMonth),
+        prediction: (date !== undefined && date.data.isPrediction && date.thisMonth),
+        fertility: (date !== undefined && date.data.isFertility && date.thisMonth)}
     }
   }
 }
@@ -183,7 +198,7 @@ export default {
   }
 
   .selected-day {
-    border: 2px solid #FF60BF;
+    outline: 2px solid #FF60BF;
   }
   
   .prediction {
@@ -215,17 +230,45 @@ export default {
     position: absolute;
     background: #FFFFFF;
     border-radius: 8px;
-    height: 16px;
     bottom: 0;
     right: 0;
     margin: 0 4px 4px 0;
+  }
+
+  .emoticon-item {
+    height: 16px;
+    width: 16px;
+  }
+
+  .emoticon-item-more-than-one {
+    display: flex;
+    align-items: center;
+    padding: 0;
+    gap: 1px;
+    height: 16px;
+    background: #FFFFFF;
+    border-radius: 8px;
+  }
+
+  .emoticon-item-count {
+    height: 16px;
+    font-weight: 600;
+    margin: 0 3px 0 0;
+    font-size: 8px;
+    line-height: 16px;
+    color: #FF60BF;
   }
 
   .today {
     position: absolute;
     width: 23px;
     height: 23px;
-    top: 0px;
+    top: 0;
+    right: 0;
+  }
+
+  .today .select{
+    top: 0;
     right: 0;
   }
 
