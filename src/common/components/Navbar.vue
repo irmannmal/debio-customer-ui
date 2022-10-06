@@ -235,9 +235,9 @@ export default {
 
       {
         id: 1,
-        name: "usdn",
+        name: "usn",
         icon: "near-logo",
-        currency: "USDN",
+        currency: "USN",
         unit: "ether",
         balance: 0
       },
@@ -306,6 +306,8 @@ export default {
     ...mapMutations({
       setWalletBalance: "substrate/SET_WALLET_BALANCE",
       setMetamaskBalance: "metamask/SET_WALLET_BALANCE",
+      setUSNBalance: "substrate/SET_USN_BALANCE",
+      setUSDTBalance: "substrate/SET_USDT_BALANCE",
       clearWallet: "metamask/CLEAR_WALLET"
     }),
 
@@ -398,6 +400,8 @@ export default {
           if (!data) return
 
           wallet.balance = this.web3.utils.fromWei(data.balance.replaceAll(",", ""), wallet.unit)
+          if (wallet.name === "usn") this.setUSNBalance(wallet.balance)
+          if (wallet.name === "usdt") this.setUSDTBalance(wallet.balance)
         }
       })
     },

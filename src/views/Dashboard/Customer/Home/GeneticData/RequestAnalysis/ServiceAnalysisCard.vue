@@ -5,12 +5,10 @@
     .service-analysis-card__description {{ computeDescription }}
 
     .service-analysis-card__info
-      v-row
-        v-col(cols="8")
-          v-icon(size="14" outlined ) mdi-timer 
-          span.service-analysis-card__info-duration {{ duration }} {{ durationType }}
-        v-col(cols="4")
-          b.service-analysis-card__info-price {{ price }}
+      .service-analysis-card__duration
+        v-icon(size="14" outlined ) mdi-timer 
+        span.service-analysis-card__info-duration {{ duration }} {{ durationType }}
+      b.service-analysis-card__info-price {{ price }}
 
     hr
 
@@ -97,7 +95,7 @@ export default {
     this.description = this.service.description
     this.duration = this.service.duration
     this.durationType = this.service.durationType
-    this.price = `${this.formatBalance(this.service.priceDetail[0].totalPrice)} ${this.service.priceDetail[0].currency}`
+    this.price = `${this.formatBalance(this.service.priceDetail[0].totalPrice, this.service.priceDetail[0].currency)} ${this.service.priceDetail[0].currency}`
     this.analystName = `${this.service.analystsInfo.info.firstName} ${this.service.analystsInfo.info.lastName}`
     this.specialization = this.service.analystsInfo.info.specialization
     this.profileImage = this.service.analystsInfo.info.profileImage
@@ -109,9 +107,11 @@ export default {
       this.$emit("click", this.service)
     },
 
-    formatBalance(balance) {
-      const formatedBalance = this.web3.utils.fromWei(String(balance.replaceAll(",", "")), "ether")
-      return Number(formatedBalance).toPrecision()
+    formatBalance(balance, currency) {
+      let unit
+      currency === "USDT" ? unit = "mwei" : unit = "ether"
+      const formatedBalance = this.web3.utils.fromWei(String(balance.replaceAll(",", "")), unit)
+      return Number(formatedBalance).toLocaleString("en-US")
     },
 
     async getServiceDetail ()  {
@@ -151,7 +151,7 @@ export default {
       this.description = service.description
       this.duration = service.duration
       this.durationType = service.durationType
-      this.price = `${this.formatBalance(service.priceDetail[0].totalPrice)} ${service.priceDetail[0].currency}`
+      this.price = `${this.formatBalance(service.priceDetail[0].totalPrice, service.priceDetail[0].currency)} ${service.priceDetail[0].currency}`
       this.analystName = `${service.analystsInfo.info.firstName} ${service.analystsInfo.info.lastName}`
       this.specialization = service.analystsInfo.info.specialization
       this.profileImage = service.analystsInfo.info.profileImage
@@ -184,8 +184,9 @@ export default {
       @include new-body-text-2
 
     &__info
-      margin-left: 16px
-      margin-bottom: 0 !important
+      display: flex
+      justify-content: space-between
+      margin: 0 16px
       padding-bottom: 20px
 
     &__info-duration
@@ -194,6 +195,7 @@ export default {
       @include body-text-3-opensans-medium
 
     &__info-price
+      margin-top: 5px
       color: #F006CB
       @include body-text-3-opensans
 

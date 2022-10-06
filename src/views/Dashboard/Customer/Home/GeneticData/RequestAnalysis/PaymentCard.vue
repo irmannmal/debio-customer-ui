@@ -16,7 +16,7 @@
       div(v-if="orderStatus === 'Unpaid'")
         .customer-analysis-payment-card__amount
           .customer-analysis-payment-card__data-text Account Balance
-          .customer-analysis-payment-card__data-text {{ walletBalance }} DBIO
+          .customer-analysis-payment-card__data-text {{ balance }} {{ orderCurrency }}
         .customer-analysis-payment-card__amount
           .customer-analysis-payment-card__data-text Service Price
           .customer-analysis-payment-card__data-text(:style="setStyleColor") {{ orderPrice }} {{ orderCurrency }}
@@ -88,7 +88,7 @@
 
 import { mapState } from "vuex"
 import ConfirmationDialog from "@/common/components/Dialog/ConfirmationDialog"
-import { getConversion, setGeneticAnalysisPaid } from "@/common/lib/api"
+import { getConversion } from "@/common/lib/api"
 import { errorHandler } from "@/common/lib/error-handler"
 import PaymentDialog from "@/common/components/Dialog/PaymentDialog"
 import { 
@@ -97,6 +97,7 @@ import {
   queryGeneticAnalysisByGeneticAnalysisTrackingId,
   cancelGeneticAnalysisOrder,
   cancelGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
+import { setGeneticAnalysisPaid } from "@/common/lib/polkadot-provider/command/geneticAnalysisOrders"
 
 export default {
   name: "PaymentCard",
@@ -124,7 +125,8 @@ export default {
     links: [],
     geneticData: {},
     customerBoxPublicKey: null,
-    error: null
+    error: null,
+    balance: 0
   }),
 
   computed: {
@@ -132,6 +134,8 @@ export default {
       api: (state) => state.substrate.api,
       wallet: (state) => state.substrate.wallet,
       walletBalance: (state) => state.substrate.walletBalance,
+      usnBalance: (state) => state.substrate.usnBalance,
+      usdtBalance: (state) => state.substrate.usdtBalance,
       lastEventData: (state) => state.substrate.lastEventData,
       web3: (state) => state.metamask.web3
     }),
@@ -185,37 +189,47 @@ export default {
       await this.getGeneticAnalysisOrderDetail()
       await this.getGeneticData()
       await this.getAnalysisStatus()
-      await this.getRate()
+      await this.getBalance()
     }
 
-    if (Number(this.walletBalance) < Number(this.orderPrice)) {
+    if (Number(this.balance) < Number(this.orderPrice.replaceAll(",", ""))) {
       this.isDeficit = true
     }
   },
 
   methods: {
+    async getBalance() {
+      if(this.orderCurrency === "DBIO") this.balance = this.walletBalance
+      if(this.orderCurrency === "USN") this.balance = this.usnBalance
+      if(this.orderCurrency === "USDT") this.balance = this.usdtBalance      
+    },
+
     async getGeneticData() {
       this.geneticData = await queryGeneticDataById(this.api, this.geneticOrderDetail.geneticDataId)
     },
 
     async setPaid() {
       this.isLoading = true
-      await setGeneticAnalysisPaid(this.orderId)
+      await setGeneticAnalysisPaid(this.api, this.wallet, this.orderId)
     },
 
     async getGeneticAnalysisOrderDetail () {
       this.geneticOrderDetail = await queryGeneticAnalysisOrderById(this.api, this.orderId)
       this.createdDate = this.formatDate(this.geneticOrderDetail.createdAt)
       this.orderStatus = this.geneticOrderDetail.status
-      this.orderPrice = this.formatBalance(this.geneticOrderDetail.prices[0].value)
+      this.orderPrice = this.formatBalance(this.geneticOrderDetail.prices[0].value, this.geneticOrderDetail.currency)
       this.orderCurrency = this.geneticOrderDetail.currency
+      await this.getRate()
       this.orderPriceInUsd = this.formatPriceInUsd(this.geneticOrderDetail.prices[0].value)
       this.trackingId = this.geneticOrderDetail.geneticAnalysisTrackingId      
     },
 
-    formatBalance(val) {
-      const formatedBalance = this.web3.utils.fromWei(String(val.replaceAll(",", "")), "ether")
-      return Number(formatedBalance).toFixed(4)
+    formatBalance(val, currency) {
+      let unit
+      currency === "USDT" ? unit = "mwei" : unit = "ether"
+
+      const formatedBalance = this.web3.utils.fromWei(String(val.replaceAll(",", "")), unit)
+      return Number(formatedBalance).toLocaleString("en-US")
     },
 
     formatPriceInUsd(val) {

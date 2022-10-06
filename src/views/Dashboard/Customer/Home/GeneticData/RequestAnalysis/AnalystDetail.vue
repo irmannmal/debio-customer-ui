@@ -19,12 +19,10 @@
 
 
           .analyst-detail__service-info
-            v-row
-              v-col(cols="8")
-                v-icon(size="14" outlined ) mdi-timer 
-                span.analyst-detail__service-info-duration {{ service.duration }} {{ service.durationType }}
-              v-col(cols="4")
-                b.analyst-detail__service-info-price {{ price }}
+            .analyst-detail__info
+              v-icon(size="14" outlined ) mdi-timer 
+              span.analyst-detail__service-info-duration {{ service.duration }} {{ service.durationType }}
+            b.analyst-detail__service-info-price {{ price }}
           hr
 
         v-row.analyst-detail__profil
@@ -226,7 +224,7 @@ export default {
     },
 
     async getPrice() {
-      this.price = `${this.formatBalance(this.service.priceDetail[0].totalPrice)} ${this.service.priceDetail[0].currency}`
+      this.price = `${this.formatBalance(this.service.priceDetail[0].totalPrice, this.service.priceDetail[0].currency)} ${this.service.priceDetail[0].currency}`
     },
 
     closeDialog() {
@@ -406,9 +404,11 @@ export default {
 
     },
 
-    formatBalance(balance) {
-      const formatedBalance = this.web3.utils.fromWei(String(balance.replaceAll(",", "")), "ether")
-      return Number(formatedBalance).toPrecision()
+    formatBalance(balance, currency) {
+      let unit
+      currency === "USDT" ? unit = "mwei" : unit = "ether"
+      const formatedBalance = this.web3.utils.fromWei(String(balance.replaceAll(",", "")), unit)
+      return Number(formatedBalance).toLocaleString("en-US")
     },
 
     async createOrder() {
@@ -465,8 +465,9 @@ export default {
         background: #a1a1ff
 
     &__service-info
-      margin-top: 16px
-      margin-bottom: 20px
+      display: flex
+      justify-content: space-between
+      padding-bottom: 20px
 
     &__service-info-duration
       letter-spacing: -0.004em
@@ -474,6 +475,7 @@ export default {
       @include body-text-3-opensans-medium
 
     &__service-info-price
+      margin-top: 5px
       color: #F006CB
       @include body-text-3-opensans
 

@@ -33,7 +33,9 @@ const defaultState = {
   lastEventData: null,
   localListNotification: [],
   configEvent: null,
-  mnemonicData: null
+  mnemonicData: null,
+  usnBalance: null,
+  usdtBalance: null
 }
 
 export default {
@@ -80,6 +82,12 @@ export default {
     },
     SET_WALLET_BALANCE(state, balance) {
       state.walletBalance = Number(balance).toFixed(4)
+    },
+    SET_USN_BALANCE(state, balance) {
+      state.usnBalance = balance
+    },
+    SET_USDT_BALANCE(state, balance) {
+      state.usdtBalance = balance
     },
     SET_WALLET_PUBLIC_KEY(state, publicKey) {
       state.walletPublicKey = publicKey

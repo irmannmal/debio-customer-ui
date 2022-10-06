@@ -17,8 +17,6 @@
           v-row
             v-col(
               v-if="isLoading"
-              v-for="(value) in 3"
-              :key="value"
             )
               v-skeleton-loader(
                 type="card"
