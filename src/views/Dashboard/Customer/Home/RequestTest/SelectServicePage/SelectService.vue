@@ -3,7 +3,7 @@
     .customer-select-service__title Select your preferred service
 
     template(v-if="showNoLab")
-      NoLab
+      NoLab(@fetch="fetchService")
 
     .customer-select-service__card(v-if="!showNoLab")
       v-row 
@@ -95,6 +95,8 @@ export default {
   },
 
   async mounted () {
+    this.services = null
+    this.serviceList = []
     this.services = this.dataServices
     await this.getServices()
 
@@ -113,8 +115,6 @@ export default {
 
     async getServices () {
 
-
-      
       for (let i = 0; i < this.services.length; i++) {
         let {
           id: serviceId,
@@ -202,6 +202,15 @@ export default {
       if (!this.serviceList.length) {
         this.showNoLab = true
       }
+    },
+
+    async fetchService() {
+      this.services = null
+      this.serviceList = []
+      this.services = this.dataServices
+
+      await this.getServices()
+      this.showNoLab = false
     },
     
     async getDetailService(service) {

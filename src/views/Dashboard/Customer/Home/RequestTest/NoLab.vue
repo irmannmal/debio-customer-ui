@@ -27,6 +27,7 @@
     template
       AgreementDialog(
         :show="showAgreement"
+        @fetch="getService"
         @close="closingDialog"
         @click="onClickDialogButton"
       )
@@ -80,6 +81,11 @@ export default {
   methods: {
     showingAgreementDialog () {
       this.showAgreement = true
+    },
+
+    getService() {
+      this.showAgreement = false
+      this.$emit("fetch")
     },
 
     closingDialog() {

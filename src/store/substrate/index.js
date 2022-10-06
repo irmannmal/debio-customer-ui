@@ -157,7 +157,7 @@ export default {
           commit("SET_LAST_BLOCK", newBlock)
 
           if(notifications && notifications.length > 0) {
-            lastBlock = parseInt((notifications[notifications.length-1].block).replaceAll(",", ""))
+            lastBlock = notifications[notifications.length-1].block
           } else {
             lastBlock = 0
           }

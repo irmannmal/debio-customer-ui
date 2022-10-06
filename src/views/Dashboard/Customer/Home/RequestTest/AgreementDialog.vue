@@ -86,6 +86,17 @@
               outlined
             )
 
+            div.staking-dialog__alert.d-flex(v-if="showErrorAlert")
+              ui-debio-icon.staking-dialog__icon(
+                :icon="alertIcon"
+                size="14"
+                stroke
+                color="#F5222D"
+              )
+              .staking-dialog__alert-text You cannot request a lab to provide this service since it's already available in your area. Click 
+                a.link.staking-dialog__alert-text(@click="toSelectService") here 
+                span.staking-dialog__alert-text to see the test
+
             v-checkbox.staking-dialog__checkbox(v-model="agree")
               template(v-slot:label) 
                 div(style="font-size: 12px;") I have read and agree to the 
@@ -146,6 +157,7 @@ import { createRequestFee } from "@debionetwork/polkadot-provider"
 import errorMessage from "@/common/constants/error-messages"
 import {errorHandler} from "@/common/lib/error-handler"
 import { getLocations, getStates, getCities, getCategories } from "@/common/lib/api"
+import { alertIcon } from "@debionetwork/ui-icons"
 
 
 export default {
@@ -156,6 +168,7 @@ export default {
   },
 
   data: () => ({
+    alertIcon,
     errorMessage,
     currencyList: ["DBIO"], 
     currencyType: "DBIO",
@@ -180,7 +193,8 @@ export default {
     countries: [],
     noState: false,
     noCity: false,
-    countryName: ""
+    countryName: "",
+    showErrorAlert: false
 
   }),
 
@@ -234,6 +248,10 @@ export default {
   methods: {
     closeDialog() {
       this.$emit("close")
+    },
+
+    toSelectService() {
+      this.$emit("fetch")
     },
 
     async getServiceCategory() {
@@ -323,7 +341,7 @@ export default {
 
     async submitServiceRequestStaking() {
       const sufficientBalance = (Number(this.amount) + Number(this.txWeight)) <= Number(this.walletBalance)
-      
+
       if (!sufficientBalance) {
         const error = await errorHandler("Insufficient Balance")
         this.errorTitle = error.title
@@ -334,23 +352,38 @@ export default {
 
       this.isLoading = true
 
-      try {
-        await createRequest(
-          this.api,
-          this.pair,
-          this.country,
-          this.state,
-          this.city,
-          this.category,
-          this.amount
-        )
+      const country = this.country
+      const region = this.state
+      const city = this.city
+      const category = this.category
+      const status = "All"
+      await this.$store.dispatch("lab/setCountryRegionCity", {country, region, city})
+      const services = await this.$store.dispatch("lab/getServicesByCategory", {category, status})
 
-      } catch (err) {
-        const error = await errorHandler(err.message)
-        
-        this.errorTitle = error.title
-        this.errorMsg = error.message
-        this.showError = true
+      if (!services.length) {
+        try {
+          await createRequest(
+            this.api,
+            this.pair,
+            this.country,
+            this.state,
+            this.city,
+            this.category,
+            this.amount
+          )
+
+        } catch (err) {
+          const error = await errorHandler(err.message)
+          
+          this.errorTitle = error.title
+          this.errorMsg = error.message
+          this.showError = true
+          this.isLoading = false
+        }
+      }
+
+      if (services.length) {
+        this.showErrorAlert = true
         this.isLoading = false
       }
     }
@@ -362,7 +395,7 @@ export default {
   @import "@/common/styles/mixins.sass"
   
   .staking-dialog
-    height: 565px
+    height: 580px
     background-color: #FF0000
 
     &__title
@@ -376,7 +409,7 @@ export default {
     &__card
       background-color: #F5F7F9
       margin: 26px 30px
-      height: 465px
+      height: 500px
 
     &__card-text
       padding: 18px 12px
@@ -425,5 +458,19 @@ export default {
 
     &__trans-weight-icon
       margin-left: 5px
+
+    &__alert
+      max-width: 100%
+      margin-bottom: 2%
+      margin-top: 2%
+      color:#F92020
+      @include body-text-2
+
+    &__icon
+      margin-top: 1px
+      margin-right: 3px
+
+    &__alert-text
+      @include tiny-semi-bold
 
 </style>
