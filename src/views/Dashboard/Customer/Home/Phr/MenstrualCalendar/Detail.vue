@@ -216,11 +216,10 @@ export default {
 
     selectedDates(newSelected) {
       this.submitEnabled = newSelected !== null && newSelected.length > 0
-      this.emojiSelected = this.emojiDays[newSelected.getTime()] ?? []
+      this.emojiSelected = this.emojiDays[newSelected?.getTime()] ?? []
     },
 
-    emojiSelected(newValue) {
-      console.log(newValue)
+    emojiSelected() {
       this.updateEmojis()
     },
 
@@ -232,44 +231,34 @@ export default {
 
   methods: {
     async addEmoji(emoji) {
+      if (!this.selectedDates) return
+
       if (emoji.disabled === "active") {
         emoji.disabled = "inactive"
         emoji.color = "#363636"
-        this.removeSymptoms(this.selectedDates, emoji)
+        await this.removeSymptoms(this.selectedDates, emoji)
       } else {
         emoji.disabled = "active"
         emoji.color = "#E27625"
-        this.addSymptoms(this.selectedDates, emoji)
+        await this.addSymptoms(this.selectedDates, emoji)
       }
     },
 
     async addSymptoms(date, emoji) {
       let emojiDaysCopy = {...this.emojiDays}
-      let emojiCollection = []
       const time = date.getTime()
-      if (emojiDaysCopy[time]) {
-        emojiCollection.push(...emojiDaysCopy[time], emoji)
-        emojiDaysCopy[time] = emojiCollection
-      } else {
-        emojiCollection.push(emoji)
-        emojiDaysCopy[time] = emojiCollection
-      }
+      let emojiCollection = emojiDaysCopy[time] ?? []
+      emojiCollection.push(emoji)
+      emojiDaysCopy[time] = emojiCollection
 
       this.emojiDays = emojiDaysCopy
     },
 
-    removeSymptoms(date, emoji) {
+    async removeSymptoms(date, emoji) {
       let emojiDaysCopy = {...this.emojiDays}
-      let emojiCollection = []
       const time = date.getTime()
-      if (emojiDaysCopy[time]) {
-        emojiCollection = emojiDaysCopy[time].filter((val) => {
-          if (val.name !== emoji.name) {
-            return val
-          }
-        })
-        emojiDaysCopy[time] = emojiCollection
-      }
+      let emojiCollection = emojiDaysCopy[time]?.filter((val) => val.name !== emoji.name) ?? []
+      emojiDaysCopy[time] = emojiCollection
 
       this.emojiDays = emojiDaysCopy
     },
@@ -414,13 +403,11 @@ export default {
 
     updateEmojis() {
       const emojies = this.emojis.map((value) => {
-        if (this.emojiSelected.filter((emoji) => emoji.name === value.name ).length > 0) {
-          value.disabled = "active"
-          value.color = "#E27625"
-        } else {
-          value.disabled = "inactive"
-          value.color = "#363636"
-        }
+        const active = this.emojiSelected.some(({name}) => name === value.name)
+        
+        value.disabled = active ? "active" : "inactive"
+        value.color = active ? "#E27625" : "#363636"
+        
         return value
       })
 
@@ -493,7 +480,7 @@ export default {
     &__emoticons-row
       display: flex
       justify-content: center
-      max-width: 394px    
+      max-width: 394px
     
     &__emoticons-col
       display: flex

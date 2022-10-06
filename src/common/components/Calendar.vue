@@ -126,13 +126,14 @@ export default {
       let date = startDate
       let indexDate = 0
       let indexMenstrualData = 0
+      let dateList = []
 
       const lastIndexCycleLog = this.menstrualData.cycleLog.length - 2
       while (date.getTime() < endDate.getTime()) {
         date = new Date(year, month, (-(dayFirstDateCurrentMonth - 1) + indexDate))
 
         if (weekDays.length === 7) {
-          this.dateList.push(weekDays)
+          dateList.push(weekDays)
           weekDays = []
         }
 
@@ -173,7 +174,8 @@ export default {
         indexDate++
       }
       
-      this.dateList.push(weekDays)
+      dateList.push(weekDays)
+      this.dateList = dateList
     },
 
     onSelect(selectedDate, index) {
