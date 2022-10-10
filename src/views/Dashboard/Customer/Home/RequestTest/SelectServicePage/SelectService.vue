@@ -157,9 +157,9 @@ export default {
         const serviceRate = serviceData.rating_service
         const countServiceRate = serviceData.count_rating_service
         const detailPrice = this.services[i].info.prices_by_currency[0]
-        const totalPrice = formatPrice(detailPrice.total_price.replaceAll(",", ""))
-        const servicePrice = formatPrice(detailPrice.price_components[0].value.replaceAll(",", ""))
-        const qcPrice =  formatPrice(detailPrice.additional_prices[0].value.replaceAll(",", ""))
+        const totalPrice = formatPrice(detailPrice.total_price.replaceAll(",", ""), currency)
+        const servicePrice = formatPrice(detailPrice.price_components[0].value.replaceAll(",", ""), currency)
+        const qcPrice =  formatPrice(detailPrice.additional_prices[0].value.replaceAll(",", ""), currency)
 
         const service = {
           serviceId,

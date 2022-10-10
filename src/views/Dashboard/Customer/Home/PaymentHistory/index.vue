@@ -32,7 +32,7 @@
         v-slot:[`item.service_info.prices_by_currency[0].total_price`]="{ item }"
       )
         .payment-history__price-details
-          | {{ formatPrice(item.service_info.prices_by_currency[0].total_price.replaceAll(',', '')) }}
+          | {{ formatPrice(item.service_info.prices_by_currency[0].total_price.replaceAll(',', ''), item.service_info.prices_by_currency[0].currency) }}
           | {{ item.service_info.prices_by_currency[0].currency }}
 
       template(v-slot:[`item.status`]="{ item }")
@@ -54,6 +54,7 @@ import { mapState } from "vuex"
 import { searchIcon } from "@debionetwork/ui-icons"
 import { generalDebounce } from "@/common/lib/utils"
 import { getOrderList } from "@/common/lib/api"
+import { formatPrice } from "@/common/lib/price-format.js"
 
 import metamaskServiceHandler from "@/common/lib/metamask/mixins/metamaskServiceHandler"
 
@@ -64,6 +65,7 @@ export default {
 
   data: () => ({
     searchIcon,
+    formatPrice,
 
     searchQuery: "",
     paymentHeaders: [
@@ -154,10 +156,6 @@ export default {
       })
 
       return colors[status.toUpperCase()]
-    },
-
-    formatPrice(price) {
-      return this.web3.utils.fromWei(String(price.replaceAll(",", "")), "ether")
     },
 
     handleDetails(item) {

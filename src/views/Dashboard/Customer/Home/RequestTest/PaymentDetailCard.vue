@@ -19,13 +19,11 @@
           | {{ dataService.servicePrice }}
           | {{ dataService.currency }}
     
-
       .menu-card__details
         .menu-card__sub-title Quality Control Price
         .menu-card__price 
           | {{ dataService.qcPrice }} 
           | {{ dataService.currency }}
-
 
       .menu-card__operation +
       hr.menu-card__line
@@ -36,35 +34,7 @@
           | {{ dataService.totalPrice }} 
           | {{ dataService.currency}}
 
-      .menu-card__rate ( {{ (this.usdRate * dataService.totalPrice).toFixed(3) }} USD )
-
-      .menu-card__details(v-if="stakingFlow")
-        .menu-card__sub-title Staking Amount
-        .menu-card__price
-          | {{ stakingAmount }}
-          | {{ dataService.currency}}
-
-      .menu-card__operation(v-if="stakingFlow") -
-      hr.menu-card__line(v-if="stakingFlow")
-
-      .menu-card__details(v-if="isDeficit && stakingFlow" style="color: red")
-        .menu-card__sub-title-medium Remaining Amount
-        .menu-card__price-medium
-          | {{ remainingAmount }}
-          | {{ dataService.currency}}
-
-      .menu-card__details(v-if="isBalanced && stakingFlow")
-        .menu-card__sub-title-medium Remaining Amount
-        .menu-card__price-medium
-          | 0
-          | {{ dataService.currency}}
-
-      .menu-card__details(v-if="isExcess" style="color: green")
-        .menu-card__sub-title-medium Excess Amount
-        .menu-card__price-medium
-          | {{ excessAmount }}
-          | {{ dataService.currency}}
-
+      .menu-card__rate ( {{ this.usdRate }} USD )
       
       div(class="text-center" v-if="status === 'Cancelled'")
         div(class="d-flex justify-space-between align-center pa-4 ms-3 me-3")
@@ -87,8 +57,7 @@
 
       div(class="text-center" v-else)
         div(v-if="!success && !isCreated" class="mt-3 d-flex justify-center align-center")
-          ui-debio-button(
-            :class="setMargin"
+          ui-debio-button.mt-12(
             color="secondary"
             width="280"
             height="35"
@@ -148,14 +117,6 @@
         @close="cancelDialog = false"
       )
 
-      PayRemainingDialog(
-        :show="showPayRemainingDialog"
-        :amount="remainingDbio"
-        :amountInDai="remainingAmount"
-        @onContinue="onContinue"
-        @close="showPayRemainingDialog = false"
-      )
-
       ui-debio-alert-dialog(
         :show="showAlert"
         :width="289"
@@ -176,12 +137,9 @@ import { u8aToHex } from "@polkadot/util"
 import CancelDialog from "@/common/components/Dialog/CancelDialog"
 import PaymentReceiptDialog from "./PaymentReceiptDialog.vue"
 import { cancelOrder } from "@debionetwork/polkadot-provider"
-import { processRequest } from "@debionetwork/polkadot-provider"
 import { queryLastOrderHashByCustomer, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
-import PayRemainingDialog from "./PayRemainingDialog.vue"
 import { getConversion, getOrderDetail, fetchTxHashOrder } from "@/common/lib/api"
 import { getDNACollectionProcess } from "@/common/lib/api"
-import { formatPrice } from "@/common/lib/price-format.js"
 import getEnv from "@/common/lib/utils/env"
 
 export default {
@@ -189,7 +147,6 @@ export default {
   
   components: {
     PaymentReceiptDialog,
-    PayRemainingDialog,
     CancelDialog
   },
 
@@ -202,16 +159,7 @@ export default {
     isCancelled: false,
     status: "Unpaid",
     labDetail: null,
-    stakingFlow: false,
-    stakingAmount: 0,
-    remainingDbio: 0,
-    remainingAmount: 0,
-    showPayRemainingDialog: false,
     orderId: "",
-    isDeficit: false,
-    isExcess: false,
-    isBalanced: false,
-    excessAmount: 0,
     showAlert: false,
     isCreated: false,
     success: false,
@@ -225,7 +173,6 @@ export default {
   },
 
   async mounted () {
-    this.stakingFlow = false
     this.getUsdRate()
 
     if(this.$route.params.hash) {
@@ -250,34 +197,6 @@ export default {
       this.orderId = this.detailOrder.id
       this.status = this.detailOrder.status
     }
-
-    if (this.dataService.serviceFlow === "StakingRequestService") {
-      this.stakingFlow = true
-      const debioBalance = await getConversion()
-      const stakingAmount = Number(formatPrice(this.stakingData.staking_amount))
-      this.stakingAmount = (stakingAmount * debioBalance.dbioToDai).toFixed(3)
-      this.remainingAmount = this.dataService.totalPrice - this.stakingAmount
-      this.remainingDbio = (this.remainingAmount / debioBalance.dbioToDai).toFixed(3)
-      this.excessAmount = this.stakingAmount - this.dataService.totalPrice
-
-      if (this.excessAmount > 0) {
-        this.isExcess = true
-      }
-
-
-      if (Number(this.stakingAmoung) > Number(this.dataService.totalPrice)) {
-        this.isExcess = true
-      }
-
-      if (Number(this.stakingAmount) === Number(this.dataService.totalPrice)) {
-        this.isBalanced = true
-      }
-
-      if (Number(this.stakingAmount) < Number(this.dataService.totalPrice)) {
-        this.isDeficit = true
-      }
-    }
-
   },
 
   computed: {
@@ -290,14 +209,7 @@ export default {
       stakingData: (state) => state.lab.stakingData,
       web3: (state) => state.metamask.web3,
       lastEventData: (state) => state.substrate.lastEventData
-    }),
-
-    setMargin() {
-      if (this.stakingFlow) {
-        return "mt-2"
-      }
-      return "mt-12"
-    }
+    })
   },
 
   watch: {
@@ -321,8 +233,8 @@ export default {
     }),
 
     async getUsdRate() {
-      this.rate = await getConversion()
-      if (this.rate) this.usdRate = this.rate.daiToUsd
+      this.rate = await getConversion(this.dataService.currency, "USD")
+      this.usdRate = (this.rate * this.dataService.totalPrice.replaceAll(",", "")).toLocaleString("en-US")
     },
 
     async toEtherscan () {
@@ -350,38 +262,7 @@ export default {
         this.detailOrder = await queryOrderDetailByOrderID(this.api, this.lastOrder)
       }
 
-      if (this.isExcess) {
-        await this.processRequestService()
-        return
-      }
-
-      if (this.remainingAmount && this.remainingAmount > 0) {
-        this.showPayRemainingDialog = true
-        return
-      }
       this.showReceipt = true
-    },
-
-    async processRequestService() {
-      const lastOrder = await queryLastOrderHashByCustomer(
-        this.api,
-        this.wallet.address
-      )
-
-      const detailOrder = await queryOrderDetailByOrderID(
-        this.api,
-        lastOrder
-      )
-
-      await processRequest(
-        this.api,
-        this.wallet,
-        this.stakingData.lab_address,
-        this.stakingData.hash,
-        detailOrder.id,
-        detailOrder.dnaSampleTrackingId
-      )
-
     },
 
     getCustomerPublicKey() {

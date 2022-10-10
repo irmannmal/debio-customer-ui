@@ -115,7 +115,7 @@ export default {
         serviceName: detail.service_info.name,
         serviceDescription: detail.service_info.description,
         serviceDuration: `${detail.service_info.expected_duration.duration} ${detail.service_info.expected_duration.duration_type}`,
-        servicePrice: `${formatPrice(detail.service_info.prices_by_currency[0].total_price)} ${detail.service_info.prices_by_currency[0].currency}`
+        servicePrice: `${formatPrice(detail.service_info.prices_by_currency[0].total_price, detail.service_info.prices_by_currency[0].currency) } ${detail.service_info.prices_by_currency[0].currency}`
       }
 
       const trackingId = detail.genetic_analysis_tracking_id

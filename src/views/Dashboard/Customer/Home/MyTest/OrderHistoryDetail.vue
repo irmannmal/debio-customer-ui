@@ -229,8 +229,8 @@ export default {
       try {
         this.myTest = await getOrderDetail(this.$route.params.id)
         this.dnaSample = await queryDnaSamples(this.api, this.myTest.dna_sample_tracking_id)
-        this.prices.servicePrice = this.formatPrice(this.myTest.service_info.prices_by_currency[0].total_price)
-        this.prices.qcPrice = this.formatPrice(this.myTest.service_info.prices_by_currency[0].additional_prices[0].value)
+        this.prices.servicePrice = this.formatPrice(this.myTest.service_info.prices_by_currency[0].total_price, this.myTest.service_info.prices_by_currency[0].currency.toUpperCase())
+        this.prices.qcPrice = this.formatPrice(this.myTest.service_info.prices_by_currency[0].additional_prices[0].value, this.myTest.service_info.prices_by_currency[0].currency.toUpperCase())
         this.prices.currency = this.myTest.service_info.prices_by_currency[0].currency.toUpperCase()
         this.isLoading = false
       } catch (error) {
@@ -278,7 +278,7 @@ export default {
     checkOrderDetail() {
       const statusDetail = ORDER_STATUS_DETAIL[this.dnaSample.status.toUpperCase()]
       if (this.dnaSample.status === "Rejected") {
-        const refundAmount = formatPrice(this.myTest.service_info.prices_by_currency[0].total_price) - formatPrice(this.myTest.service_info.prices_by_currency[0].additional_prices[0].value)
+        const refundAmount = formatPrice(this.myTest.service_info.prices_by_currency[0].total_price, this.myTest.service_info.prices_by_currency[0].currency.toUpperCase()) - formatPrice(this.myTest.service_info.prices_by_currency[0].additional_prices[0].value, this.myTest.service_info.prices_by_currency[0].currency.toUpperCase())
         const { banner, name, detail, bannerSize, viewBox, e1 } = statusDetail(refundAmount)
         this.banner = banner
         this.status = { name, detail, size: bannerSize, viewBox }

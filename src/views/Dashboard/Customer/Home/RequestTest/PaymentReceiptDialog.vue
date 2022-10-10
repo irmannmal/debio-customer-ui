@@ -120,8 +120,7 @@ import {
   queryEthAdressByAccountId,
   queryLastOrderHashByCustomer,
   queryOrderDetailByOrderID,
-  createOrder,
-  createOrderFee
+  processRequest
 } from "@debionetwork/polkadot-provider"
 import { startApp, getTransactionReceiptMined, handleSwitchChain } from "@/common/lib/metamask"
 import { getBalanceETH, getBalanceDAI } from "@/common/lib/metamask/wallet.js"
@@ -134,6 +133,7 @@ import SpinnerLoader from "@bit/joshk.vue-spinners-css.spinner-loader"
 import InstallMetamask from "@/common/components/Dialog/InstallMetamask.vue"
 import { postTxHash, walletBinding } from "@/common/lib/api"
 import getEnv from "@/common/lib/utils/env"
+import { setOrderPaid, setOrderPaidFee } from "@/common/lib/polkadot-provider/command/order"
 
 export default {
   name: "PaymentReceiptDialog",
@@ -189,16 +189,23 @@ export default {
       mnemonicData: (state) => state.substrate.mnemonicData,
       selectedService: (state) => state.testRequest.products,
       metamaskWalletAddress: (state) => state.metamask.metamaskWalletAddress,
-      web3: (state) => state.metamask.web3
+      stakingData: (state) => state.lab.stakingData,
+      web3: (state) => state.metamask.web3,
+      usnBalance: (state) => state.substrate.usnBalance,
+      usdtBalance: (state) => state.substrate.usdtBalance
     })
   },
 
   watch: {
-    lastEventData(event) {
+    async lastEventData(event) {
       if (event) {
         const dataEvent = JSON.parse(event.data.toString())
 
         if (event.method === "OrderPaid") {
+          if (this.selectedService.serviceFlow === "StakingRequestService") {
+            await this.processRequestService()
+          }
+
           this.isLoading = false
           this.$router.push({ 
             name: "customer-request-test-success",
@@ -212,7 +219,7 @@ export default {
           this.isLoadingButton = false
           this.showMetamask = false
         }
-      }      
+      }
     }
   },
 
@@ -230,10 +237,30 @@ export default {
     async connectWallet() {
       this.isLoadingButton = true
       const accountDetail = await startApp()
-      console.log(accountDetail)
       const accountId = this.wallet.address
       const ethAddress = accountDetail.currentAccount
       await walletBinding({accountId, ethAddress})
+    },
+
+    async processRequestService() {
+      const lastOrder = await queryLastOrderHashByCustomer(
+        this.api,
+        this.wallet.address
+      )
+
+      const detailOrder = await queryOrderDetailByOrderID(
+        this.api,
+        lastOrder
+      )
+
+      await processRequest(
+        this.api,
+        this.wallet,
+        this.stakingData.lab_address,
+        this.stakingData.hash,
+        detailOrder.id,
+        detailOrder.dnaSampleTrackingId
+      )
     },
 
     async getCustomerPublicKey() {
@@ -243,13 +270,16 @@ export default {
 
     async calculateTxWeight() {
       this.txWeight = "Calculating..."
-      const txWeight = await createOrderFee(
+
+      this.lastOrder = await queryLastOrderHashByCustomer(
+        this.api,
+        this.wallet.address
+      )
+      
+      const txWeight = await setOrderPaidFee(
         this.api,
         this.wallet,
-        this.selectedService.serviceId,
-        this.selectedService.indexPrice,
-        this.customerBoxPublicKey,
-        this.selectedService.serviceFlow
+        this.selectedService.serviceId
       )
       this.txWeight = this.web3.utils.fromWei(String(txWeight.partialFee), "ether")
     },
@@ -280,7 +310,6 @@ export default {
       this.error = ""
 
       try {
-        if (this.switchNetwork) return
 
         this.lastOrder = await queryLastOrderHashByCustomer(
           this.api,
@@ -295,7 +324,27 @@ export default {
             this.closeDialog()
             return
           }
+
+          if (this.detailOrder.currency !== "DBIO") {
+            let balance
+            this.detailOrder.currency === "USN" ? balance = this.usnBalance : balance = this.usdtBalance
+            
+            if (Number(balance) < Number(this.serviceDetail.totalPrice.replaceAll(",", ""))) {
+              this.isLoading = false
+              this.showError = true
+              const error = await errorHandler("Insufficient Balance")
+              this.error = error.message
+              this.errorTitle = error.title
+              this.errorMsg = error.message
+              return
+            }
+
+            await setOrderPaid(this.api, this.wallet, this.lastOrder)
+            return
+          }
         }
+
+        if (this.switchNetwork) return
 
         this.ethAccount = await startApp()
         const ethAddress = await queryEthAdressByAccountId(this.api, this.wallet.address)    
@@ -348,21 +397,8 @@ export default {
           this.selectedService.labId
         )
 
+        this.payOrder
 
-
-        if (!this.status || this.status !== "Unpaid") {
-          await createOrder(
-            this.api,
-            this.wallet,
-            this.selectedService.serviceId,
-            this.selectedService.indexPrice,
-            this.customerBoxPublicKey,
-            this.selectedService.serviceFlow,
-            this.payOrder
-          )
-        } else {
-          this.payOrder()
-        }
       } catch (err) {
         this.isLoading = false
         const error = await errorHandler(err.message)

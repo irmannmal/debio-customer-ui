@@ -67,7 +67,8 @@ import { getLocations } from "@/common/lib/api"
 import CryptoJS from "crypto-js"
 import Kilt from "@kiltprotocol/sdk-js"
 import { u8aToHex } from "@polkadot/util"
-import { createOrder, queryLastOrderHashByCustomer } from "@debionetwork/polkadot-provider"
+import { queryLastOrderHashByCustomer } from "@debionetwork/polkadot-provider"
+import { createOrder } from "@/common/lib/polkadot-provider/command/order.js"
 
 export default {
   name: "ServiceDetailDialog",
@@ -103,11 +104,14 @@ export default {
     },
 
     computeLongDescription () {
-      const description = this.selectedService.longDescription.split("||")[0]
-      if (this.web3.utils.isHex(description)) {
-        return this.web3.utils.hexToUtf8(description) 
+      if (this.selectedService.longDescription) {
+        const description = this.selectedService.longDescription.split("||")[0]
+        if (this.web3.utils.isHex(description)) {
+          return this.web3.utils.hexToUtf8(description) 
+        }
+        return description  
       }
-      return description  
+      return ""
     },
 
     computePurchaseLink () {
@@ -155,14 +159,16 @@ export default {
     async onSelect () {
       this.loading = true
       const customerBoxPublicKey = await this.getCustomerPublicKey()        
-      
+      const assetId = this.selectedService.currency === "USDT" ? 2 : 1      
+
       await createOrder(
         this.api,
         this.wallet,
         this.selectedService.serviceId,
         this.selectedService.indexPrice,
         customerBoxPublicKey,
-        this.selectedService.serviceFlow
+        this.selectedService.serviceFlow,
+        assetId
       )
     },
 
