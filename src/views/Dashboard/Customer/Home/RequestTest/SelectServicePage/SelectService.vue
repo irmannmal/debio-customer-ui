@@ -21,8 +21,8 @@
             :price="service.totalPrice"
             :currency="service.currency"
             :city="service.city"
-            :region="service.region"
-            :country="service.country"
+            :region="service.regionName"
+            :country="service.countryName"
             :category="service.serviceCategory"
             @click="getDetailService(service)"
           )
@@ -145,6 +145,8 @@ export default {
               }
             ]
           },
+          country_name: countryName,
+          region_name: regionName,
           verification_status:  verificationStatus,
           stake_status: stakeStatus,
           service_flow: serviceFlow
@@ -190,7 +192,9 @@ export default {
           indexPrice: 0,
           dnaCollectionProcess,
           resultSample,
-          serviceFlow
+          serviceFlow,
+          countryName,
+          regionName
         }
         if (service.verificationStatus === "Verified") {
           if (service.stakeStatus === "Staked") {
