@@ -8,22 +8,22 @@
     template(v-if="!isLoading")
       template(v-if="isMenstrualData")
         div.day-card(
-          v-for="day in countDay"
-          :class="setClass(day)"
-          @click="selectDayClick(dates[day - 1] !== undefined && dates[day - 1].thisMonth && dates[day - 1].isPast, dates[day - 1].date, dates[day - 1].index)"
+          v-for="date in dates"
+          :class="setClass(date)"
+          @click="selectDayClick(date.thisMonth && date.isPast, date.date, date.index)"
         )
           div(
-            v-if="dates[day - 1] !== undefined && dates[day - 1].thisMonth"
+            v-if="date.thisMonth"
           )
             v-img.ovulation(
-              v-if="dates[day - 1] !== undefined && dates[day - 1].data.isOvulation"
+              v-if="date.data.isOvulation"
               alt="today"
               src="@/assets/ovulation.svg"
               max-width="23px"
               max-height="23px"
             )
             v-img.today(
-              v-if="dates[day - 1] !== undefined && dates[day - 1].today"
+              v-if="date.today"
               alt="today"
               src="@/assets/today.svg"
               max-width="23px"
@@ -31,52 +31,52 @@
             )
             .emoticon
               .emoticon-item-more-than-one(
-                v-if="dates[day - 1].data.symptoms.length > 1"
+                v-if="date.data.symptoms.length > 1"
               )
                 v-img.emoticon-item(
                   alt="emoji-depressed-active"
-                  :src="require(`../../assets/${dates[day - 1].data.symptoms[0].name}-active.svg`)"
+                  :src="require(`../../assets/${date.data.symptoms[0].name}-active.svg`)"
                   max-width="16px"
                   max-height="16px"
                 )
-                .emoticon-item-count +{{dates[day - 1].data.symptoms.length - 1}}
+                .emoticon-item-count +{{date.data.symptoms.length - 1}}
               v-img.emoticon-item(
-                v-else-if="dates[day - 1].data.symptoms.length > 0"
+                v-else-if="date.data.symptoms.length > 0"
                 alt="emoji-depressed-active"
-                :src="require(`../../assets/${dates[day - 1].data.symptoms[0].name}-active.svg`)"
+                :src="require(`../../assets/${date.data.symptoms[0].name}-active.svg`)"
                 max-width="16px"
                 max-height="16px"
               )
             span(
-              :class="{ highlight: (dates[day - 1].data.isFertility || dates[day - 1].data.isPrediction || dates[day - 1].data.isMenstruation), past: (dates[day - 1] !== undefined && dates[day - 1].isPast)}"
-            ) {{ dates[day - 1].text.toString().trim() }}
+              :class="{ highlight: (date.data.isFertility || date.data.isPrediction || date.data.isMenstruation), past: (date.isPast)}"
+            ) {{ date.text.toString().trim() }}
 
       template(v-if="!isMenstrualData")
         div.day-card(
-          v-for="day in countDay" 
-          :class="{day: (dates[day - 1] !== undefined && dates[day - 1].thisMonth), none: !(dates[day - 1] !== undefined && dates[day - 1].thisMonth), selected: (dates[day - 1] !== undefined && dates[day - 1].isSelected && dates[day - 1].thisMonth)}" 
-          @click="daySelectionClick(dates[day - 1] !== undefined && dates[day - 1].thisMonth && dates[day - 1].isPast, dates[day - 1].date, dates[day - 1].index)"
+          v-for="date in dates" 
+          :class="{day: (date.thisMonth), none: !(date.thisMonth), selected: (date.isSelected && date.thisMonth)}" 
+          @click="daySelectionClick(date.thisMonth && date.isPast, date.date, date.index)"
         )
           div(
-            v-if="dates[day - 1] !== undefined && dates[day - 1].thisMonth"
+            v-if="date.thisMonth"
           )
             v-img.today(
-              v-if="dates[day - 1] !== undefined && dates[day - 1].today"
+              v-if="date.today"
               alt="today"
               src="@/assets/today.svg"
               max-width="23px"
               max-height="23px"
             )
             v-img.checked(
-              v-if="(dates[day - 1] !== undefined && dates[day - 1].isSelected)"
+              v-if="(date.isSelected)"
               alt="checked"
               src="@/assets/tick-circle.svg"
               max-width="16px"
               max-height="16px"
             )
             span(
-              :class="{ past: (dates[day - 1] !== undefined && dates[day - 1].isPast && !dates[day - 1].isSelected) }"
-            ) {{ dates[day - 1].text.toString().trim() }}
+              :class="{ past: (date.isPast && !date.isSelected) }"
+            ) {{ date.text.toString().trim() }}
 </template>
 
 <script>
@@ -119,8 +119,7 @@ export default {
       }
     },
     
-    setClass(day) {
-      const date = this.dates[day - 1]
+    setClass(date) {
       return {
         "selected-day": (date !== undefined && date.isSelected), 
         day: (date !== undefined && date.thisMonth), 

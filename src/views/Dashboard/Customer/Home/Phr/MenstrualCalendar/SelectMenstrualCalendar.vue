@@ -144,7 +144,10 @@
                 max-height="16px"
               )
             .select-avarage-menstrual__selection-wrapper
-              DaySelectAverage(v-model="selected")
+              DaySelectAverage(
+                v-model="daySelectedAverage"
+                :startSelected="startDaySelectedAverage"
+              )
             .select-avarage-menstrual__submit
               ui-debio-button(
                 v-if="isUpdate"
@@ -275,7 +278,7 @@
         ui-debio-card.select-menstrual-calendar__step(width="394")
           .select-menstrual-calendar__small-head
             v-img(
-              alt="fertility"
+              alt="calendar-circle"
               src="@/assets/calendar-circle.svg"
               max-width="44px"
               max-height="44px"
@@ -291,7 +294,10 @@
 </template>
 
 <script>
+import { mapState } from "vuex"
 import { alertTriangleIcon, checkCircleIcon } from "@debionetwork/ui-icons"
+import { addMenstrualCalendar, addMenstrualCycleLog, updateMenstrualCalendar, updateMenstrualCycleLog } from "@/common/lib/polkadot-provider/command/menstrual-calendar"
+import { getLastMenstrualCalendarByOwner, getLastMenstrualCalendarCycleLogByOwner, getMenstrualCalendarById } from "@/common/lib/polkadot-provider/query/menstrual-calendar"
 import Calendar from "@/common/components/Calendar"
 import DaySelectAverage from "@/common/components/DaySelectAverage"
 import MenstrualCalendarBanner from "./Banner"
@@ -338,8 +344,19 @@ export default {
     isSuccess: false,
     stepText: "",
     routeStateSave: null,
-    nextStatus: false
+    nextStatus: false,
+    daySelectedAverage: 21,
+    startDaySelectedAverage: 21,
+    lastMenstrualCalendar: null,
+    lastMenstrualCalendarCycle: null,
+    menstrualCalendarDetail: null
   }),
+  computed: {
+    ...mapState({
+      api: (state) => state.substrate.api,
+      pair: (state) => state.substrate.wallet
+    })
+  },
 
   beforeRouteLeave(to, _, next) {
     if (this.isUpdate && !this.routeStateSave) {
@@ -367,16 +384,51 @@ export default {
     this.currentYear = today.getFullYear().toString()
   },
 
+  async beforeMounted() {
+    if (this.isUpdate) {
+      const lastMC = (await getLastMenstrualCalendarByOwner(this.api, this.pair.address)).at(-1)
+      const lastMCC = (await getLastMenstrualCalendarCycleLogByOwner(this.api, lastMC)).at(-1)
+      this.lastMenstrualCalendar = lastMC
+      this.lastMenstrualCalendarCycle = lastMCC
+      const menstrualDetail = await getMenstrualCalendarById(this.api, lastMC)
+      this.menstrualCalendarDetail = menstrualDetail
+      this.startDaySelectedAverage = Number(menstrualDetail.averageCycle)
+    }
+  },
+
   methods: {
-    onSubmit() {
+    async onSubmit() {
       if (this.isUpdate) {
         this.showAlert = true
       } else {
         this.submitPreview = true
         this.nextStatus = true
-        setTimeout(() => {
-          this.$router.push({ name: "menstrual-calendar-detail" })
-        }, 10000)
+        
+        await addMenstrualCalendar(
+          this.api,
+          this.pair,
+          this.daySelectedAverage,
+          async () => {
+            const idMenstrualCalendar = (await getLastMenstrualCalendarByOwner(this.api, this.pair.address)).at(-1)
+            await addMenstrualCycleLog(
+              this.api,
+              this.pair,
+              idMenstrualCalendar,
+              {
+                id: idMenstrualCalendar,
+                menstrualCalendarId: idMenstrualCalendar,
+                date: this.selectedDates[0].getTime(),
+                menstruation: true,
+                symptoms: [],
+                createdAt: new Date().getTime(),
+                updatedAt: 0
+              },
+              () => {
+                this.$router.push({ name: "menstrual-calendar-detail" })
+              }
+            )
+          }
+        )
       }
     },
 
@@ -384,7 +436,8 @@ export default {
       this.selectAverage = true
     },
 
-    onSubmitAverage() {
+    async onSubmitAverage() {
+      this.startDaySelectedAverage = this.daySelectedAverage
       this.selectAverage = false
       this.stepText = "By choosing your menstrual day, you’ll get your menstrual calendar information"
     },
@@ -394,12 +447,39 @@ export default {
       this.$router.push({ name: "menstrual-calendar-detail" })
     },
 
-    toUpdateMenstrual() {
+    async toUpdateMenstrual() {
       this.showAlert = false
-      this.isSuccess = true
+      this.submitPreview = true
+
+      await updateMenstrualCalendar(
+        this.api,
+        this.pair,
+        this.lastMenstrualCalendar,
+        this.daySelectedAverage,
+        async () => {
+          await updateMenstrualCycleLog(
+            this.api,
+            this.pair,
+            this.lastMenstrualCalendar,
+            this.lastMenstrualCalendarCycle,
+            {
+              id: this.lastMenstrualCalendar,
+              menstrualCalendarId: this.lastMenstrualCalendar,
+              date: this.selectedDates[0].getTime(),
+              menstruation: true,
+              symptoms: [],
+              createdAt: new Date().getTime(),
+              updatedAt: new Date().getTime()
+            },
+            () => {
+              this.isSuccess = true
+            }
+          )
+        }
+      )
     },
 
-    updateMenstrualSuccess() {
+    async updateMenstrualSuccess() {
       this.isSuccess = false
       this.submitPreview = true
       this.nextStatus = true
@@ -419,6 +499,7 @@ export default {
     cancelUnsaved() {
       this.routeStateSave = null
       this.showAlertUnsaved = false
+      this.$router.push({ name: "menstrual-calendar-detail" })
     }
   }
 }
