@@ -22,7 +22,7 @@
             .analyst-detail__info
               v-icon(size="14" outlined ) mdi-timer 
               span.analyst-detail__service-info-duration {{ service.duration }} {{ service.durationType }}
-            b.analyst-detail__service-info-price {{ price }}
+            b.analyst-detail__service-info-price {{ computePrice }}
           hr
 
         v-row.analyst-detail__profil
@@ -106,12 +106,9 @@ import Kilt from "@kiltprotocol/sdk-js"
 import CryptoJS from "crypto-js"
 import cryptWorker from "@/common/lib/ipfs/crypt-worker"
 import { u8aToHex } from "@polkadot/util"
-import { 
-  queryLastGeneticAnalysisOrderByCustomerId,
-  queryGeneticAnalystByAccountId, 
-  createGeneticAnalysisOrder, 
-  createGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
-import { queryLastGeneticAnalysisOrderByCustomer } from "@/common/lib/polkadot-provider/query/genetic-analysis-orders.js"
+import { queryLastGeneticAnalysisOrderByCustomerId, queryGeneticAnalystByAccountId } from "@debionetwork/polkadot-provider"
+import { createGeneticAnalysisOrderFee, createGeneticAnalysisOrder } from "@/common/lib/polkadot-provider/command/genetic-analysis-orders"
+import { queryLastGeneticAnalysisOrderByCustomer } from "@/common/lib/polkadot-provider/query/genetic-analysis-orders"
 import { downloadFile, uploadFile, getFileUrl } from "@/common/lib/pinata-proxy"
 // import SpinnerLoader from "@bit/joshk.vue-spinners-css.spinner-loader"
 import UploadingDialog from "@/common/components/Dialog/UploadingDialog"
@@ -166,6 +163,10 @@ export default {
     computeAvatar() {
       const profile = this.service.analystsInfo.info.profileImage
       return profile ? profile : require("@/assets/defaultAvatar.svg")
+    },
+    
+    computePrice() {
+      return `${this.formatBalance(this.service.priceDetail[0].totalPrice, this.service.priceDetail[0].currency)} ${this.service.priceDetail[0].currency}`
     }
   },
 
@@ -207,7 +208,6 @@ export default {
         this.geneticLink
       )
       this.txWeight = `${Number(this.web3.utils.fromWei(String(txWeight.partialFee), "ether")).toFixed(4)} DBIO`
-      await this.getPrice()
     },
 
     async getCustomerPublicKey() {
@@ -221,10 +221,6 @@ export default {
       const analystDetail = await queryGeneticAnalystByAccountId(this.api, id)
       const analystPublicKey = analystDetail.info.boxPublicKey
       return analystPublicKey
-    },
-
-    async getPrice() {
-      this.price = `${this.formatBalance(this.service.priceDetail[0].totalPrice, this.service.priceDetail[0].currency)} ${this.service.priceDetail[0].currency}`
     },
 
     closeDialog() {
@@ -413,14 +409,20 @@ export default {
 
     async createOrder() {
       const priceIndex = 0
+      const currency = this.service.priceDetail[0].currency
+      let assetId = 0
+      if(currency === "USN") assetId = 1
+      if(currency === "USDT") assetId = 2
+
       await createGeneticAnalysisOrder(
         this.api,
         this.wallet,
         this.selectedGeneticData.id,
         this.service.serviceId,
         priceIndex,
+        this.publicKey,
         this.geneticLink,
-        this.publicKey
+        assetId
       )
     },
 

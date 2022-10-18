@@ -97,7 +97,7 @@ import {
   queryGeneticAnalysisByGeneticAnalysisTrackingId,
   cancelGeneticAnalysisOrder,
   cancelGeneticAnalysisOrderFee } from "@debionetwork/polkadot-provider"
-import { setGeneticAnalysisPaid } from "@/common/lib/polkadot-provider/command/geneticAnalysisOrders"
+import { setGeneticAnalysisPaid } from "@/common/lib/polkadot-provider/command/genetic-analysis-orders"
 
 export default {
   name: "PaymentCard",
