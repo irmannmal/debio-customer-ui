@@ -33,15 +33,17 @@
       )
 
     template
-      ui-debio-dialog(
-        :show="showSuccessDialog"
-        :width="289"
-        title="Request service submitted!"
-        message="Thanks for submitting request service! We are trying our best to find the nearest lab available. You can monitor your request here"
-        btn-message="ok"
-        @close="closingDialog"
-        @click="toStakeService"
-        )
+      v-dialog(:value="showSuccessDialog" :height="276" :width="289" persistent)
+        v-card.dialog-card
+          .dialog-card__title Request service submitted
+          .dialog-card__message Thanks for submitting request service! We are trying our best to find the nearest lab available. You can monitor your request 
+            a(:href="linkServiceRequest" target="_blank") here
+          .dialog-card__button
+            ui-debio-button(
+              color="secondary"
+              width="150"
+              @click="toStakeService"
+              ) ok
   
 </template>
 
@@ -49,7 +51,7 @@
 import { mapState } from "vuex"
 import { alertIcon } from "@debionetwork/ui-icons"
 import AgreementDialog from "./AgreementDialog.vue"
-
+import getEnv from "@/common/lib/utils/env"
 
 export default {
   name: "NoLab",
@@ -61,6 +63,7 @@ export default {
   data: () => ({
     showAgreement: false,
     showSuccessDialog: false,
+    linkServiceRequest: "",
     alertIcon
   }),
 
@@ -76,6 +79,8 @@ export default {
   async mounted () {
     if(!this.labs) return
     if(!this.labs.length) this.showNoLab = true
+
+    this.linkServiceRequest = `v${getEnv("VUE_APP_SERVICE_REQUEST_LINK")}`
   },
 
   methods: {
@@ -112,6 +117,30 @@ export default {
 
 <style lang="sass">
   @import "@/common/styles/mixins.sass"
+
+  .dialog-card
+    padding: 55px 1px
+    &__title
+      display: flex
+      align-items: center
+      text-align: center
+      letter-spacing: -0.0044em
+      margin: 0px 47px
+      width: 205px
+      height: 40px
+      @include body-text-medium-1
+    &__message
+      text-align: center
+      letter-spacing: -0.004em
+      padding-top: 18px
+      margin: 18px 33px
+      @include body-text-3-opensans
+    &__button
+      display: flex
+      justify-content: center
+      align-items: center
+      text-align: center
+      padding-top: 37px
 
   .card-no-lab
     display: flex
