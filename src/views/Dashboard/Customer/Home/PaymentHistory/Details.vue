@@ -91,14 +91,13 @@
 
 <script>
 import { copyIcon } from "@debionetwork/ui-icons"
-import { getOrderDetail, fetchTxHashOrder } from "@/common/lib/api"
+import { getOrderDetail } from "@/common/lib/api"
 import { getRatingService } from "@/common/lib/api"
 import {
   queryDnaSamples,
   queryGeneticAnalysisByGeneticAnalysisTrackingId
 } from "@debionetwork/polkadot-provider"
 import { mapState } from "vuex"
-import metamaskServiceHandler from "@/common/lib/metamask/mixins/metamaskServiceHandler"
 import getEnv from "@/common/lib/utils/env"
 
 // NOTE: Use anchor tag with "noreferrer noopener nofollow" for security
@@ -110,12 +109,9 @@ anchor.rel = "noreferrer noopener nofollow"
 export default {
   name: "CustomerPaymentDetails",
 
-  mixins: [metamaskServiceHandler],
-
   data: () => ({
     copyIcon,
     messageError: null,
-    txHash: null,
     rewardPopup: false,
     payment: {}
   }),
@@ -182,9 +178,8 @@ export default {
       try {
         let data
         let rating
-        let txDetails
         let isNotGAOrders = false
-        const dataPayment = await this.metamaskDispatchAction(getOrderDetail, this.$route.params.id)
+        const dataPayment = await getOrderDetail(this.$route.params.id)
         const classes = Object.freeze({
           PAID: "success--text",
           UNPAID: "warning--text",
@@ -212,13 +207,11 @@ export default {
             try {
               isNotGAOrders = true
               rating = await getRatingService(dataPayment.service_id)
-              txDetails = await this.metamaskDispatchAction(fetchTxHashOrder, dataPayment.id)
               data = await queryDnaSamples(this.api, dataPayment.dna_sample_tracking_id)
             } catch (error) {
               console.error(error)
             }
 
-            this.txHash = txDetails.transaction_hash
           } else {
             try {
               data = await queryGeneticAnalysisByGeneticAnalysisTrackingId(

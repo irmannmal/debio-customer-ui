@@ -73,25 +73,6 @@
       @close="showError = false"
     )
 
-    ui-debio-modal.modal-switch-network(
-      :show-title="false"
-      :showCta="true"
-      :show="switchNetwork"
-      class="font-weight-bold"
-      disable-dismiss
-    )
-      h6.modal-switch-network__title Wrong Network
-      p.modal-switch-network__subtitle You need to connect your Metamask to 
-        b {{ networkName }}  
-        | to use this app, currently you are connected to 
-        b {{ currentNetwork }}
-      ui-debio-button(
-        slot="cta"
-        color="secondary"
-        width="427"
-        @click="toChangeNetwork"
-      ) Switch to {{ networkName }}
-
     ui-debio-alert-dialog(
       :show="showAlert"
       :width="289"
@@ -102,14 +83,6 @@
       @click="toPaymentHistory"
       )
 
-    InstallMetamask(
-      :show="showMetamask"
-      :button="metamaskButton"
-      :title="metamaskTitle"
-      :loading="isLoadingButton"
-      @close="showMetamask = false"
-      @onClick="connectWallet"
-    )
 </template>
 
 <script>
@@ -117,30 +90,22 @@
 import { mapState } from "vuex"
 import { serviceHandlerMixin } from "@/common/lib/polkadot-provider"
 import { 
-  queryEthAdressByAccountId,
   queryLastOrderHashByCustomer,
   queryOrderDetailByOrderID,
   processRequest
 } from "@debionetwork/polkadot-provider"
-import { startApp, getTransactionReceiptMined, handleSwitchChain } from "@/common/lib/metamask"
-import { getBalanceETH, getBalanceDAI } from "@/common/lib/metamask/wallet.js"
-import { approveDaiStakingAmount, checkAllowance, sendPaymentOrder  } from "@/common/lib/metamask/escrow"
 import CryptoJS from "crypto-js"	
 import Kilt from "@kiltprotocol/sdk-js"
 import { u8aToHex } from "@polkadot/util"
 import { errorHandler } from "@/common/lib/error-handler"
 import SpinnerLoader from "@bit/joshk.vue-spinners-css.spinner-loader"
-import InstallMetamask from "@/common/components/Dialog/InstallMetamask.vue"
-import { postTxHash, walletBinding } from "@/common/lib/api"
-import getEnv from "@/common/lib/utils/env"
 import { setOrderPaid, setOrderPaidFee } from "@/common/lib/polkadot-provider/command/order"
 
 export default {
   name: "PaymentReceiptDialog",
 
   components: {
-    SpinnerLoader,
-    InstallMetamask
+    SpinnerLoader
   },
 
   mixins: [serviceHandlerMixin],
@@ -168,16 +133,6 @@ export default {
     errorMsg: "",
     txWeight: "",
     customerBoxPublicKey: null,
-    switchNetwork: false,
-    networkName: "",
-    currentNetwork: "",
-    network: {
-      "Ethereum Mainnet": "0x1",
-      "Rinkeby Test Network": "0x4"
-    },
-    showMetamask: false,
-    metamaskButton: "",
-    metamaskTitle: "",
     isLoadingButton: false
   }),
 
@@ -188,7 +143,6 @@ export default {
       lastEventData: (state) => state.substrate.lastEventData,
       mnemonicData: (state) => state.substrate.mnemonicData,
       selectedService: (state) => state.testRequest.products,
-      metamaskWalletAddress: (state) => state.metamask.metamaskWalletAddress,
       stakingData: (state) => state.lab.stakingData,
       web3: (state) => state.metamask.web3,
       usnBalance: (state) => state.substrate.usnBalance,
@@ -217,7 +171,6 @@ export default {
 
         if (event.method === "EthAddressSet") {
           this.isLoadingButton = false
-          this.showMetamask = false
         }
       }
     }
@@ -234,13 +187,6 @@ export default {
   },
 
   methods: {
-    async connectWallet() {
-      this.isLoadingButton = true
-      const accountDetail = await startApp()
-      const accountId = this.wallet.address
-      const ethAddress = accountDetail.currentAccount
-      await walletBinding({accountId, ethAddress})
-    },
 
     async processRequestService() {
       const lastOrder = await queryLastOrderHashByCustomer(
@@ -284,27 +230,6 @@ export default {
       this.txWeight = this.web3.utils.fromWei(String(txWeight.partialFee), "ether")
     },
 
-    async checkMetamask(){
-      this.metamask = await startApp()
-
-      if (getEnv("VUE_APP_ROLE") === "development") {
-        this.networkName = "Rinkeby Test Network"
-        if (this.metamask?.network === this.network[this.networkName]) return
-        this.switchNetwork = true
-        this.metamask?.network === "0x1" ? this.currentNetwork = "Ethereum Mainnet" : this.currentNetwork = "other Network"
-        return
-      }
-
-      this.networkName = "Ethereum Mainnet"
-      if (this.metamask?.network === this.network[this.networkName]) return
-      this.switchNetwork = true
-      this.metamask?.network === "0x4" ? this.currentNetwork = "Rinkeby Test Network" : this.currentNetwork = "other Network"
-    },
-
-    async toChangeNetwork() {
-      await handleSwitchChain(this.network[this.networkName])
-    },
-
     async onSubmit () {
       this.isLoading = true
       this.error = ""
@@ -325,121 +250,30 @@ export default {
             return
           }
 
-          if (this.detailOrder.currency !== "DBIO") {
-            let balance
-            this.detailOrder.currency === "USN" ? balance = this.usnBalance : balance = this.usdtBalance
-            
-            if (Number(balance) < Number(this.serviceDetail.totalPrice.replaceAll(",", ""))) {
-              this.isLoading = false
-              this.showError = true
-              const error = await errorHandler("Insufficient Balance")
-              this.error = error.message
-              this.errorTitle = error.title
-              this.errorMsg = error.message
-              return
-            }
-
-            await setOrderPaid(this.api, this.wallet, this.lastOrder)
+          let balance
+          this.detailOrder.currency === "USN" ? balance = this.usnBalance : balance = this.usdtBalance
+          
+          if (Number(balance) < Number(this.serviceDetail.totalPrice.replaceAll(",", ""))) {
+            this.isLoading = false
+            this.showError = true
+            const error = await errorHandler("Insufficient Balance")
+            this.error = error.message
+            this.errorTitle = error.title
+            this.errorMsg = error.message
             return
           }
-        }
 
-        if (this.switchNetwork) return
-
-        this.ethAccount = await startApp()
-        const ethAddress = await queryEthAdressByAccountId(this.api, this.wallet.address)    
-
-        if (this.ethAccount.currentAccount === "no_install") {
-          this.isLoading = false
-          this.showMetamask = true
-          this.metamaskButton = "Install"
-          this.metamaskTitle = "Metamask Not Found!"
-          this.errorMsg = "Please install MetaMask!"
-          this.closeDialog()
+          await setOrderPaid(this.api, this.wallet, this.lastOrder)
           return
         }
-
-        await this.checkMetamask()
-
-        if (ethAddress !== this.ethAccount.accountList[0]) {
-          this.isLoading = false
-          this.showMetamask = true
-          this.metamaskButton = "Connect"
-          this.metamaskTitle = "Connect Metamask"
-          this.errorMsg = "Please connect your wallet"
-          this.closeDialog()
-          return
-        }
-
-        // check ETH Balance
-        const balance = await getBalanceETH(ethAddress)
-        if (balance <= 0 ) {
-          this.isLoading = false
-          this.showError = true
-          this.errorMsg = "You don't have enough ETH"
-          this.closeDialog()
-          return
-        }
-
-        // check DAI Balance 
-        const daiBalance = await getBalanceDAI(ethAddress)
-        if (Number(daiBalance) < Number(this.selectedService.totalPrice)) {
-          this.isLoading = false
-          this.showError = true
-          this.errorMsg = "You don't have enough DAI"
-          this.closeDialog()
-          return
-        }
-
-        // Seller has no ETH address
-        this.ethSellerAddress = await queryEthAdressByAccountId(
-          this.api,
-          this.selectedService.labId
-        )
-
-        this.payOrder
-
-      } catch (err) {
-        this.isLoading = false
-        const error = await errorHandler(err.message)
-        this.showError = true
-        this.errorTitle = error.title
-        this.errorMsg = error.message
-      }
-    },
-
-    async payOrder () {
-      try {
-        // get last order id
-        this.lastOrder = await queryLastOrderHashByCustomer(
-          this.api,
-          this.wallet.address
-        )
-        this.detailOrder = await queryOrderDetailByOrderID(this.api, this.lastOrder)
-        const ethAddress = await queryEthAdressByAccountId(this.api, this.wallet.address)    
-        const stakingAmountAllowance = await checkAllowance(ethAddress)
-
-        if (stakingAmountAllowance < this.selectedService.totalPrice ) {
-          const txHash = await approveDaiStakingAmount(
-            ethAddress,
-            this.selectedService.totalPrice
-          )
-          await getTransactionReceiptMined(txHash)
-        }
-
-        this.txHash = await sendPaymentOrder(this.api, this.lastOrder, ethAddress, this.ethSellerAddress)  
-        await getTransactionReceiptMined(this.txHash)
-        await postTxHash(this.lastOrder, this.txHash)
         
       } catch (err) {
         this.isLoading = false
-        this.showError = true
         const error = await errorHandler(err.message)
-        this.error = error.message
+        this.showError = true
         this.errorTitle = error.title
         this.errorMsg = error.message
       }
-
     },
 
     closeDialog(){

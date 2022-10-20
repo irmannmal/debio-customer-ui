@@ -56,12 +56,8 @@ import { generalDebounce } from "@/common/lib/utils"
 import { getOrderList } from "@/common/lib/api"
 import { formatPrice } from "@/common/lib/price-format.js"
 
-import metamaskServiceHandler from "@/common/lib/metamask/mixins/metamaskServiceHandler"
-
 export default {
   name: "CustomerPaymentHistory",
-
-  mixins: [metamaskServiceHandler],
 
   data: () => ({
     searchIcon,

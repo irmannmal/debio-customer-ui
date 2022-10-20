@@ -125,7 +125,7 @@
 </template>
 
 <script>
-import {mapState, mapMutations, mapActions} from "vuex"
+import {mapState, mapActions} from "vuex"
 import store from "@/store"
 import {validateForms} from "@/common/lib/validate"
 import {
@@ -159,9 +159,6 @@ export default {
     eyeIcon,
     eyeOffIcon,
     cableErrorIcon,
-
-    metamask: null,
-    role: null,
 
     showModalError: false,
     showModalPassword: false,
@@ -238,10 +235,6 @@ export default {
   },
 
   methods: {
-    ...mapMutations({
-      clearWallet: "metamask/CLEAR_WALLET"
-    }),
-
     handlePageError(error) {
       this.pageError = error
     },

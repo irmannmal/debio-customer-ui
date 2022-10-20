@@ -117,12 +117,9 @@ import CryptoJS from "crypto-js"
 import Kilt from "@kiltprotocol/sdk-js"
 import { u8aToHex } from "@polkadot/util"
 import { errorHandler } from "@/common/lib/error-handler"
-import metamaskServiceHandler from "@/common/lib/metamask/mixins/metamaskServiceHandler"
 
 export default {
   name: "CustomerPHR",
-  mixins: [metamaskServiceHandler],
-
 
   data: () => ({
     layersIcon,
