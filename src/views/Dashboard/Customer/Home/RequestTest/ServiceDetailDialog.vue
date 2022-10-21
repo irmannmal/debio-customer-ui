@@ -35,9 +35,7 @@
             span {{ selectedService.labAddress }}, {{ selectedService.city }}, {{ country(selectedService.country) }}
 
         v-col(cols="3")
-          ui-debio-rating(:rating="selectedService.labRate" :total-reviews="selectedService.countRateLab" size="10")
-
-         
+          ui-debio-rating(:rating="selectedService.labRate" :total-reviews="selectedService.countRateLab" size="10")         
 
       .dialog-service__button
         ui-debio-button.dialog-service__button-text(
@@ -96,6 +94,7 @@ export default {
       stakingData: (state) => state.lab.stakingData,
       selectedService: (state) => state.testRequest.products,
       web3: (state) => state.metamask.web3,
+      polkadotWallet: (state) => state.substrate.polkadotWallet,
       lastEventData: (state) => state.substrate.lastEventData
     }),
 
@@ -156,10 +155,17 @@ export default {
       this.$emit("close")
     },
 
+    async getAssetId(currency) {
+      let assetId = 0
+      const wallet = this.polkadotWallet.find(wallet => wallet?.currency?.toUpperCase() === currency?.toUpperCase())
+      assetId = wallet.id
+      return assetId
+    },
+
     async onSelect () {
       this.loading = true
       const customerBoxPublicKey = await this.getCustomerPublicKey()        
-      const assetId = this.selectedService.currency === "USDT" ? 2 : 1      
+      const assetId = await this.getAssetId(this.selectedService.currency)   
 
       await createOrder(
         this.api,

@@ -49,7 +49,6 @@
                         )
                           | {{ compareDate(new Date(), new Date(parseInt(notif.timestamp))) }}
 
-
                 section.navbar__dropdown-content(v-if="getActiveMenu.type === 'polkadot'")
                   .navbar__wallet-header(v-if="getActiveMenu.type === 'polkadot'")
                     ui-debio-icon.mb-5(
@@ -123,7 +122,7 @@ import localStorage from "@/common/lib/local-storage"
 import { generalDebounce } from "@/common/lib/utils"
 import { queryAccountBalance } from "@debionetwork/polkadot-provider"
 import { setReadNotification } from "@/common/lib/api"
-import { queryGetAssetBalance } from "@/common/lib/polkadot-provider/query/octopus-assets"
+import { queryGetAssetBalance, queryGetAllOctopusAssets } from "@/common/lib/polkadot-provider/query/octopus-assets"
 
 let timeout
 
@@ -187,8 +186,7 @@ export default {
       },
 
       {
-        id: 1,
-        name: "usn",
+        name: "usdn",
         icon: "near-logo",
         currency: "USN",
         unit: "ether",
@@ -196,14 +194,14 @@ export default {
       },
 
       {
-        id: 2,
         name: "usdt",
         icon: "tether-logo",
         currency: "USDT",
         unit: "mwei",
         balance: 0
       }
-    ]
+    ],
+    octopusAsset: []
   }),
 
   computed: {
@@ -231,8 +229,9 @@ export default {
   },
 
   async mounted () {
-    this.fetchWalletBalance()
-    this.fetchPolkadotBallance()
+    await this.fetchWalletBalance()
+    await this.getOctopusAssets()
+    await this.fetchPolkadotBallance()
   },
 
   watch: {
@@ -248,7 +247,8 @@ export default {
     ...mapMutations({
       setWalletBalance: "substrate/SET_WALLET_BALANCE",
       setUSNBalance: "substrate/SET_USN_BALANCE",
-      setUSDTBalance: "substrate/SET_USDT_BALANCE"
+      setUSDTBalance: "substrate/SET_USDT_BALANCE",
+      setPolkadotWallet: "substrate/SET_POLKADOT_WALLET"
     }),
 
     async handleNotificationRead(notif) {
@@ -318,19 +318,29 @@ export default {
       }
     },
 
-    async fetchPolkadotBallance() {
+    async getOctopusAssets() {
+      const assets = await queryGetAllOctopusAssets(this.api)
+      for (let i = 0; i < assets.length; i++) {
+        const name = assets[i][0].toHuman()[0]
+        const id = assets[i][1].toHuman()
+        const data = await queryGetAssetBalance(this.api, id, this.wallet.address)
+        const assetData = {id, data, name:  name.split(".")[0]}
+        this.octopusAsset.push(assetData)
+      }
+    },
+    
+    async fetchPolkadotBallance() {  
       this.polkadotWallets.forEach(async (wallet) => {
         if (wallet.name !== "debio") {
-          const data = await queryGetAssetBalance(
-            this.api, wallet.id, this.wallet.address
-          )
+          const data = this.octopusAsset.find(a => a.name === wallet.name)
           if (!data) return
-
-          wallet.balance = this.web3.utils.fromWei(data.balance.replaceAll(",", ""), wallet.unit)
-          if (wallet.name === "usn") this.setUSNBalance(wallet.balance)
+          wallet.balance = this.web3.utils.fromWei(data.data.balance.replaceAll(",", ""), wallet.unit)
+          wallet.id = data.id
+          if (wallet.name === "usdn") this.setUSNBalance(wallet.balance)
           if (wallet.name === "usdt") this.setUSDTBalance(wallet.balance)
         }
       })
+      this.setPolkadotWallet(this.polkadotWallets)
     },
 
     handleDropdownAction(type) {

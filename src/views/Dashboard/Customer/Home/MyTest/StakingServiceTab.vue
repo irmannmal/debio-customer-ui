@@ -181,7 +181,8 @@ export default {
       pair: (state) => state.substrate.wallet,
       web3: (state) => state.metamask.web3,
       lastEventData: (state) => state.substrate.lastEventData,
-      mnemonicData: (state) => state.substrate.mnemonicData
+      mnemonicData: (state) => state.substrate.mnemonicData,
+      polkadotWallet: (state) => state.substrate.polkadotWallet
     })
   },
 
@@ -293,8 +294,15 @@ export default {
       return u8aToHex(identity.boxKeyPair.publicKey)
     },
 
+    async getAssetId(currency) {
+      let assetId = 0
+      const wallet = this.polkadotWallet.find(wallet => wallet?.currency?.toUpperCase() === currency?.toUpperCase())
+      assetId = wallet.id
+      return assetId
+    },
+
     async createOrder(service) {
-      const assetId = service.currency === "USDT" ? 2 : 1      
+      const assetId = await this.getAssetId(service.currency)    
       const customerBoxPublicKey = await this.getCustomerPublicKey() 
       const indexPrice = 0
 

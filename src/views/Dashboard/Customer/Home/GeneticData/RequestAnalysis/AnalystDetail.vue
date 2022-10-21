@@ -157,7 +157,8 @@ export default {
       mnemonicData: (state) => state.substrate.mnemonicData,
       lastEventData: (state) => state.substrate.lastEventData,
       selectedGeneticData: (state) => state.geneticData.selectedData,
-      service: (state) => state.geneticData.selectedAnalysisSerivice
+      service: (state) => state.geneticData.selectedAnalysisSerivice,
+      polkadotWallet: (state) => state.substrate.polkadotWallet
     }),
 
     computeAvatar() {
@@ -407,12 +408,17 @@ export default {
       return Number(formatedBalance).toLocaleString("en-US")
     },
 
+    async getAssetId(currency) {
+      let assetId = 0
+      const wallet = this.polkadotWallet.find(wallet => wallet?.currency?.toUpperCase() === currency?.toUpperCase())
+      assetId = wallet.id
+      return assetId
+    },
+
     async createOrder() {
       const priceIndex = 0
       const currency = this.service.priceDetail[0].currency
-      let assetId = 0
-      if(currency === "USN") assetId = 1
-      if(currency === "USDT") assetId = 2
+      const assetId = await this.getAssetId(currency)
 
       await createGeneticAnalysisOrder(
         this.api,
