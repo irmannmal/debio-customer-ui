@@ -231,7 +231,6 @@ export default {
   },
 
   async mounted () {
-    this.checkMetamask()
     this.fetchWalletBalance()
     this.fetchPolkadotBallance()
   },
@@ -247,6 +246,7 @@ export default {
 
   methods: {
     ...mapMutations({
+      setWalletBalance: "substrate/SET_WALLET_BALANCE",
       setUSNBalance: "substrate/SET_USN_BALANCE",
       setUSDTBalance: "substrate/SET_USDT_BALANCE"
     }),

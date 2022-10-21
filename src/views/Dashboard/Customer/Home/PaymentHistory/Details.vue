@@ -63,12 +63,12 @@
                 .price__block
                   .price__label Service Price
                   .price__value
-                    | {{ formatPrice(payment.prices[0].value) }}
+                    | {{ formatPrice(payment.prices[0].value, payment.currency) }}
                     | {{ payment.currency }}
                 .price__block(v-if="payment.section === 'order'")
                   .price__label QC Price
                   .price__value
-                    | {{ payment.additional_prices.length ? formatPrice(payment.additional_prices[0].value) : "0" }}
+                    | {{ payment.additional_prices.length ? formatPrice(payment.additional_prices[0].value, payment.currency) : "0" }}
                     | {{ payment.currency }}
 
                 hr.mb-4
@@ -141,13 +141,13 @@ export default {
     },
 
     computeTotalPrices() {
-      if (!this.payment?.additional_prices?.length) return this.formatPrice(this.payment?.prices[0].value)
-      return this.formatPrice(this.payment?.prices[0].value) + this.formatPrice(this.payment?.additional_prices[0].value)
+      if (!this.payment?.additional_prices?.length) return this.formatPrice(this.payment?.prices[0].value, this.payment?.currency)
+      return this.formatPrice(this.payment?.prices[0].value, this.payment?.currency) + this.formatPrice(this.payment?.additional_prices[0].value, this.payment?.currency)
     },
 
     computeRefundedValue() {
       return this.payment?.status === "Refunded"
-        ? `${this.formatPrice(this.payment?.prices[0].value)} ${this.payment?.currency}`
+        ? `${this.formatPrice(this.payment?.prices[0].value, this.payment?.currency)} ${this.payment?.currency}`
         : "-"
     }
   },
@@ -266,8 +266,11 @@ export default {
       }, 1000)
     },
 
-    formatPrice(price) {
-      return parseFloat(this.web3.utils.fromWei(String(price.replaceAll(",", "")), "ether"))
+    formatPrice(price, currency) {
+      let unit
+      currency === "USDT" ? unit = "mwei" : unit = "ether"
+      const formatedPrice = this.web3.utils.fromWei(String(price.replaceAll(",", "")), unit)
+      return parseFloat(formatedPrice)
     },
 
     async handleCTA() {
