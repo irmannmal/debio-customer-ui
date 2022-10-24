@@ -210,8 +210,8 @@ export default {
     async selectedMonthText(newMonth) {
       this.menstruationPeriodeIndex = []
       this.selectedMonth = this.monthList.find((value) => value.text === newMonth).value
-      // await this.getMenstruationCalendarData()
-      this.createTestData(this.selectedYear, this.selectedMonth)
+      await this.getMenstruationCalendarData()
+      // this.createTestData(this.selectedYear, this.selectedMonth)
     },
 
     selectedDates(newSelected) {
@@ -224,8 +224,8 @@ export default {
     },
 
     async emojiDays() {
-      // await this.getMenstruationCalendarData()
-      this.createTestData(this.selectedYear, this.selectedMonth)
+      await this.getMenstruationCalendarData()
+      // this.createTestData(this.selectedYear, this.selectedMonth)
     }
   },
 
@@ -276,121 +276,63 @@ export default {
       return moods.NONE
     },
 
-    // async getMenstruationCalendarData() {
-    //   const data = mockData
-    //   const today = new Date()
-    //   const firstDateCurrentMonth = new Date(this.selectedYear, this.selectedMonth, 1)
-    //   const firstDateNextMonth = new Date(this.selectedYear, this.selectedMonth + 1, 0)
-      
-    //   const dayFirstDateCurrentMonth = firstDateCurrentMonth.getDay() === 0 ? 6 : firstDateCurrentMonth.getDay() - 1
-    //   const dayFirstDateNextMonth = firstDateNextMonth.getDay() === 0 ? 6 : firstDateNextMonth.getDay() - 1
-      
-    //   const startDate = new Date(this.selectedYear, this.selectedMonth, -(dayFirstDateCurrentMonth - 1))
-    //   const endDate = new Date(this.selectedYear, this.selectedMonth + 1, (6 - dayFirstDateNextMonth))
-    //   const menstrualCalendarData = {
-    //     addressId: data.addressId,
-    //     averageCycle: data.averageCycle,
-    //     cycleLog: []
-    //   }
-
-    //   let date = startDate
-    //   let indexDate = 0
-    //   this.menstruationPeriodeIndex = []
-
-    //   while(date.getTime() < endDate.getTime()) {
-    //     date = new Date(this.selectedYear, this.selectedMonth, (-(dayFirstDateCurrentMonth - 1) + indexDate))
-    //     const log = this.emojiDays[date.getTime()]
-    //     const menstruation = log
-
-    //     if (menstruation) this.menstruationPeriodeIndex.push(indexDate)
-    //     const currentData = {
-    //       date: menstruation ? menstruation.date : date.getTime(),
-    //       menstruation: menstruation ? menstruation.menstruation: 0,
-    //       prediction: indexDate >= this.menstruationPeriodeIndex[0] + data.averageCycle &&  indexDate < this.menstruationPeriodeIndex[0] + data.averageCycle + 5 ? 1 : 0,
-    //       fertility: indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
-    //       ovulation: indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
-    //       symptoms: menstruation.length > 0 ? menstruation : []
-    //     }
-
-    //     menstrualCalendarData.cycleLog.push(currentData)
-
-
-    //     if (today.getDate() === date.getDate()) {
-    //       this.todaySum = currentData
-    //       this.menstruationPeriodeIndex.map((num, i) => {
-    //         this.todaySum.index = num
-    //         this.todaySum.days = i
-    //       })
-          
-    //     }
-    //     indexDate++
-    //   }
-
-    //   console.log(menstrualCalendarData)
-    //   this.menstrualCalendarData = menstrualCalendarData
-    // },
-
-    createTestData(year, month) {
-      const today = new Date()
-      const firstDateCurrentMonth = new Date(year, month, 1)
-      const firstDateNextMonth = new Date(year, month + 1, 0)
-
-      const dayFirstDateCurrentMonth = firstDateCurrentMonth.getDay() === 0 ? 6 : firstDateCurrentMonth.getDay() - 1
-      const dayFirstDateNextMonth = firstDateNextMonth.getDay() === 0 ? 6 : firstDateNextMonth.getDay() - 1
-      const startDate = new Date(year, month, -(dayFirstDateCurrentMonth - 1))
-      const endDate = new Date(year, month + 1, (6 - dayFirstDateNextMonth))
-
-      let date = startDate
-      let indexDate = 0
-      const menstrualCalendarData = {...this.menstrualCalendarData}
-      menstrualCalendarData.cycleLog = []
-
-      while (date.getTime() < endDate.getTime()) {
-        date = new Date(year, month, (-(dayFirstDateCurrentMonth - 1) + indexDate))
-        const symptoms = this.emojiDays[date.getTime()] ?? []
-
-        if (date.getDate() <= 5 && date.getMonth() === today.getMonth()) {
-          menstrualCalendarData.cycleLog.push({
-            date: date.getTime(),
-            menstruation: 1,
-            prediction: 0,
-            fertility: 0,
-            ovulation: 0,
-            symptoms: symptoms
-          })
-        } else if (date.getDate() >= 10 && date.getDate() < 20 && date.getMonth() === today.getMonth()) {
-          menstrualCalendarData.cycleLog.push({
-            date: date.getTime(),
-            menstruation: 0,
-            prediction: 0,
-            fertility: 1,
-            ovulation: indexDate === 14 ? 1 : 0,
-            symptoms: symptoms
-          })
-        } else if (date.getDate() >= 28 && date.getDate() <= 30 && date.getMonth() === today.getMonth()) {
-          menstrualCalendarData.cycleLog.push({
-            date: date.getTime(),
-            menstruation: 0,
-            prediction: 1,
-            fertility: 0,
-            ovulation: 0,
-            symptoms: symptoms
-          })
-        } else {
-          menstrualCalendarData.cycleLog.push({
-            date: date.getTime(),
-            menstruation: 0,
-            prediction: 1,
-            fertility: 0,
-            ovulation: 0,
-            symptoms: symptoms
-          })
+    async getMenstruationCalendarData() {
+      try {
+        const data = mockData
+        const today = new Date()
+        const firstDateCurrentMonth = new Date(this.selectedYear, this.selectedMonth, 1)
+        const firstDateNextMonth = new Date(this.selectedYear, this.selectedMonth + 1, 0)
+        
+        const dayFirstDateCurrentMonth = firstDateCurrentMonth.getDay() === 0 ? 6 : firstDateCurrentMonth.getDay() - 1
+        const dayFirstDateNextMonth = firstDateNextMonth.getDay() === 0 ? 6 : firstDateNextMonth.getDay() - 1
+        
+        const startDate = new Date(this.selectedYear, this.selectedMonth, -(dayFirstDateCurrentMonth - 1))
+        const endDate = new Date(this.selectedYear, this.selectedMonth + 1, (6 - dayFirstDateNextMonth))
+        const menstrualCalendarData = {
+          addressId: data.addressId,
+          averageCycle: data.averageCycle,
+          cycleLog: []
         }
 
-        indexDate++
-      }
+        let date = startDate
+        let indexDate = 0
+        this.menstruationPeriodeIndex = []
 
-      this.menstrualCalendarData = menstrualCalendarData
+        while(date.getTime() < endDate.getTime()) {
+          date = new Date(this.selectedYear, this.selectedMonth, (-(dayFirstDateCurrentMonth - 1) + indexDate))
+          const log = data.cycleLog.filter(log => log.date === date.getTime())
+          const menstruation = log[0]
+
+          const symptoms = this.emojiDays[date.getTime()] ?? []
+          console.log(data)
+
+          if (menstruation) this.menstruationPeriodeIndex.push(indexDate)
+          const currentData = {
+            date: menstruation ? menstruation.date : date.getTime(),
+            menstruation: menstruation ? menstruation.menstruation: 0,
+            prediction: indexDate >= this.menstruationPeriodeIndex[0] + data.averageCycle &&  indexDate < this.menstruationPeriodeIndex[0] + data.averageCycle + 5 ? 1 : 0,
+            fertility: indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
+            ovulation: indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
+            symptoms: symptoms
+          }
+
+          menstrualCalendarData.cycleLog.push(currentData)
+
+
+          if (today.getDate() === date.getDate()) {
+            this.todaySum = currentData
+            this.menstruationPeriodeIndex.map((num, i) => {
+              this.todaySum.index = num
+              this.todaySum.days = i
+            })
+            
+          }
+          indexDate++
+        }
+        this.menstrualCalendarData = menstrualCalendarData
+      } catch (err) {
+        console.log(err.message)
+      }
     },
 
     toSubscriptionSetting() {
@@ -421,8 +363,8 @@ export default {
     this.selectedMonthText = this.monthList[today.getMonth()].text
     this.currentYear = today.getFullYear().toString()
 
-    // await this.getMenstruationCalendarData()
-    this.createTestData(this.selectedYear, this.selectedMonth)
+    await this.getMenstruationCalendarData()
+    // this.createTestData(this.selectedYear, this.selectedMonth)
   },
 
   components: {

@@ -384,7 +384,7 @@ export default {
     this.currentYear = today.getFullYear().toString()
   },
 
-  async beforeMounted() {
+  async beforeMount() {
     if (this.isUpdate) {
       const lastMC = (await getLastMenstrualCalendarByOwner(this.api, this.pair.address)).at(-1)
       const lastMCC = (await getLastMenstrualCalendarCycleLogByOwner(this.api, lastMC)).at(-1)
@@ -414,15 +414,9 @@ export default {
               this.api,
               this.pair,
               idMenstrualCalendar,
-              {
-                id: idMenstrualCalendar,
-                menstrualCalendarId: idMenstrualCalendar,
-                date: this.selectedDates[0].getTime(),
-                menstruation: true,
-                symptoms: [],
-                createdAt: new Date().getTime(),
-                updatedAt: 0
-              },
+              this.selectedDates[0].getTime(),
+              [],
+              true,
               () => {
                 this.$router.push({ name: "menstrual-calendar-detail" })
               }
@@ -462,15 +456,9 @@ export default {
             this.pair,
             this.lastMenstrualCalendar,
             this.lastMenstrualCalendarCycle,
-            {
-              id: this.lastMenstrualCalendar,
-              menstrualCalendarId: this.lastMenstrualCalendar,
-              date: this.selectedDates[0].getTime(),
-              menstruation: true,
-              symptoms: [],
-              createdAt: new Date().getTime(),
-              updatedAt: new Date().getTime()
-            },
+            this.selectedDates[0].getTime(),
+            [],
+            true,
             () => {
               this.isSuccess = true
             }
