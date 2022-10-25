@@ -33,7 +33,7 @@
             width="100px"
             height="35"
             style="font-size: 10px;"
-            @click="toPayment"
+            @click="toSusbsribe"
           ) Yes
 
       ui-debio-modal.menstrual-calendar__modal-success(
@@ -97,13 +97,13 @@
                     ui-debio-card(width="410").my-1
                       .menstrual-calendar__plan-card-wrapper
                         v-radio.menstrual-calendar__plan-card-radio(
-                          :label="plan.text" 
+                          :label="plan.duration" 
                           :value="plan" 
                           color="secondary"
                         )
                         v-alert.menstrual-calendar__plan-card-alert(v-if="plan.promo" color="#E7FFE6" )
                           .menstrual-calendar__plan-card-alert-text {{ plan.promo }}
-                        .menstrual-calendar__plan-card-price {{ plan.price }}
+                        .menstrual-calendar__plan-card-price {{ plan.price }} {{ plan.currency}}
                       .menstrual-calendar__plan-card-desc.pt-1.ml-8 {{ plan.description }}
 
                 ui-debio-button(
@@ -116,12 +116,12 @@
               v-card.menstrual-calendar__plan-payment-card
                 .menstrual-calendar__plan-payment-card-title Purchase Detail
                 .menstrual-calendar__plan-payment-card-detail
-                  .menstrual-calendar__plan-payment-card-desc Menstrual Date {{ subscription.text }}
-                  .menstrual-calendar__plan-card-price {{ subscription.price }} / {{ subscription.periode}}
+                  .menstrual-calendar__plan-payment-card-desc Menstrual Date {{ subscription.duration }}
+                  .menstrual-calendar__plan-card-price {{ subscription.price }} {{ subscription.currency }}/ {{ subscription.periode}}
                 v-divider.ma-4
                 .menstrual-calendar__plan-payment-card-total
                   .menstrual-calendar__plan-payment-card-total-text Total Today
-                  .menstrual-calendar__plan-payment-card-total-price {{ subscription.price }}
+                  .menstrual-calendar__plan-payment-card-total-price {{ subscription.price }} {{ subscription.currency }}
                   
 
                 .menstrual-calendar__plan-payment-card-notes Any eligible subscription credit will be applied until it runs out. Your subscription will renew for {{ subscription.price }} / {{ subscription.periode }} on Sept 23, 2023. Have any questions? 
@@ -131,7 +131,7 @@
               .menstrual-calendar__plan-payment-card-title PAY WITH CURRENCY
               
               v-chip-group.menstrual-calendar__plan-payment-card-chips(v-model="currency" column)
-                v-chip.mr-8(label outlined large)
+                v-chip.mr-8(label outlined large @click="subscription.currency = 'USN'" :color="setActive('USN')" )
                   v-avatar(right width="30")
                     v-img.pr-5(
                       alt="no-list-data"
@@ -141,7 +141,7 @@
                     )
                   span.ma-3 USN (Near)
                   
-                v-chip(label outlined large)
+                v-chip(label outlined large @click="subscription.currency = 'USDT'" :color="setActive('USDT')")
                   v-avatar(right width="30")
                     v-img.pr-5(
                       alt="no-list-data"
@@ -164,7 +164,7 @@
                       ) mdi-alert-circle-outline 
                     span(style="font-size: 10px;") Total fee paid in DBIO to execute this transaction.
 
-                div( style="font-size: 12px;" ) 0 DBIO
+                div( style="font-size: 12px;" ) {{ txWeight}}
 
               ui-debio-button(
                 color="secondary"
@@ -177,6 +177,11 @@
 <script>
 import { alertTriangleIcon, checkCircleIcon } from "@debionetwork/ui-icons"
 import MenstrualCalendarBanner from "./Banner"
+import { mapState } from "vuex"
+import { getMenstrualSubscriptionPrices } from "@/common/lib/polkadot-provider/query/menstrual-subscription"
+import { addMenstrualSubscriptionFee, addMenstrualSubscription, setMenstrualSubscriptionPaid } from "@/common/lib/polkadot-provider/command/menstrual-subscription"
+import { formatPrice } from "@/common/lib/price-format"
+import { generalDebounce } from "@/common/lib/utils"
 
 export default {
   name: "MenstrualCalendar",
@@ -184,14 +189,15 @@ export default {
   data: () => ({
     alertTriangleIcon, checkCircleIcon,
     plans: [
-      {text: "Monthly", description: "For users on a budget who want to try out menstrual date", price: "8 USD", promo: "", periode: "Month"},
-      {text: "Quarterly", description: "For users on a budget who want to track menstrual cycle quarterly", price: "21.6 USD", promo: "Save 10%", periode: "3 Months"},
-      {text: "Annualy", description: "For users on a budget who want to keep tracking menstrual cycle annualy", price: "48 USD", promo: "Save 50%", periode: "Year"}
+      {duration: "Monthly", description: "For users on a budget who want to try out menstrual date", price: 0, currency: "USDT", promo: "", periode: "Month"},
+      {duration: "Quarterly", description: "For users on a budget who want to track menstrual cycle quarterly", price: 0, currency: "USDT", promo: "Save 10%", periode: "3 Months"},
+      {duration: "Yearly", description: "For users on a budget who want to keep tracking menstrual cycle annualy", price: 0, currency: "USDT", promo: "Save 50%", periode: "Year"}
     ],
     subscription: "",
     paymentPreview: false,
     isSuccess: false,
     showAlert: false,
+    txWeight: 0,
     breadcrumbs: [
       {
         text: "Subscription Plan",
@@ -207,17 +213,78 @@ export default {
     currency: ""
   }),
 
+  computed: {
+    
+    ...mapState({
+      api: (state) => state.substrate.api,
+      wallet: (state) => state.substrate.wallet,
+      web3: (state) => state.metamask.web3,
+      lastEventData: (state) => state.substrate.lastEventData
+    })
+  },
+  
+  watch: {
+    lastEventData(e) {
+      if (e !== null) {
+        const dataEvent = JSON.parse(e.data.toString())
+        if (dataEvent[1] === this.wallet.address) {
+          if (e.method === "MenstrualSubscriptionAdded") {
+            this.toPayment(dataEvent[0].id)
+          }
+
+          if (e.method === "MenstrualSubscriptionPaid") {
+            this.showAlert = false
+            this.isSuccess = true
+          }
+        }
+      }
+    },
+
+    subscription: {
+      deep: true,
+      immediate: true,
+      handler: generalDebounce(async function() {
+        await this.getTxWeight()
+      }, 500)
+    }
+  },
+
+  async created() {
+    await this.getSubscriptionPrices()
+    await this.getTxWeight()
+  },
+
   components: {
     MenstrualCalendarBanner
   },
 
   methods: {
-    async toPayment() {
-      this.showAlert = false
-      this.isSuccess = true
+    async toSusbsribe() {
+      await addMenstrualSubscription(this.api, this.wallet, this.subscription.duration, this.subscription.currency)
+    },
+
+    async toPayment(id) {
+      await setMenstrualSubscriptionPaid(this.api, this.wallet, id)
+    },
+
+    async getSubscriptionPrices() {
+      this.plans.forEach(async plan => {
+        const data = await getMenstrualSubscriptionPrices(this.api, plan.duration, plan.currency) 
+        plan.price = formatPrice(data.amount, plan.currency)
+      })
+    },
+
+    async getTxWeight() {
+      const txWeight = await addMenstrualSubscriptionFee(this.api, this.wallet, this.subscription.duration, this.subscription.currency)
+      this.txWeight = `${Number(this.web3.utils.fromWei(String(txWeight.partialFee), "ether")).toFixed(4)} DBIO`
+    },
+
+    setActive(currency) {
+      return currency === this.subscription.currency ? "secondary" : ""
     },
 
     toPaymentPreview() {
+      
       this.paymentPreview = true
       this.breadcrumbs[0].disabled = true
       this.breadcrumbs[1].disabled = false
