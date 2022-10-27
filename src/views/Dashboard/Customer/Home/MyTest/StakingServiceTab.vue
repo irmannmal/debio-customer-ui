@@ -77,6 +77,12 @@
       @click="toPaymentHistory"
       )
 
+    ui-debio-error-dialog(
+      :show="!!error"
+      :title="error ? error.title : ''"
+      :message="error ? error.message : ''"
+      @close="error = null"
+    )
 </template>
 
 <script>
@@ -85,14 +91,16 @@ import { mapState, mapMutations } from "vuex"
 import { getServiceRequestByCustomer } from "@/common/lib/api"
 import { getLocations } from "@/common/lib/api"
 import { STAKE_STATUS_DETAIL } from "@/common/constants/status"
-import { queryLastOrderHashByCustomer, queryServiceById, queryOrderDetailByOrderID, processRequest } from "@debionetwork/polkadot-provider"
+import { queryLastOrderHashByCustomer, queryServiceById, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
 import CryptoJS from "crypto-js"
 import Kilt from "@kiltprotocol/sdk-js"
 import { u8aToHex } from "@polkadot/util"
 import { fmtReferenceFromHex } from "@/common/lib/string-format"
 import { queryGetServiceOfferById } from "@/common/lib/polkadot-provider/query/service-request"
-import { createOrder } from "@/common/lib/polkadot-provider/command/order.js"
+import { createOrder } from "@/common/lib/polkadot-provider/command/order"
 import { setOrderPaid } from "@/common/lib/polkadot-provider/command/order"
+import { processRequest } from "@/common/lib/polkadot-provider/command/service-request"
+import { formatPrice } from "@/common/lib/price-format"
 
 
 export default {
@@ -153,7 +161,8 @@ export default {
     isLoadingData: false,
     loading: false,
     showAlert: false,
-    stakingData: null
+    stakingData: null,
+    error: null
 
   }),
 
@@ -171,7 +180,7 @@ export default {
         await this.processRequestService(dataEvent[0])
       }
 
-      if(event.method === "ServiceRequestProcessed") this.toCheckout()
+      if(event.method === "ServiceRequestUpdated") this.toCheckout()
     }
   },
 
@@ -182,7 +191,9 @@ export default {
       web3: (state) => state.metamask.web3,
       lastEventData: (state) => state.substrate.lastEventData,
       mnemonicData: (state) => state.substrate.mnemonicData,
-      polkadotWallet: (state) => state.substrate.polkadotWallet
+      polkadotWallet: (state) => state.substrate.polkadotWallet,
+      usnBalance: (state) => state.substrate.usnBalance,
+      usdtBalance: (state) => state.substrate.usdtBalance
     })
   },
 
@@ -229,14 +240,11 @@ export default {
     },
 
     async processRequestService(event) {
-      const detailOrder = await queryOrderDetailByOrderID(this.api, event.id)
       await processRequest(
         this.api,
         this.pair,
-        event.sellerId,
         this.stakingData.hash,
-        event.id,
-        detailOrder.dnaSampleTrackingId
+        event.id
       )
     },
 
@@ -257,16 +265,13 @@ export default {
     setRemainingStakingDate(date) {
       const formatedDate = new Date(parseInt(date.replace(/,/g, "")))
       const dueDate = formatedDate.setDate(formatedDate.getDate() + 6)
-
       return dueDate
     },
 
     async toRequestTest(req) {
       this.loading = true
       this.stakingData = req.request
-      console.log(this.stakingData)
       const lastOrder = await this.getLastOrderId()
-
 
       if (lastOrder) {
         const detailOrder = await queryOrderDetailByOrderID(this.api, lastOrder)
@@ -278,11 +283,20 @@ export default {
       }
 
       const request = req.request
-      const serviceOffer = await queryGetServiceOfferById(this.api, request.hash)
-      const service = await queryServiceById(this.api, serviceOffer.serviceId)
+      const serviceRequest = await queryGetServiceOfferById(this.api, request.hash)
+      const service = await queryServiceById(this.api, serviceRequest.serviceId)
+      const servicePrice = formatPrice(service.price, service.currency)
+      const balance = service.currency ? this.usnBalance : this.usdtBalance
+      if (Number(servicePrice) >= balance - 1) {
+        this.error = {
+          title: "Insufficient Balance",
+          message: "Your transaction cannot succeed due to insufficient balance, check your account balance"
+        }
+        return
+      }
+      
       await this.createOrder(service)
       this.$emit("loading")
-
     },
     
     toPaymentHistory() {

@@ -8,3 +8,10 @@ export async function createRequest(api, pair, country, region, city, category, 
     .signAndSend(pair, { nonce: -1 })
   return result.toHuman()
 }
+
+export async function processRequest(api, pair, requestId, orderId) {
+  const result = await api.tx.serviceRequest
+    .processRequest(requestId, orderId)
+    .signAndSend(pair, { nonce: -1})
+  return result.toHuman()
+}

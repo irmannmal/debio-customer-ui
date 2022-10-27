@@ -91,8 +91,7 @@ import { mapState } from "vuex"
 import { serviceHandlerMixin } from "@/common/lib/polkadot-provider"
 import { 
   queryLastOrderHashByCustomer,
-  queryOrderDetailByOrderID,
-  processRequest
+  queryOrderDetailByOrderID
 } from "@debionetwork/polkadot-provider"
 import CryptoJS from "crypto-js"	
 import Kilt from "@kiltprotocol/sdk-js"
@@ -156,9 +155,6 @@ export default {
         const dataEvent = JSON.parse(event.data.toString())
 
         if (event.method === "OrderPaid") {
-          if (this.selectedService.serviceFlow === "StakingRequestService") {
-            await this.processRequestService()
-          }
 
           this.isLoading = false
           this.$router.push({ 
@@ -187,27 +183,6 @@ export default {
   },
 
   methods: {
-
-    async processRequestService() {
-      const lastOrder = await queryLastOrderHashByCustomer(
-        this.api,
-        this.wallet.address
-      )
-
-      const detailOrder = await queryOrderDetailByOrderID(
-        this.api,
-        lastOrder
-      )
-
-      await processRequest(
-        this.api,
-        this.wallet,
-        this.stakingData.lab_address,
-        this.stakingData.hash,
-        detailOrder.id,
-        detailOrder.dnaSampleTrackingId
-      )
-    },
 
     async getCustomerPublicKey() {
       const identity = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
@@ -250,10 +225,9 @@ export default {
             return
           }
 
-          let balance
-          this.detailOrder.currency === "USN" ? balance = this.usnBalance : balance = this.usdtBalance
+          const balance =  this.detailOrder.currency === "USN" ? this.usnBalance : this.usdtBalance
           
-          if (Number(balance) < Number(this.serviceDetail.totalPrice.replaceAll(",", ""))) {
+          if (Number(balance) - 1 <= Number(this.serviceDetail.totalPrice.replaceAll(",", ""))) {
             this.isLoading = false
             this.showError = true
             const error = await errorHandler("Insufficient Balance")
