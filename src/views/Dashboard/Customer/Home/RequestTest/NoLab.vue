@@ -33,11 +33,11 @@
       )
 
     template
-      v-dialog(:value="showSuccessDialog" :height="276" :width="289" persistent)
+      v-dialog(:value="true" :height="276" :width="289" persistent)
         v-card.dialog-card
           .dialog-card__title Request service submitted
           .dialog-card__message Thanks for submitting request service! We are trying our best to find the nearest lab available. You can monitor your request 
-            a(:href="linkServiceRequest" target="_blank") here
+            a(@click="toLabRequestService") here
           .dialog-card__button
             ui-debio-button(
               color="secondary"
@@ -63,7 +63,6 @@ export default {
   data: () => ({
     showAgreement: false,
     showSuccessDialog: false,
-    linkServiceRequest: "",
     alertIcon
   }),
 
@@ -79,8 +78,6 @@ export default {
   async mounted () {
     if(!this.labs) return
     if(!this.labs.length) this.showNoLab = true
-
-    this.linkServiceRequest = `v${getEnv("VUE_APP_SERVICE_REQUEST_LINK")}`
   },
 
   methods: {
@@ -109,6 +106,10 @@ export default {
           page: 1
         }
       })
+    },
+
+    toLabRequestService() {
+      window.open(`${getEnv("VUE_APP_SERVICE_REQUEST_LINK")}`, "__blank")
     }
   }
 
