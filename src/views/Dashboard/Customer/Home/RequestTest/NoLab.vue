@@ -33,7 +33,7 @@
       )
 
     template
-      v-dialog(:value="true" :height="276" :width="289" persistent)
+      v-dialog(:value="showSuccessDialog" :height="276" :width="289" persistent)
         v-card.dialog-card
           .dialog-card__title Request service submitted
           .dialog-card__message Thanks for submitting request service! We are trying our best to find the nearest lab available. You can monitor your request 
