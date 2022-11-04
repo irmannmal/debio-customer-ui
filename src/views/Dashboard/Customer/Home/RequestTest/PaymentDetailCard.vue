@@ -36,7 +36,7 @@
 
       .menu-card__rate ( {{ this.usdRate }} USD )
       
-      div(class="text-center" v-if="status === 'Cancelled'")
+      div(class="text-center" v-if="success || status === 'Cancelled'")
         div(class="d-flex justify-space-between align-center pa-4 ms-3 me-3")
           ui-debio-button(
             color="secondary"
@@ -173,6 +173,11 @@ export default {
   },
 
   async mounted () {
+
+    if(this.$route.name === "customer-request-test-success") {
+      this.success = true
+    }
+
     this.getUsdRate()
 
     if(this.$route.params.hash) {
@@ -223,6 +228,10 @@ export default {
             hash: this.$route.params.id || this.$route.params.hash
           }
         })
+      }
+
+      if(event.method === "OrderPaid") {
+        this.status = "Paid"
       }
     }
   },

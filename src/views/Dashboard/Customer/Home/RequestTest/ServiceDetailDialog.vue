@@ -1,5 +1,12 @@
 <template lang="pug">
   v-dialog.dialog-service(:value="show" width="440" persistent rounded )
+    ui-debio-error-dialog(
+      :show="!!error"
+      :title="error ? error.title : ''"
+      :message="error ? error.message : ''"
+      @close="error = null"
+    )
+
     v-card.dialog-service__card
       div.dialog-service__close
         v-btn.fixed-button(icon @click="closeDialog" :disabled="loading")
@@ -75,7 +82,8 @@ export default {
     countries: [],
     publicKey: "",
     secretKey: "",
-    loading: false
+    loading: false,
+    error: null
   }),
 
   async mounted () {
@@ -95,7 +103,9 @@ export default {
       selectedService: (state) => state.testRequest.products,
       web3: (state) => state.metamask.web3,
       polkadotWallet: (state) => state.substrate.polkadotWallet,
-      lastEventData: (state) => state.substrate.lastEventData
+      lastEventData: (state) => state.substrate.lastEventData,
+      usnBalance: (state) => state.substrate.usnBalance,
+      usdtBalance: (state) => state.substrate.usdtBalance
     }),
 
     computeAvatar() {
@@ -164,8 +174,18 @@ export default {
 
     async onSelect () {
       this.loading = true
+      const balance = this.selectedService.currency ? this.usnBalance : this.usdtBalance
+      if (Number(this.selectedService.totalPrice) >= balance - 1) {
+        this.error = {
+          title: "Insufficient Balance",
+          message: "Your transaction cannot succeed due to insufficient balance, check your account balance"
+        }
+        this.loading = false 
+        return
+      }
+
       const customerBoxPublicKey = await this.getCustomerPublicKey()        
-      const assetId = await this.getAssetId(this.selectedService.currency)   
+      const assetId = await this.getAssetId(this.selectedService.currency)
 
       await createOrder(
         this.api,

@@ -91,7 +91,7 @@ import { mapState, mapMutations } from "vuex"
 import { getServiceRequestByCustomer } from "@/common/lib/api"
 import { getLocations } from "@/common/lib/api"
 import { STAKE_STATUS_DETAIL } from "@/common/constants/status"
-import { queryLastOrderHashByCustomer, queryServiceById, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
+import { queryLastOrderHashByCustomer, queryServiceById, queryLabById, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
 import CryptoJS from "crypto-js"
 import Kilt from "@kiltprotocol/sdk-js"
 import { u8aToHex } from "@polkadot/util"
@@ -180,7 +180,7 @@ export default {
         await this.processRequestService(dataEvent[0])
       }
 
-      if(event.method === "ServiceRequestUpdated") this.toCheckout()
+      if(event.method === "ServiceRequestUpdated") this.toCheckout(dataEvent[0].id)
     }
   },
 
@@ -206,7 +206,8 @@ export default {
     ...mapMutations({
       setCategory: "lab/SET_CATEGORY",
       setStakingService: "lab/SET_STAKING_SERVICE",
-      setStakingId: "lab/SET_STAKING_ID"
+      setStakingId: "lab/SET_STAKING_ID",
+      setProductsToRequest: "testRequest/SET_PRODUCTS"
     }),
 
     async fetchData () {
@@ -285,6 +286,30 @@ export default {
       const request = req.request
       const serviceRequest = await queryGetServiceOfferById(this.api, request.hash)
       const service = await queryServiceById(this.api, serviceRequest.serviceId)
+      const labDetail = await queryLabById(this.api, service.ownerId)
+
+      this.setProductsToRequest({
+        serviceName: service.info.name,
+        serviceImage: service.image,
+        totalPrice: formatPrice(service.info.pricesByCurrency[0].totalPrice.replaceAll(",", ""), service.info.pricesByCurrency[0].currency.toUpperCase()),
+        servicePrice: formatPrice(service.price.replaceAll(",", ""), service.info.pricesByCurrency[0].currency.toUpperCase()),
+        qcPrice: formatPrice(service.qcPrice.replaceAll(",", ""), service.info.pricesByCurrency[0].currency.toUpperCase()),
+        currency: service.info.pricesByCurrency[0].currency.toUpperCase(),
+        duration: service.info.expectedDuration.duration,
+        durationType: service.info.expectedDuration.durationType,
+        serviceRate: 0,
+        countServiceRate: 0,
+        labId: labDetail.accountId,
+        labName: labDetail.info.name,
+        labAddress: labDetail.info.address,
+        labRate: 0,
+        countRateLab: 0,
+        labImage: labDetail.info.image,
+        city: labDetail.info.city,
+        country: labDetail.info.country,
+        region: labDetail.info.region
+      })
+
       const servicePrice = formatPrice(service.price, service.currency)
       const balance = service.currency ? this.usnBalance : this.usdtBalance
       if (Number(servicePrice) >= balance - 1) {
@@ -365,16 +390,14 @@ export default {
       return lastOrderId
     },
 
-    async toCheckout() {
-      await this.getLastOrderId()
-      
+    async toCheckout(id) {      
       this.$router.push({ 
-        name: "customer-request-test-checkout", params: { id: this.lastOrderId }
+        name: "customer-request-test-success", params: { hash: id }
       })
       this.$emit("closeLoading")
     }
   }
-}
+} 
 </script>
 
 <style lang="sass" scoped>
