@@ -3,9 +3,9 @@
     v-card.menu-card
       v-row.pa-3
         v-col(cols="4")
-          v-img(v-if="!icon" src="@/assets/debio-logo.png" height="135" width="135" contain)
+          v-img(v-if="!icon" src="@/assets/debio-logo.png" height="176" width="152" contain)
 
-          ui-debio-avatar(v-else :src="icon" size="135" rounded)
+          v-img(v-else :src="icon" height="176" max-width="152" class="rounded")
     
         v-col(cols="8")
           .menu-card__title
@@ -74,8 +74,8 @@ export default {
   @import "@/common/styles/mixins.sass"
 
   .container-card
-    width: 452px
-    height: 165px
+    width: 500px
+    height: 200px
     padding: 1px
     border-radius: 8px
     cursor: pointer
@@ -86,8 +86,8 @@ export default {
   .menu-card 
     border-radius: 8px
     padding: 1px
-    width: 450px
-    height: 163px
+    width: 500px
+    height: 197px
 
     &__title
       display: flex
