@@ -231,14 +231,13 @@ export default {
   async mounted () {
     await this.fetchWalletBalance()
     await this.getOctopusAssets()
-    await this.fetchPolkadotBallance()
   },
 
   watch: {
     lastEventData() {
       if(this.lastEventData) {
         this.fetchWalletBalance()
-        this.fetchPolkadotBallance()
+        this.getOctopusAssets()
       }
     }
   },
@@ -319,6 +318,7 @@ export default {
     },
 
     async getOctopusAssets() {
+      this.octopusAsset = []
       const assets = await queryGetAllOctopusAssets(this.api)
       for (let i = 0; i < assets.length; i++) {
         const name = assets[i][0].toHuman()[0]
@@ -327,6 +327,8 @@ export default {
         const assetData = {id, data, name:  name.split(".")[0]}
         this.octopusAsset.push(assetData)
       }
+
+      await this.fetchPolkadotBallance()
     },
     
     async fetchPolkadotBallance() {  
