@@ -19,8 +19,8 @@ export async function addMenstrualCalendar(api, pair, averageCycle, callback) {
   )
 }
 
-export async function addMenstrualCycleLog(api, pair, menstrualCalendarId, date, symptoms, menstruation, callback) {
-  let unsub = await api.tx.menstrualCalendar.addMenstrualCycleLog(menstrualCalendarId, date, symptoms, menstruation).signAndSend(
+export async function addMenstrualCycleLog(api, pair, menstrualCalendarId, menstrualCalendarInfo, callback) {
+  let unsub = await api.tx.menstrualCalendar.addMenstrualCycleLog(menstrualCalendarId, menstrualCalendarInfo).signAndSend(
     pair, 
     { nonce: -1},
     ({ events, status}) => {

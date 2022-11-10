@@ -7,6 +7,7 @@ import substrate from "./substrate"
 import lab from "./lab"
 import rating from "./rating"
 import geneticData from "./genetic-data"
+import menstrualCalendar from "./menstrual-calendar"
 
 
 
@@ -21,7 +22,8 @@ export default new Vuex.Store({
     substrate,
     lab,
     rating,
-    geneticData
+    geneticData,
+    menstrualCalendar
   },
   state: {
   },

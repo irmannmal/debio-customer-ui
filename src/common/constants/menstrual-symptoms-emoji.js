@@ -52,26 +52,26 @@ export default [
 
   {
     name: "emoji-heart-eyes",
-    text: "Highly sex drive",
+    text: "High sex drive",
     disabled: "inactive",
     color: "#363636"
   },
 
   {
     name: "emoji-peanut",
-    text: "Sex with condom",
+    text: "Protected Sex",
     disabled: "inactive",
     color: "#363636"
   },
   {
     name: "emoji-egg",
-    text: "Raw sex",
+    text: "Unprotected Sex",
     disabled: "inactive",
     color: "#363636"
   },
   {
     name: "emoji-banana",
-    text: "Banana free",
+    text: "No Sex",
     disabled: "inactive",
     color: "#363636"
   },

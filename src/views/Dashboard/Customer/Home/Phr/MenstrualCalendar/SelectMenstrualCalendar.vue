@@ -187,19 +187,26 @@
                   span.select-menstrual-calendar__head-text-secondary Kindly wait during calculating calendar
             .select-menstrual-calendar__line-divider
             .select-menstrual-calendar__options
-              ui-debio-dropdown(
-                :items="monthList"
-                variant="small"
-                label=""
-                v-model="selectedMonthText"
-                placeholder=""
-                item-text="text"
-                item-value="text"
-                outlined
-                close-on-select
-                width="140"
-                :disabled="submitPreview"
-              )
+              .menstrual-calendar-detail__month
+                v-btn( 
+                  fab
+                  text
+                  small
+                  color="grey darken-2"
+                  @click="prev"
+                )
+                  v-icon(small) mdi-chevron-left
+                span {{ selectedMonthText }}
+
+                v-btn( 
+                  fab
+                  text
+                  small
+                  color="grey darken-2"
+                  @click="next"
+                )
+                  v-icon(small) mdi-chevron-right
+
               span.select-menstrual-calendar__year {{ selectedYear }}
             .select-menstrual-calendar__calendar-wrapper
               Calendar(
@@ -294,7 +301,7 @@
 </template>
 
 <script>
-import { mapState } from "vuex"
+import { mapState, mapMutations } from "vuex"
 import { alertTriangleIcon, checkCircleIcon } from "@debionetwork/ui-icons"
 import { addMenstrualCalendar, addMenstrualCycleLog, updateMenstrualCalendar, updateMenstrualCycleLog } from "@/common/lib/polkadot-provider/command/menstrual-calendar"
 import { getLastMenstrualCalendarByOwner, getLastMenstrualCalendarCycleLogByOwner, getMenstrualCalendarById } from "@/common/lib/polkadot-provider/query/menstrual-calendar"
@@ -397,7 +404,30 @@ export default {
   },
 
   methods: {
+    ...mapMutations({
+      setIsStart: "menstrualCalendar/SET_ISSTART"
+    }),
+
+    prev() {
+      this.selectedMonth--
+      this.selectedMonthText = this.monthList[this.selectedMonth].text
+    },
+
+    next() { 
+      this.selectedMonth++
+      this.selectedMonthText = this.monthList[this.selectedMonth].text
+    },    
+
     async onSubmit() {
+      const menstrualCalendarInfo = []
+      this.selectedDates.forEach(d => {
+        menstrualCalendarInfo.push({
+          date: d.getTime(),
+          symptoms: [],
+          menstruation: true
+        })}
+      );
+
       if (this.isUpdate) {
         this.showAlert = true
       } else {
@@ -410,17 +440,18 @@ export default {
           this.daySelectedAverage,
           async () => {
             const idMenstrualCalendar = (await getLastMenstrualCalendarByOwner(this.api, this.pair.address)).at(-1)
+
             await addMenstrualCycleLog(
               this.api,
               this.pair,
               idMenstrualCalendar,
-              this.selectedDates[0].getTime(),
-              [],
-              true,
+              menstrualCalendarInfo,
               () => {
                 this.$router.push({ name: "menstrual-calendar-detail" })
               }
             )
+
+            this.setIsStart(true)
           }
         )
       }

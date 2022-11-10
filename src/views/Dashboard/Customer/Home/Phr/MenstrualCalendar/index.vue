@@ -20,6 +20,7 @@
 
         .menstrual-calendar__modal-buttons(class=" justify-space-between align-center pa-10")
           ui-debio-button(
+            :disabled="loading"
             color="secondary" 
             width="100px"
             height="35"
@@ -29,6 +30,7 @@
           ) No
 
           ui-debio-button(
+            :loading="loading"
             color="secondary" 
             width="100px"
             height="35"
@@ -178,7 +180,8 @@
 import { alertTriangleIcon, checkCircleIcon } from "@debionetwork/ui-icons"
 import MenstrualCalendarBanner from "./Banner"
 import { mapState } from "vuex"
-import { getMenstrualSubscriptionPrices } from "@/common/lib/polkadot-provider/query/menstrual-subscription"
+import { getMenstrualSubscriptionPrices, getActiveSubscriptionByOwner } from "@/common/lib/polkadot-provider/query/menstrual-subscription"
+import { getLastMenstrualCalendarByOwner } from "@/common/lib/polkadot-provider/query/menstrual-calendar"
 import { addMenstrualSubscriptionFee, addMenstrualSubscription, setMenstrualSubscriptionPaid } from "@/common/lib/polkadot-provider/command/menstrual-subscription"
 import { formatPrice } from "@/common/lib/price-format"
 import { generalDebounce } from "@/common/lib/utils"
@@ -210,7 +213,8 @@ export default {
         href: ".menstrual-calendar__plan-card"
       }
     ],
-    currency: ""
+    currency: "",
+    loading: false
   }),
 
   computed: {
@@ -235,6 +239,7 @@ export default {
           if (e.method === "MenstrualSubscriptionPaid") {
             this.showAlert = false
             this.isSuccess = true
+            this.loading = false
           }
         }
       }
@@ -252,6 +257,11 @@ export default {
   async created() {
     await this.getSubscriptionPrices()
     await this.getTxWeight()
+    await this.getActiveSubscription()
+  },
+
+  async mounted() {
+    await this.getActiveSubscription()
   },
 
   components: {
@@ -260,11 +270,26 @@ export default {
 
   methods: {
     async toSusbsribe() {
+      this.loading = true
       await addMenstrualSubscription(this.api, this.wallet, this.subscription.duration, this.subscription.currency)
     },
 
     async toPayment(id) {
       await setMenstrualSubscriptionPaid(this.api, this.wallet, id)
+    },
+
+    async getActiveSubscription() {
+      const activeSubs = await getActiveSubscriptionByOwner(this.api, this.wallet.address)
+      const menstrualCalendar = await getLastMenstrualCalendarByOwner(this.api, this.wallet.address)
+      
+      if (activeSubs) {
+        if (!menstrualCalendar) {
+          this.$router.push({ name: "menstrual-calendar-selection"})
+          return
+        } 
+
+        this.$router.push({ name: "menstrual-calendar-detail"})
+      }
     },
 
     async getSubscriptionPrices() {

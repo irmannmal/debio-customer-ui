@@ -33,16 +33,25 @@
           v-divider.menstrual-calendar-detail__divider
 
           .menstrual-calendar-detail__options
-            ui-debio-dropdown(
-              :items="monthList"
-              variant="small"
-              v-model="selectedMonthText"
-              item-text="text"
-              item-value="text"
-              outlined
-              close-on-select
-              width="140"
-            )
+            .menstrual-calendar-detail__month
+              v-btn( 
+                fab
+                text
+                small
+                color="grey darken-2"
+                @click="prev"
+              )
+                v-icon(small) mdi-chevron-left
+              span {{ selectedMonthText }}
+
+              v-btn( 
+                fab
+                text
+                small
+                color="grey darken-2"
+                @click="next"
+              )
+                v-icon(small) mdi-chevron-right
 
             span.menstrual-calendar-detail__year {{ selectedYear }}
 
@@ -164,7 +173,8 @@ import emojis from "@/common/constants/menstrual-symptoms-emoji"
 import moods from "@/common/constants/menstruation-moods"
 import MenstrualCalendarBanner from "./Banner.vue"
 import Calendar from "@/common/components/Calendar"
-import mockData from "./mockData"
+import { mapState } from "vuex"
+import { getLastMenstrualCalendarByOwner, getMenstrualCalendarById, getLastMenstrualCalendarCycleLogByOwner, getMenstrualCycleLog } from "@/common/lib/polkadot-provider/query/menstrual-calendar"
 
 
 export default {
@@ -180,7 +190,7 @@ export default {
     submitEnabled: false,
     submitPreview: false,
     selectAverage: true,
-    showStart: true,
+    showStart: false,
     averageCycle: 0,
     monthList: [
       {value: 0, text: "January"},
@@ -206,12 +216,18 @@ export default {
     descriptions: ["Today", "Menstruation", "Prediction", "Fertility", "Ovulation"]
   }),
 
+  computed: {
+    ...mapState({
+      api: (state) => state.substrate.api,
+      wallet: (state) => state.substrate.wallet
+    })  
+  },
+
   watch: {
     async selectedMonthText(newMonth) {
       this.menstruationPeriodeIndex = []
       this.selectedMonth = this.monthList.find((value) => value.text === newMonth).value
       await this.getMenstruationCalendarData()
-      // this.createTestData(this.selectedYear, this.selectedMonth)
     },
 
     selectedDates(newSelected) {
@@ -225,11 +241,20 @@ export default {
 
     async emojiDays() {
       await this.getMenstruationCalendarData()
-      // this.createTestData(this.selectedYear, this.selectedMonth)
     }
   },
 
   methods: {
+    prev() {
+      this.selectedMonth--
+      this.selectedMonthText = this.monthList[this.selectedMonth].text
+    },
+
+    next() { 
+      this.selectedMonth++
+      this.selectedMonthText = this.monthList[this.selectedMonth].text
+    },
+
     async addEmoji(emoji) {
       if (!this.selectedDates) return
 
@@ -264,21 +289,16 @@ export default {
     },
 
     getSummary() {
-      console.log(this.todaySum)
-      for (const key in this.todaySum) {
-        if (key === "fertility" && key === "ovulation" && key === "menstruation" && this.todaySum[key]) {
-          if(key === "menstruation") {
-            return moods.MENSTRUATION(this.todaySum.days)
-          }
-          return moods[key.toUpperCase()]
-        }
-      }
+      if(this.todaySum.menstruation) return moods.MENSTRUATION(this.todaySum.days)
+      if(this.todaySum.fertility) return moods.FERTILITY
+      if(this.todaySum.ovulation) return moods.OVULATION
       return moods.NONE
     },
 
     async getMenstruationCalendarData() {
       try {
-        const data = mockData
+        const menstrualCalendar = await getLastMenstrualCalendarByOwner(this.api, this.wallet.address)
+        const data = await getMenstrualCalendarById(this.api, menstrualCalendar[0])
         const today = new Date()
         const firstDateCurrentMonth = new Date(this.selectedYear, this.selectedMonth, 1)
         const firstDateNextMonth = new Date(this.selectedYear, this.selectedMonth + 1, 0)
@@ -298,26 +318,32 @@ export default {
         let indexDate = 0
         this.menstruationPeriodeIndex = []
 
+        const menstrualCycleLogByOwner = await getLastMenstrualCalendarCycleLogByOwner(this.api, menstrualCalendar[menstrualCalendar.length-1])
+        const cycle = []
+
+        for (let i = 0; i < menstrualCycleLogByOwner.length; i++) {
+          const test = await getMenstrualCycleLog(this.api, menstrualCycleLogByOwner[i])
+          cycle.push(test)
+        }
+
         while(date.getTime() < endDate.getTime()) {
           date = new Date(this.selectedYear, this.selectedMonth, (-(dayFirstDateCurrentMonth - 1) + indexDate))
-          const log = data.cycleLog.filter(log => log.date === date.getTime())
+          const log = cycle.filter(log => Number(log.date.replaceAll(",", "")) === date.getTime())
           const menstruation = log[0]
 
           const symptoms = this.emojiDays[date.getTime()] ?? []
-          console.log(data)
 
           if (menstruation) this.menstruationPeriodeIndex.push(indexDate)
           const currentData = {
-            date: menstruation ? menstruation.date : date.getTime(),
-            menstruation: menstruation ? menstruation.menstruation: 0,
-            prediction: indexDate >= this.menstruationPeriodeIndex[0] + data.averageCycle &&  indexDate < this.menstruationPeriodeIndex[0] + data.averageCycle + 5 ? 1 : 0,
+            date: date.getTime(),
+            menstruation: menstruation ? 1: 0,
+            prediction: indexDate >= this.menstruationPeriodeIndex[0] + Number(data.averageCycle) &&  indexDate < this.menstruationPeriodeIndex[0] + Number(data.averageCycle) + 5 ? 1 : 0,
             fertility: indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
             ovulation: indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
             symptoms: symptoms
           }
 
           menstrualCalendarData.cycleLog.push(currentData)
-
 
           if (today.getDate() === date.getDate()) {
             this.todaySum = currentData
@@ -358,13 +384,11 @@ export default {
   },
 
   async created() {
-    this.menstrualCalendarData = mockData
     const today = new Date()
     this.selectedMonthText = this.monthList[today.getMonth()].text
     this.currentYear = today.getFullYear().toString()
 
     await this.getMenstruationCalendarData()
-    // this.createTestData(this.selectedYear, this.selectedMonth)
   },
 
   components: {
@@ -408,6 +432,9 @@ export default {
     
     &__summary-desc
       @include new-body-text-2
+
+    &__month
+      width: 200px
 
     &__text
       color: #C400A5

@@ -1,7 +1,8 @@
 const defaultState = {
   averageCycle: null,
   menstrualCalendarSelected: null,
-  menstrualCalendarId: null
+  menstrualCalendarId: null,
+  isStart: false
 }
 
 export default {
@@ -12,6 +13,9 @@ export default {
   },
 
   mutations: {
+    SET_ISSTART(state, boolean) {
+      state.isStart = boolean
+    }
 
   },
 
