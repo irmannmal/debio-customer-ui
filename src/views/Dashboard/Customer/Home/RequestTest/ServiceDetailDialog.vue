@@ -174,7 +174,7 @@ export default {
 
     async onSelect () {
       this.loading = true
-      const balance = this.selectedService.currency ? this.usnBalance : this.usdtBalance
+      const balance = this.selectedService.currency === "USDT" ? this.usdtBalance : this.usnBalance
       if (Number(this.selectedService.totalPrice) >= balance - 1) {
         this.error = {
           title: "Insufficient Balance",
