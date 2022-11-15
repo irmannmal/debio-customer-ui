@@ -2,6 +2,14 @@
   .menstrual-calendar
     .menstrual-calendar__wrapper
       MenstrualCalendarBanner
+
+      ui-debio-error-dialog(
+        :show="!!error"
+        :title="error ? error.title : ''"
+        :message="error ? error.message : ''"
+        @close="error = null"
+      )
+
       ui-debio-modal.menstrual-calendar__modal(
         :show="showAlert"
         :show-title="false"
@@ -130,29 +138,6 @@
                   a Contact our support team
 
 
-              .menstrual-calendar__plan-payment-card-title PAY WITH CURRENCY
-              
-              v-chip-group.menstrual-calendar__plan-payment-card-chips(v-model="currency" column)
-                v-chip.mr-8(label outlined large @click="subscription.currency = 'USN'" :color="setActive('USN')" )
-                  v-avatar(right width="30")
-                    v-img.pr-5(
-                      alt="no-list-data"
-                      src="@/assets/near-logo.svg"
-                      max-width="24px"
-                      max-height="24px"
-                    )
-                  span.ma-3 USN (Near)
-                  
-                v-chip(label outlined large @click="subscription.currency = 'USDT'" :color="setActive('USDT')")
-                  v-avatar(right width="30")
-                    v-img.pr-5(
-                      alt="no-list-data"
-                      src="@/assets/tether-logo.svg"
-                      max-width="24px"
-                      max-height="24px"
-                    )
-                  span.ma-3 USDT (TETHER)
-
               .menstrual-calendar__trans-weight
                 .menstrual-calendar__trans-weight-text Estimated transaction weight
                   v-tooltip.visible(bottom )
@@ -192,9 +177,9 @@ export default {
   data: () => ({
     alertTriangleIcon, checkCircleIcon,
     plans: [
-      {duration: "Monthly", description: "For users on a budget who want to try out menstrual date", price: 0, currency: "USDT", promo: "", periode: "Month"},
-      {duration: "Quarterly", description: "For users on a budget who want to track menstrual cycle quarterly", price: 0, currency: "USDT", promo: "Save 10%", periode: "3 Months"},
-      {duration: "Yearly", description: "For users on a budget who want to keep tracking menstrual cycle annualy", price: 0, currency: "USDT", promo: "Save 50%", periode: "Year"}
+      {duration: "Monthly", description: "For users on a budget who want to try out menstrual date", price: 0, currency: "DBIO", promo: "", periode: "Month"},
+      {duration: "Quarterly", description: "For users on a budget who want to track menstrual cycle quarterly", price: 0, currency: "DBIO", promo: "Save 10%", periode: "3 Months"},
+      {duration: "Yearly", description: "For users on a budget who want to keep tracking menstrual cycle annualy", price: 0, currency: "DBIO", promo: "Save 50%", periode: "Year"}
     ],
     subscription: "",
     paymentPreview: false,
@@ -214,7 +199,8 @@ export default {
       }
     ],
     currency: "",
-    loading: false
+    loading: false,
+    error: null
   }),
 
   computed: {
@@ -223,7 +209,8 @@ export default {
       api: (state) => state.substrate.api,
       wallet: (state) => state.substrate.wallet,
       web3: (state) => state.metamask.web3,
-      lastEventData: (state) => state.substrate.lastEventData
+      lastEventData: (state) => state.substrate.lastEventData,
+      walletBalance: (state) => state.substrate.walletBalance
     })
   },
   
@@ -271,6 +258,17 @@ export default {
   methods: {
     async toSusbsribe() {
       this.loading = true
+
+      if (this.walletBalance < this.subscription.price) {
+        this.error = {
+          title: "Insufficient Balance",
+          message: "Your transaction cannot succeed due to insufficient balance, check your account balance"
+        }
+        this.showAlert = false
+        this.loading = false
+        return
+      }
+
       await addMenstrualSubscription(this.api, this.wallet, this.subscription.duration, this.subscription.currency)
     },
 
