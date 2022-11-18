@@ -7,7 +7,6 @@
         Day(
           :dates="date" 
           @on-selected="onSelect" 
-          @on-unselected="onUnselect"
           @on-remove-select="onRemoveSelect"
           @on-day-select="onDaySelect"
           :isLoading="isLoading"
@@ -38,7 +37,9 @@ export default {
     selectedMonth: 0,
     selectedYear: 0,
     selectedDate: null,
-    isMenstrualData: false
+    isMenstrualData: false,
+    indexList: [],
+    listDate: []
   }),
 
   async created() {
@@ -49,13 +50,13 @@ export default {
       this.isMenstrualData = true
       this.processFromData(this.year, this.month)
     } else {
-      this.updateCalendar(-1, -1, this.year, this.month)
+      this.updateCalendar(this.year, this.month)
     }
   },
 
   watch: {
     month(newMonth) {
-      this.updateCalendar(-1, -1, this.year, newMonth)
+      this.updateCalendar(this.year, newMonth)
     },
     isLoading(newLoad) {
       console.log("loading", newLoad)
@@ -69,7 +70,7 @@ export default {
   },
 
   methods: {
-    updateCalendar(selectStart, selectEnd, year, month) {
+    updateCalendar(year, month) {
       this.dateList.splice(0, this.dateList.length)
       const today = new Date()
       const firstDateCurrentMonth = new Date(year, month, 1)
@@ -96,9 +97,9 @@ export default {
           index: indexDate,
           isPast: date < today, 
           date: date,
-          indexStartSelected: selectStart === indexDate,
+          indexStartSelected: this.indexList[0] === indexDate,
           thisMonth: date.getMonth() === month,
-          isSelected: indexDate >= selectStart && indexDate <= selectEnd,
+          isSelected: this.indexList.find(i => i === indexDate) ? true : false,
           text: date.getDate(),
           today: today.getDate() === date.getDate() && today.getMonth() === date.getMonth(),
           previousDay: today.getDate() <= date.getDate() && today.getMonth() <= date.getMonth() && today.getFullYear() <= date.getFullYear()
@@ -178,16 +179,24 @@ export default {
       this.dateList = dateList
     },
 
-    onSelect(selectedDate, index) {
-      this.selectedDate = selectedDate
-      this.updateCalendar(index, index + 4, this.year, this.month)
-      this.$emit("input", selectedDate)
+    functionSort(val) {
+      return val.sort(function(a, b){return a - b})
     },
 
-    onUnselect() {
-      this.startSelectDate = null
-      this.updateCalendar(-1, -1, this.year, this.month)
-      this.$emit("input", null)
+    onSelect(date, index) {
+
+      if (this.indexList.find(i => i === index)) {
+        this.indexList = this.functionSort(this.indexList.filter(i => i !== index))
+        this.listDate = this.listDate.filter(d => d.getTime() !== date.getTime() )
+        this.updateCalendar(this.year, this.month)
+        return
+      }
+
+      this.indexList.push(index)
+      this.listDate.push(date)
+ 
+      this.updateCalendar(this.year, this.month)
+      this.$emit("input", date)
     },
 
     onRemoveSelect() {
@@ -197,7 +206,6 @@ export default {
     },
 
     onDaySelect(selectedDate) {
-      console.log("select", selectedDate)
       this.selectedDate = selectedDate
       this.processFromData(this.year, this.month)
       this.$emit("input", selectedDate)

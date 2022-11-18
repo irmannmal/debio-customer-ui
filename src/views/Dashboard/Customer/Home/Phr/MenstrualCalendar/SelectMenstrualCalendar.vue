@@ -157,9 +157,8 @@
                 style="font-size: 13px"
                 @click="showAlertCancel = true"
                 color="error"
-                :bind="attrs"
-                :on="on"
               ) Cancel
+              
               v-btn(
                 color="secondary"
                 elevation='0'
@@ -270,8 +269,6 @@
                   style="font-size: 13px"
                   @click="showAlertCancel = true"
                   color="error"
-                  :bind="attrs"
-                  :on="on"
                 ) Cancel
                 v-btn(
                   color="secondary"
@@ -304,7 +301,8 @@
 import { mapState, mapMutations } from "vuex"
 import { alertTriangleIcon, checkCircleIcon } from "@debionetwork/ui-icons"
 import { addMenstrualCalendar, addMenstrualCycleLog, updateMenstrualCalendar, updateMenstrualCycleLog } from "@/common/lib/polkadot-provider/command/menstrual-calendar"
-import { getLastMenstrualCalendarByOwner, getLastMenstrualCalendarCycleLogByOwner, getMenstrualCalendarById } from "@/common/lib/polkadot-provider/query/menstrual-calendar"
+import { getLastMenstrualCalendarByOwner, getLastMenstrualCalendarCycleLogByOwner, getMenstrualCycleLog, getMenstrualCalendarById } from "@/common/lib/polkadot-provider/query/menstrual-calendar"
+import { getMensCalendarCycle } from "@/common/lib/api"
 import Calendar from "@/common/components/Calendar"
 import DaySelectAverage from "@/common/components/DaySelectAverage"
 import MenstrualCalendarBanner from "./Banner"
@@ -354,9 +352,12 @@ export default {
     nextStatus: false,
     daySelectedAverage: 21,
     startDaySelectedAverage: 21,
-    lastMenstrualCalendar: null,
+    menstrualCalendarId: null,
+    menstrualCalendarCycleLogIds: null,
     lastMenstrualCalendarCycle: null,
-    menstrualCalendarDetail: null
+    menstrualCalendarCycleDetail: null,
+    menstrualCalendarDetail: null,
+    dateSelected: []
   }),
   computed: {
     ...mapState({
@@ -375,11 +376,22 @@ export default {
   },
 
   watch: {
+    
     selectedMonthText(newMonth) {
       this.selectedMonth = this.monthList.find((value) => value.text === newMonth).value
     },
+
     selectedDates(newSelected) {
-      this.submitEnabled = newSelected !== null && newSelected.length > 0
+
+      if(this.dateSelected.find(date => date.getTime() === newSelected.getTime())) {
+        this.dateSelected = this.dateSelected.filter(date => date.getTime() !== newSelected.getTime() )
+        return
+      }
+
+      this.dateSelected.push(newSelected)
+      this.submitEnabled = newSelected !== null
+      return
+
     }
   },
 
@@ -393,13 +405,19 @@ export default {
 
   async beforeMount() {
     if (this.isUpdate) {
-      const lastMC = (await getLastMenstrualCalendarByOwner(this.api, this.pair.address)).at(-1)
-      const lastMCC = (await getLastMenstrualCalendarCycleLogByOwner(this.api, lastMC)).at(-1)
-      this.lastMenstrualCalendar = lastMC
-      this.lastMenstrualCalendarCycle = lastMCC
-      const menstrualDetail = await getMenstrualCalendarById(this.api, lastMC)
-      this.menstrualCalendarDetail = menstrualDetail
-      this.startDaySelectedAverage = Number(menstrualDetail.averageCycle)
+      this.menstrualCalendarId = await getLastMenstrualCalendarByOwner(this.api, this.pair.address)
+      this.menstrualCalendarCycleLogIds = await getLastMenstrualCalendarCycleLogByOwner(this.api, this.menstrualCalendarId.at(-1))
+      const menstrualDetail = []
+
+      for (let i = 0; i < this.menstrualCalendarCycleLogIds.length; i++) {
+        const id =  this.menstrualCalendarCycleLogIds[i]
+        const detail = await getMenstrualCycleLog(this.api, id)
+        menstrualDetail.push(detail)
+      }
+
+      const menstrualCalendarDetail = await getMenstrualCalendarById(this.api, this.menstrualCalendarId.at(-1))
+      this.menstrualCalendarCycleDetail = menstrualDetail
+      this.startDaySelectedAverage = Number(menstrualCalendarDetail.averageCycle)
     }
   },
 
@@ -416,17 +434,17 @@ export default {
     next() { 
       this.selectedMonth++
       this.selectedMonthText = this.monthList[this.selectedMonth].text
-    },    
+    },
 
     async onSubmit() {
       const menstrualCalendarInfo = []
-      this.selectedDates.forEach(d => {
+      this.dateSelected.forEach(d => {
         menstrualCalendarInfo.push({
           date: d.getTime(),
           symptoms: [],
           menstruation: true
         })}
-      );
+      )
 
       if (this.isUpdate) {
         this.showAlert = true
@@ -479,21 +497,61 @@ export default {
       await updateMenstrualCalendar(
         this.api,
         this.pair,
-        this.lastMenstrualCalendar,
+        this.menstrualCalendarId.at(-1),
         this.daySelectedAverage,
         async () => {
-          await updateMenstrualCycleLog(
-            this.api,
-            this.pair,
-            this.lastMenstrualCalendar,
-            this.lastMenstrualCalendarCycle,
-            this.selectedDates[0].getTime(),
-            [],
-            true,
-            () => {
-              this.isSuccess = true
-            }
-          )
+          await this.toUpdateMenstrualCycleLog()
+        }
+      )
+    },
+
+    async toUpdateMenstrualCycleLog() {
+      const dateList = this.dateSelected.map(date => date.getTime())
+      const mensAdded = []
+
+      dateList.forEach(date => {
+        const data = this.menstrualCalendarCycleDetail.find(detail => Number(detail.date.replaceAll(",", "")) === date)
+        if (data) mensAdded.push(data)
+      })
+
+      if (!mensAdded.length) {
+        const menstrualCalendarInfo = []
+        this.dateSelected.forEach(d => {
+          menstrualCalendarInfo.push({
+            date: d.getTime(),
+            symptoms: [],
+            menstruation: true
+          })}
+        )
+
+        await addMenstrualCycleLog(
+          this.api,
+          this.pair,
+          this.menstrualCalendarId.at(-1),
+          menstrualCalendarInfo,
+          async () => {
+            await this.updateMenstrualSuccess()
+          }
+        )
+        return
+      }
+
+      const menstrualCalendarCycleData = await getMensCalendarCycle(this.selectedMonth - 1, this.selectedYear )
+      console.log(menstrualCalendarCycleData)
+
+      this.submitPreview = false
+
+      if (this.api) return
+      await updateMenstrualCycleLog(
+        this.api,
+        this.pair,
+        this.lastMenstrualCalendarId,
+        this.lastMenstrualCalendarCycle,
+        this.selectedDates[0].getTime(),
+        [],
+        true,
+        () => {
+          this.isSuccess = true
         }
       )
     },
@@ -502,9 +560,7 @@ export default {
       this.isSuccess = false
       this.submitPreview = true
       this.nextStatus = true
-      setTimeout(() => {
-        this.$router.push({ name: "menstrual-calendar-detail" })
-      }, 10000)
+      this.$router.push({ name: "menstrual-calendar-detail" })
     },
 
     goToNextRoute() {

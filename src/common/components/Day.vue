@@ -91,22 +91,15 @@ export default {
 
   data: () => ({
     selectedIndex: -1,
-    countDay: 7
+    countDay: 7,
+    selectedDate: []
   }),
 
   methods: {
     daySelectionClick(active, date, index) {
-      if (index === this.selectedIndex) {
-        active && this.$emit("on-unselected")
-        this.selectedIndex = -1
-      } else {
-        const selectedDate = []
-        for (let currNum = 0; currNum <= 4; currNum++) {
-          selectedDate.push(new Date(date.getFullYear(), date.getMonth(), (date.getDate() + currNum)))
-        }
-        active && this.$emit("on-selected", selectedDate, index)
-        this.selectedIndex = index
-      }
+
+      if(!active) return
+      this.$emit("on-selected", new Date(date.getFullYear(), date.getMonth(), (date.getDate())), index)
     },
 
     selectDayClick(active, date, index) {

@@ -10,4 +10,5 @@ export * from "./service-request"
 export * from "./genetic-analysis-order"
 export * from "./dna-collection-process"
 export * from "./notifications"
+export * from "./menstrual-calendar"
 
