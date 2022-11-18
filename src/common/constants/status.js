@@ -101,5 +101,10 @@ export const STAKE_STATUS_DETAIL = Object.freeze({
   UNSTAKED: {
     display: "Unstaked",
     color: "#E32319"
+  },
+  FINALIZED: {
+    display: "Finalized",
+    color: "#6F4CEC"
+
   }
 })

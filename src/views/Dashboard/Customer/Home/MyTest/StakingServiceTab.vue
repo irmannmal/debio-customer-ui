@@ -41,7 +41,7 @@
             style="font-size: 1em"
             color="primary"
             @click="getUnstakingDialog(item.request.hash)"
-            :disabled="item.request.status === 'Unstaked' || item.request.status === 'Processed'"
+            :disabled="item.request.status === 'Unstaked' || item.request.status === 'Processed' ||  item.request.status === 'Finalized'"
           ) Unstake
 
           ui-debio-button.pa-4(
