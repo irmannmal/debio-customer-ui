@@ -201,7 +201,7 @@ export default {
     async getBalance() {
       if(this.orderCurrency === "DBIO") this.balance = this.walletBalance
       if(this.orderCurrency === "USN") this.balance = this.usnBalance
-      if(this.orderCurrency === "USDT") this.balance = this.usdtBalance      
+      if(this.orderCurrency === "USDT") this.balance = this.usdtBalance
     },
 
     async getGeneticData() {
@@ -233,9 +233,9 @@ export default {
     },
 
     formatPriceInUsd(val) {
-      const priceInUsd = Number(val.replaceAll(",", "") * this.rate )
-      const formatedBalance = this.web3.utils.fromWei(String(priceInUsd), "ether")
-      return Number(formatedBalance).toFixed(4)
+      const priceInUsd = Number(val.replaceAll(",", ""))
+      const formatedBalance = this.web3.utils.fromWei(String(priceInUsd), "mwei")
+      return Number(formatedBalance * this.rate.conversion).toFixed(4)
     },
 
     formatDate(date) {

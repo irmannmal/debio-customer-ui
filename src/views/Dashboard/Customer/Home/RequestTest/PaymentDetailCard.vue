@@ -242,8 +242,9 @@ export default {
     }),
 
     async getUsdRate() {
+      const totalPrice = Number(this.dataService.totalPrice.split(",").join(""));
       this.rate = await getConversion(this.dataService.currency, "USD")
-      this.usdRate = (this.rate * this.dataService.totalPrice.replaceAll(",", "")).toLocaleString("en-US")
+      this.usdRate = Number(this.rate.conversion * totalPrice).toFixed(4)
     },
 
     async toEtherscan () {

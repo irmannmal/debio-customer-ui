@@ -28,7 +28,9 @@ describe("Payment Detail Card", () => {
           mnemonicData: "claw spare illegal parrot crack chase buddy answer slim weird write uncle" 
         },
         testRequest: {
-          products: {}
+          products: {
+            totalPrice: "5,000"
+          }
         },
         metamask: {
           metamaskWalletAddress: "metamaskWalletAddress",

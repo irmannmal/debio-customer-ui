@@ -75,9 +75,9 @@
                     .navbar__balance-wrapper
                       .navbar__balance-content
                         .navbar__balance-type Balance
-                        .navbar__balance-instruction 
-                          v-icon(size="10" type="button") mdi-open-in-new
-                          span.ml-2 How to add balance
+                        .navbar__balance-instruction(@click.prevent="openTutorialToken()")
+                            v-icon(size="10" type="button") mdi-open-in-new
+                            span.ml-2 How to add balance
 
                     v-divider.navbar__balance-divider
                     .navbar__balance-amount(v-for="wallet in polkadotWallets")
@@ -362,6 +362,10 @@ export default {
       this.clearAuth()
       this.clearWallet()
       this.loginStatus = false
+    },
+
+    openTutorialToken() {
+      window.open("https://app.gitbook.com/s/-Me8JCBOdWFqjBTM_Viy/getting-started/how-to-bridge-your-usddbio-and-usdusdt-to-the-debio-network-appchain", "__blank")
     }
   }
 }
@@ -457,6 +461,7 @@ export default {
     &__balance-instruction
       color: #8F98AA
       @include tiny-reg
+      cursor: pointer
     
     &__balance-divider-sec
       margin-top: 0.75rem
