@@ -365,7 +365,7 @@ export default {
     },
 
     openTutorialToken() {
-      window.open("https://app.gitbook.com/s/-Me8JCBOdWFqjBTM_Viy/getting-started/how-to-bridge-your-usddbio-and-usdusdt-to-the-debio-network-appchain", "__blank")
+      window.open("https://docs.debio.network/getting-started/how-to-bridge-your-usddbio-and-usdusdt-to-the-debio-network-appchain", "__blank")
     }
   }
 }
