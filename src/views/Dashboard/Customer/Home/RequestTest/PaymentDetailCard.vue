@@ -138,9 +138,8 @@ import CancelDialog from "@/common/components/Dialog/CancelDialog"
 import PaymentReceiptDialog from "./PaymentReceiptDialog.vue"
 import { cancelOrder } from "@debionetwork/polkadot-provider"
 import { queryLastOrderHashByCustomer, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
-import { getConversion, getOrderDetail, fetchTxHashOrder } from "@/common/lib/api"
+import { getConversion, getOrderDetail } from "@/common/lib/api"
 import { getDNACollectionProcess } from "@/common/lib/api"
-import getEnv from "@/common/lib/utils/env"
 
 export default {
   name: "PaymentDetailCard",
@@ -245,17 +244,6 @@ export default {
       const totalPrice = Number(this.dataService.totalPrice.split(",").join(""));
       this.rate = await getConversion(this.dataService.currency, "USD")
       this.usdRate = Number(this.rate.conversion * totalPrice).toFixed(4)
-    },
-
-    async toEtherscan () {
-      const { transaction_hash } = await fetchTxHashOrder(this.$route.params.hash)
-
-      const anchor = document.createElement("a")
-      anchor.target = "_blank"
-      anchor.rel = "noreferrer noopener nofollow"
-      // eslint-disable-next-line camelcase
-      anchor.href = `${getEnv("VUE_APP_ETHERSCAN")}${transaction_hash}`
-      anchor.click()
     },
 
     toPaymentHistory () {

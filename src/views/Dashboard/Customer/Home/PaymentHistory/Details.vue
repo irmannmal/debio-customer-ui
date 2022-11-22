@@ -86,7 +86,7 @@
                   :disabled="payment.status === 'Cancelled'"
                   outlined
                   block
-                ) {{ payment.status === "Unpaid" ? "Pay" : "VIEW ON ETHERSCAN" }}
+                ) {{ payment.status === "Unpaid" ? "Pay" : "VIEW ON OCTOPUS EXPLORER" }}
 </template>
 
 <script>
@@ -113,7 +113,8 @@ export default {
     copyIcon,
     messageError: null,
     rewardPopup: false,
-    payment: {}
+    payment: {},
+    txHash: null
   }),
 
   computed: {
@@ -180,6 +181,8 @@ export default {
         let rating
         let isNotGAOrders = false
         const dataPayment = await getOrderDetail(this.$route.params.id)
+        this.txHash = dataPayment.blockMetaData.blockHash
+
         const classes = Object.freeze({
           PAID: "success--text",
           UNPAID: "warning--text",
@@ -283,7 +286,7 @@ export default {
         return
       }
 
-      anchor.href = `${getEnv("VUE_APP_ETHERSCAN")}${this.txHash}`
+      anchor.href = `${getEnv("VUE_APP_OCTOPUS_EXPLORER")}blocks/${this.txHash}`
       anchor.click()
     }
   }
