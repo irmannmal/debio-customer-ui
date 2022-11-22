@@ -286,7 +286,7 @@ export default {
         return
       }
 
-      anchor.href = `${getEnv("VUE_APP_OCTOPUS_EXPLORER")}blocks/${this.txHash}`
+      anchor.href = `${getEnv("VUE_APP_OCTOPUS_EXPLORER")}/blocks/${this.txHash}`
       anchor.click()
     }
   }
