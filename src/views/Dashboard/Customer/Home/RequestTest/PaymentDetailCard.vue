@@ -35,17 +35,30 @@
           | {{ dataService.currency}}
 
       .menu-card__rate ( {{ this.usdRate }} USD )
+
+      .menu-card__details.mt-5(v-if="$route.name === 'customer-request-test-checkout'")
+        .menu-card__trans-weight Estimated Transaction Weight
+          v-tooltip.visible(bottom)
+              template(v-slot:activator="{ on, attrs }")
+                v-icon.menu-card__icon(
+                  color="primary"
+                  dark
+                  v-bind="attrs"
+                  v-on="on"
+                ) mdi-alert-circle-outline 
+              span(style="font-size: 10px;") Total fee paid in DBIO to execute this transaction.
+        .menu-card__trans-weight-amount {{ Number(txWeight).toFixed(4) }} DBIO
       
-      div(class="text-center" v-if="status === 'Cancelled'")
+      div(class="text-center" v-if="$route.name === 'customer-request-test-checkout' && status === 'Cancelled'")
         div(class="d-flex justify-space-between align-center pa-4 ms-3 me-3")
           ui-debio-button(
             color="secondary"
             width="49%"
             height="35"
-            @click="$router.push({name: 'customer-dashboard'})"
+            @click="toDashboard"
             style="font-size: 10px;"
             outlined 
-            ) Go to Dashboard {{ status }}
+            ) Go to Dashboard
 
           ui-debio-button(
             color="secondary"
@@ -56,14 +69,6 @@
             ) Go To Payment History
 
       div(class="text-center" v-else)
-        div(v-if="!success && !isCreated" class="mt-3 d-flex justify-center align-center")
-          ui-debio-button.mt-12(
-            color="secondary"
-            width="280"
-            height="35"
-            @click="onSubmit"
-            ) Submit Order
-
         div(v-if="status === 'Paid'" class="d-flex justify-space-between align-center pa-4 ms-3 me-3")
           ui-debio-button(
             color="secondary"
@@ -82,7 +87,7 @@
             style="font-size: 9px;"
             ) View Instruction
 
-        div(v-if="status === 'Unpaid'" class="d-flex justify-space-between align-center pa-4 ms-3 me-3")
+        div(v-if="$route.name === 'customer-request-test-checkout'" class="d-flex justify-space-between align-center pa-4 ms-3 me-3")
           ui-debio-button(
             color="primary"
             width="46%"
@@ -91,6 +96,7 @@
             style="font-size: 10px;"
             outlined 
             :loading="loading"
+            :disabled="loadingPayment"
             ) Cancel Order
 
           ui-debio-button(
@@ -100,16 +106,9 @@
             style="font-size: 10px;"
             @click="onSubmit"
             :disabled="loading"
+            :loading="loadingPayment"
             ) Pay
             
-    template
-      PaymentReceiptDialog(
-        :show="showReceipt"
-        :serviceDetail="dataService"
-        @onContinue="onContinue"
-        @close="showReceipt = false"
-      )
-
       CancelDialog(
         :show="cancelDialog"
         :orderId="orderId"
@@ -127,6 +126,13 @@
         @close="showAlert = false"
         @click="toPaymentHistory"
       )
+
+      ui-debio-error-dialog(
+        :show="showError"
+        :title="errorTitle"
+        :message="errorMsg"
+        @close="showError = false"
+      )
 </template>
 
 <script>
@@ -135,22 +141,25 @@ import CryptoJS from "crypto-js"
 import Kilt from "@kiltprotocol/sdk-js"
 import { u8aToHex } from "@polkadot/util"
 import CancelDialog from "@/common/components/Dialog/CancelDialog"
-import PaymentReceiptDialog from "./PaymentReceiptDialog.vue"
 import { cancelOrder } from "@debionetwork/polkadot-provider"
 import { queryLastOrderHashByCustomer, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
+import { setOrderPaidFee, setOrderPaid } from "@/common/lib/polkadot-provider/command/order"
 import { getConversion, getOrderDetail } from "@/common/lib/api"
 import { getDNACollectionProcess } from "@/common/lib/api"
+import { errorHandler } from "@/common/lib/error-handler"
+import { createOrder } from "@/common/lib/polkadot-provider/command/order"
+import { processRequest } from "@/common/lib/polkadot-provider/command/service-request"
+
+
 
 export default {
   name: "PaymentDetailCard",
   
   components: {
-    PaymentReceiptDialog,
     CancelDialog
   },
 
   data: () => ({
-    showReceipt: false,
     newService: false,
     lastOrder: null,
     detailOrder: null,
@@ -160,47 +169,48 @@ export default {
     labDetail: null,
     orderId: "",
     showAlert: false,
+    showError: false,
     isCreated: false,
     success: false,
     loading: false,
     rate: null,
-    usdRate: null
+    usdRate: null,
+    txWeight: "",
+    errorTitle: "",
+    errorMsg: "",
+    loadingPayment: false,
+    fetching: false
   }),
 
-  props: {
-    fetching: { type: Boolean, default: false }
-  },
-
-  async mounted () {
-
-    if(this.$route.name === "customer-request-test-success") {
-      this.success = true
+  async mounted() {
+    if(this.$route.name === "customer-request-test-checkout" && !this.dataService) {
+      this.toDashboard()
+      return
     }
-
-    this.getUsdRate()
-
-    if(this.$route.params.hash) {
+    
+    if(this.$route.name === "customer-request-test-success") {
       this.success = true
     }
 
     if(this.$route.params.id) {
       this.isCreated = true
+      const orderId = this.$route.params.id
+ 
+      this.lastOrder = await queryLastOrderHashByCustomer(
+        this.api,
+        this.wallet.address
+      )
+      
+      if (this.lastOrder) {
+        const detailOrder = await queryOrderDetailByOrderID(this.api, orderId)
+        this.detailOrder = detailOrder
+        this.orderId = this.detailOrder.id
+        this.status = this.detailOrder.status
+      }
     }
 
-    const orderId = this.$route.params.id || this.$route.params.hash
-
-    // get last order id
-    this.lastOrder = await queryLastOrderHashByCustomer(
-      this.api,
-      this.wallet.address
-    )
-    
-    if (this.lastOrder) {
-      const detailOrder = await queryOrderDetailByOrderID(this.api, orderId)
-      this.detailOrder = detailOrder
-      this.orderId = this.detailOrder.id
-      this.status = this.detailOrder.status
-    }
+    await this.getUsdRate()
+    await this.calculateTxWeight()
   },
 
   computed: {
@@ -212,12 +222,19 @@ export default {
       metamaskWalletAddress: (state) => state.metamask.metamaskWalletAddress,
       stakingData: (state) => state.lab.stakingData,
       web3: (state) => state.metamask.web3,
-      lastEventData: (state) => state.substrate.lastEventData
+      lastEventData: (state) => state.substrate.lastEventData,
+      usnBalance: (state) => state.substrate.usnBalance,
+      usdtBalance: (state) => state.substrate.usdtBalance,
+      polkadotWallet: (state) => state.substrate.polkadotWallet
     })
   },
 
   watch: {
-    lastEventData(event) {
+    async lastEventData(event) {
+      const dataEvent = JSON.parse(event.data.toString())
+      const orderId = dataEvent[0].id
+      this.status = dataEvent.status
+
       if (!event) return
       if (event.method === "OrderCancelled" && this.isCancelled) {
         this.loading = false
@@ -229,9 +246,32 @@ export default {
         })
       }
 
-      if(event.method === "OrderPaid") {
-        this.status = "Paid"
+      if (event.method === "OrderCreated") {
+        await this.setPaid(orderId)
       }
+
+      if (event.method === "OrderPaid") {
+        if(dataEvent[0].orderFlow === "RequestTest"){
+          this.loadingPayment = false
+          this.success = true
+          
+          this.$router.push({ 
+            name: "customer-request-test-success",
+            params: {
+              id: dataEvent[0].id
+            }
+          })
+          return
+        }
+
+        await this.processRequestService(dataEvent[0])
+      }
+
+      if(event.method === "ServiceRequestUpdated") this.$router.push({ name: "customer-request-test-success"})
+    },
+    
+    dataService(val) {
+      if(val) this.getUsdRate()
     }
   },
 
@@ -240,10 +280,44 @@ export default {
       setProductsToRequest: "testRequest/SET_PRODUCTS"
     }),
 
+    async calculateTxWeight() {
+      this.txWeight = "Calculating..."
+
+      this.lastOrder = await queryLastOrderHashByCustomer(
+        this.api,
+        this.wallet.address
+      )
+      
+      const txWeight = await setOrderPaidFee(
+        this.api,
+        this.wallet,
+        this.dataService.serviceId
+      )
+      this.txWeight = this.web3.utils.fromWei(String(txWeight.partialFee), "ether")
+    },
+
+    async processRequestService(event) {
+      await processRequest(
+        this.api,
+        this.wallet,
+        this.stakingData.hash,
+        event.id
+      )
+    },
+
     async getUsdRate() {
-      const totalPrice = Number(this.dataService.totalPrice.split(",").join(""));
+      this.fetching = true
+      let totalPrice
+
+      if(this.$route.params.id) {
+        totalPrice = this.dataService.totalPrice
+      } else {
+        totalPrice = this.dataService.totalPrice.split(",").join("")
+      }
+
       this.rate = await getConversion(this.dataService.currency, "USD")
       this.usdRate = Number(this.rate.conversion * totalPrice).toFixed(4)
+      this.fetching = false
     },
 
     toPaymentHistory () {
@@ -251,16 +325,64 @@ export default {
     },
 
     async onSubmit () {
-      this.lastOrder = await queryLastOrderHashByCustomer(
-        this.api,
-        this.wallet.address
-      )
+      this.loadingPayment = true
 
-      if(this.lastOrder){
-        this.detailOrder = await queryOrderDetailByOrderID(this.api, this.lastOrder)
+      try {
+        const balance =  this.dataService.currency === "USN" ? this.usnBalance : this.usdtBalance       
+        if (Number(balance) - 1 <= Number(this.dataService.totalPrice.replaceAll(",", ""))) {
+          this.loadingPayment = false
+          this.showError = true
+          const error = await errorHandler("Insufficient Balance")
+          this.error = error.message
+          this.errorTitle = error.title
+          this.errorMsg = error.message
+          return
+        }
+
+        if(this.isCreated) {
+          this.lastOrder = await queryLastOrderHashByCustomer(
+            this.api,
+            this.wallet.address
+          )
+
+          await setOrderPaid(this.api, this.wallet, this.lastOrder)
+          return
+        }
+        
+        await this.createOrder()
+      } catch (err) {
+        this.loadingPayment = false
+        const error = await errorHandler(err.message)
+        this.showError = true
+        this.errorTitle = error.title
+        this.errorMsg = error.message
       }
+    },
 
-      this.showReceipt = true
+    async setPaid(id) {
+      await setOrderPaid(this.api, this.wallet, id)
+    },
+
+    async createOrder() {
+      const assetId = await this.getAssetId(this.dataService.currency)    
+      const customerBoxPublicKey = await this.getCustomerPublicKey() 
+      const indexPrice = 0
+      await createOrder(
+        this.api,
+        this.wallet,
+        this.dataService.serviceId,
+        indexPrice,
+        customerBoxPublicKey,
+        this.dataService.serviceFlow,
+        assetId
+      )
+    },
+
+    async getAssetId(currency) {
+      let assetId = 0
+      const wallet = this.polkadotWallet.find(wallet => wallet?.currency?.toUpperCase() === currency?.toUpperCase())
+      assetId = wallet.id
+      return assetId
     },
 
     getCustomerPublicKey() {
@@ -268,10 +390,6 @@ export default {
       this.publicKey = u8aToHex(identity.boxKeyPair.publicKey)
       this.secretKey = u8aToHex(identity.boxKeyPair.secretKey)
       return u8aToHex(identity.boxKeyPair.publicKey)
-    },
-
-    onContinue() {
-      this.$emit("onContinue")
     },
 
     async toInstruction (val) {
@@ -289,19 +407,28 @@ export default {
     },
 
     showCancelConfirmation () {
+      if(!this.isCreated) {
+        this.toDashboard()
+        return
+      }
+
       this.cancelDialog = true
     },
 
     async setCancelled() {
       this.loading = true
       this.isCancelled = true
-      if (this.orderCreated) {
-        await cancelOrder(
-          this.api, 
-          this.wallet,
-          this.$route.params.id
-        )
-      }
+
+      await cancelOrder(
+        this.api, 
+        this.wallet,
+        this.$route.params.id
+      )
+      
+    },
+
+    toDashboard() {
+      this.$router.push({name: "customer-dashboard"})
     },
 
     async getDataService() {
@@ -400,4 +527,17 @@ export default {
       display: flex
       justify-content: flex-end
       @include body-text-3-opensans-medium
+
+    &__trans-weight
+      margin-left: 38px
+      @include tiny-reg
+
+    &__trans-weight-amount
+      margin-right: 38px
+      @include tiny-reg
+
+    &__icon
+      margin-left: 5px
+      @include body-text-3-opensans-medium
+
 </style>

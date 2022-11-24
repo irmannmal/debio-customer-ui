@@ -110,8 +110,7 @@ export default {
   computed: {
     ...mapState({
       api: (state) => state.substrate.api,
-      wallet: (state) => state.substrate.wallet,
-      configApp: (state) => state.auth.configApp
+      wallet: (state) => state.substrate.wallet
     }),
 
     disable() {

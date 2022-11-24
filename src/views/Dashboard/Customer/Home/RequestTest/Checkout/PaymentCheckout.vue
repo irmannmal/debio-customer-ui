@@ -11,7 +11,6 @@
         PaymentDetailCard(
           :serviceDetail="service"
           :orderDetail="detailOrder"
-          :fetching="isLoading"
           @cancel="onCancel"
           @onContinue="onContinue"
         )

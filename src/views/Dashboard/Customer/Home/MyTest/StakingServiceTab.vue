@@ -92,14 +92,8 @@ import { getServiceRequestByCustomer } from "@/common/lib/api"
 import { getLocations } from "@/common/lib/api"
 import { STAKE_STATUS_DETAIL } from "@/common/constants/status"
 import { queryLastOrderHashByCustomer, queryServiceById, queryLabById, queryOrderDetailByOrderID } from "@debionetwork/polkadot-provider"
-import CryptoJS from "crypto-js"
-import Kilt from "@kiltprotocol/sdk-js"
-import { u8aToHex } from "@polkadot/util"
 import { fmtReferenceFromHex } from "@/common/lib/string-format"
 import { queryGetServiceOfferById } from "@/common/lib/polkadot-provider/query/service-request"
-import { createOrder } from "@/common/lib/polkadot-provider/command/order"
-import { setOrderPaid } from "@/common/lib/polkadot-provider/command/order"
-import { processRequest } from "@/common/lib/polkadot-provider/command/service-request"
 import { formatPrice } from "@/common/lib/price-format"
 
 
@@ -169,18 +163,7 @@ export default {
   watch: {
     async lastEventData(event) {
       if (!event) return
-      const dataEvent = JSON.parse(event.data.toString())
-      const orderId = dataEvent[0].id
-
-      if (event.method === "OrderCreated") {
-        await this.setPaid(orderId)
-      }
-
-      if (event.method === "OrderPaid") {
-        await this.processRequestService(dataEvent[0])
-      }
-
-      if(event.method === "ServiceRequestUpdated") this.toCheckout(dataEvent[0].id)
+      if(event.method === "ServiceRequestUpdated") await this.fetchData()
     }
   },
 
@@ -236,19 +219,6 @@ export default {
       }
     },
 
-    async setPaid(id) {
-      await setOrderPaid(this.api, this.pair, id)
-    },
-
-    async processRequestService(event) {
-      await processRequest(
-        this.api,
-        this.pair,
-        this.stakingData.hash,
-        event.id
-      )
-    },
-
     setAmount(amount) {
       const formatedAmount = this.web3.utils.fromWei(String(amount.replaceAll(",", "")), "ether")
       return formatedAmount
@@ -274,6 +244,8 @@ export default {
       this.stakingData = req.request
       const lastOrder = await this.getLastOrderId()
 
+      this.setStakingService(this.stakingData)
+
       if (lastOrder) {
         const detailOrder = await queryOrderDetailByOrderID(this.api, lastOrder)
         const status = detailOrder.status
@@ -291,6 +263,8 @@ export default {
       this.setProductsToRequest({
         serviceName: service.info.name,
         serviceImage: service.image,
+        serviceId: serviceRequest.serviceId,
+        serviceFlow: service.serviceFlow,
         totalPrice: formatPrice(service.info.pricesByCurrency[0].totalPrice.replaceAll(",", ""), service.info.pricesByCurrency[0].currency.toUpperCase()),
         servicePrice: formatPrice(service.price.replaceAll(",", ""), service.info.pricesByCurrency[0].currency.toUpperCase()),
         qcPrice: formatPrice(service.qcPrice.replaceAll(",", ""), service.info.pricesByCurrency[0].currency.toUpperCase()),
@@ -310,50 +284,13 @@ export default {
         region: labDetail.info.region
       })
 
-      const servicePrice = formatPrice(service.price, service.currency)
-      const balance = service.currency ? this.usnBalance : this.usdtBalance
-      if (Number(servicePrice) >= balance - 1) {
-        this.error = {
-          title: "Insufficient Balance",
-          message: "Your transaction cannot succeed due to insufficient balance, check your account balance"
-        }
-        return
-      }
+      await this.toCheckout()
       
-      await this.createOrder(service)
       this.$emit("loading")
     },
     
     toPaymentHistory() {
       this.$router.push({ name: "customer-payment-history" })
-    },
-
-    getCustomerPublicKey() {
-      const identity = Kilt.Identity.buildFromMnemonic(this.mnemonicData.toString(CryptoJS.enc.Utf8))
-      return u8aToHex(identity.boxKeyPair.publicKey)
-    },
-
-    async getAssetId(currency) {
-      let assetId = 0
-      const wallet = this.polkadotWallet.find(wallet => wallet?.currency?.toUpperCase() === currency?.toUpperCase())
-      assetId = wallet.id
-      return assetId
-    },
-
-    async createOrder(service) {
-      const assetId = await this.getAssetId(service.currency)    
-      const customerBoxPublicKey = await this.getCustomerPublicKey() 
-      const indexPrice = 0
-
-      await createOrder(
-        this.api,
-        this.pair,
-        service.id,
-        indexPrice,
-        customerBoxPublicKey,
-        service.serviceFlow,
-        assetId
-      )
     },
 
     async getUnstakingDialog(id) {
@@ -390,9 +327,9 @@ export default {
       return lastOrderId
     },
 
-    async toCheckout(id) {      
+    async toCheckout() {      
       this.$router.push({ 
-        name: "customer-request-test-success", params: { hash: id }
+        name: "customer-request-test-checkout"
       })
       this.$emit("closeLoading")
     }

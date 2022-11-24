@@ -130,7 +130,7 @@ export default [
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/RequestTest/Checkout")
       },
       {
-        path: "request-test/success/:hash?",
+        path: "request-test/success/:id?",
         name: "customer-request-test-success",
         meta: { pageHeader: "Summary/Instruction", parent: "customer-request-test" },
         component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/RequestTest/Success")

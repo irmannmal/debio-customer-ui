@@ -193,7 +193,7 @@ export default {
         this.selectedService.serviceId,
         this.selectedService.indexPrice,
         customerBoxPublicKey,
-        this.selectedService.serviceFlow,
+        "RequestTest",
         assetId
       )
     },
