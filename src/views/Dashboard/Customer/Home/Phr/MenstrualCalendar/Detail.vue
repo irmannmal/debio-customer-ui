@@ -149,9 +149,12 @@
               color="#F3F3F3" 
               height="48"
               width="100%"
+              disabled
               @click="toSubscriptionSetting()"
             ) 
               .menstrual-calendar-detail__button-text Subscription Settings
+              v-alert.menstrual-calendar-detail__alert.ml-1(color="#FFE6E6" )
+                .menstrual-calendar-detail__alert-text Coming Soon
               v-icon mdi-chevron-right
 
             ui-debio-button.menstrual-calendar-detail__button(
