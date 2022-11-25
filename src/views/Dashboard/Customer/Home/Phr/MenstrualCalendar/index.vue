@@ -113,7 +113,9 @@
                         )
                         v-alert.menstrual-calendar__plan-card-alert(v-if="plan.promo" color="#E7FFE6" )
                           .menstrual-calendar__plan-card-alert-text {{ plan.promo }}
-                        .menstrual-calendar__plan-card-price {{ plan.price }} {{ plan.currency}}
+                        .menstrual-calendar__plan-card-price Burn {{ plan.price }} {{ plan.currency}}
+                          .menstrual-calendar__plan-card-price-convert ({{ plan.usd }} USD)
+
                       .menstrual-calendar__plan-card-desc.pt-1.ml-8 {{ plan.description }}
 
                 ui-debio-button(
@@ -124,17 +126,13 @@
             
             template(v-if="paymentPreview")
               v-card.menstrual-calendar__plan-payment-card
-                .menstrual-calendar__plan-payment-card-title Purchase Detail
-                .menstrual-calendar__plan-payment-card-detail
-                  .menstrual-calendar__plan-payment-card-desc Menstrual Date {{ subscription.duration }}
-                  .menstrual-calendar__plan-card-price {{ subscription.price }} {{ subscription.currency }}/ {{ subscription.periode}}
+                .menstrual-calendar__plan-payment-card-title Purchase Details
                 v-divider.ma-4
-                .menstrual-calendar__plan-payment-card-total
-                  .menstrual-calendar__plan-payment-card-total-text Total Today
-                  .menstrual-calendar__plan-payment-card-total-price {{ subscription.price }} {{ subscription.currency }}
-                  
-
-                .menstrual-calendar__plan-payment-card-notes Any eligible subscription credit will be applied until it runs out. Your subscription will renew for {{ subscription.price }} / {{ subscription.periode }} on Sept 23, 2023. Have any questions? 
+                .menstrual-calendar__plan-payment-card-detail
+                  .menstrual-calendar__plan-payment-card-total-text {{ subscription.duration }}
+                  .menstrual-calendar__plan-card-price Burn {{ subscription.price }} {{ subscription.currency }}/ {{ subscription.periode}}                  
+                    .menstrual-calendar__plan-card-price-convert ({{ subscription.usd }} USD)
+                .menstrual-calendar__plan-payment-card-notes Any eligible subscription credit will be applied until it runs out. Your subscription will renew for {{ subscription.price }} {{ subscription.currency }} / {{ subscription.periode }} on {{getExpiredDate( subscription.periode )}}. Have any questions? 
                   a Contact our support team
 
 
@@ -170,6 +168,7 @@ import { getLastMenstrualCalendarByOwner } from "@/common/lib/polkadot-provider/
 import { addMenstrualSubscriptionFee, addMenstrualSubscription, setMenstrualSubscriptionPaid } from "@/common/lib/polkadot-provider/command/menstrual-subscription"
 import { formatPrice } from "@/common/lib/price-format"
 import { generalDebounce } from "@/common/lib/utils"
+import { getConversion } from "@/common/lib/api"
 
 export default {
   name: "MenstrualCalendar",
@@ -177,9 +176,9 @@ export default {
   data: () => ({
     alertTriangleIcon, checkCircleIcon,
     plans: [
-      {duration: "Monthly", description: "For users on a budget who want to try out menstrual date", price: 0, currency: "DBIO", promo: "", periode: "Month"},
-      {duration: "Quarterly", description: "For users on a budget who want to track menstrual cycle quarterly", price: 0, currency: "DBIO", promo: "Save 10%", periode: "3 Months"},
-      {duration: "Yearly", description: "For users on a budget who want to keep tracking menstrual cycle annualy", price: 0, currency: "DBIO", promo: "Save 50%", periode: "Year"}
+      {duration: "Monthly", description: "For users on a budget who want to try out menstrual date", price: 0, currency: "DBIO", usd: 0, promo: "", periode: "Month"},
+      {duration: "Quarterly", description: "For users on a budget who want to track menstrual cycle quarterly", price: 0, currency: "DBIO", usd: 0, promo: "Save 10%", periode: "3 Months"},
+      {duration: "Yearly", description: "For users on a budget who want to keep tracking menstrual cycle annualy", price: 0, currency: "DBIO", usd: 0, promo: "Save 50%", periode: "Year"}
     ],
     subscription: "",
     paymentPreview: false,
@@ -256,6 +255,34 @@ export default {
   },
 
   methods: {
+
+    async getRate() {
+      const rate = await getConversion()
+      return rate.dbioToUsd      
+    },
+
+    getExpiredDate(period) {
+      const today = new Date()
+      let newDate
+
+      if(period === "Month") {
+        newDate = new Date(today.setMonth(today.getMonth()+1))
+      }
+
+      if(period === "3 Months") {
+        newDate = new Date(today.setMonth(today.getMonth()+3))
+      }
+
+      if(period === "Year") {
+        newDate = new Date(today.setMonth(today.getMonth() + 12))
+      }
+
+      let day =  newDate.getDate() - 1
+      let month = newDate.toLocaleString("default", { month: "short" })
+      let year = newDate.getFullYear()
+      return `${day} ${month} ${year}`
+    },
+
     async toSusbsribe() {
       this.loading = true
 
@@ -293,7 +320,9 @@ export default {
     async getSubscriptionPrices() {
       this.plans.forEach(async plan => {
         const data = await getMenstrualSubscriptionPrices(this.api, plan.duration, plan.currency) 
+        const rate = await this.getRate()
         plan.price = formatPrice(data.amount, plan.currency)
+        plan.usd = (Number(plan.price.split(",").join("")) * rate).toFixed(4)
       })
     },
 
@@ -367,10 +396,14 @@ export default {
 
     &__plan-card-price
       @include button-2
+
+    &__plan-card-price-convert
+      color: #FF56E0
+      @include body-text-5
     
     &__plan-card-alert
       height: 24px
-      margin-left: -98px
+      margin-left: -40px
 
     &__plan-card-alert-text
       margin-top: -12px
@@ -385,7 +418,7 @@ export default {
 
     &__plan-payment-card-title
       padding: 16px
-      margin: 4px 0
+      margin-bottom: -16px
       @include button-1
 
     &__plan-payment-card-detail
@@ -408,7 +441,7 @@ export default {
 
     &__plan-payment-card-notes
       padding: 24px 16px
-      @include tiny-reg
+      @include body-text-3-opensans
 
     &__plan-payment-card-chips
       margin-top: -10px

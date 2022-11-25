@@ -308,7 +308,7 @@ export default {
         
         const dayFirstDateCurrentMonth = firstDateCurrentMonth.getDay() === 0 ? 6 : firstDateCurrentMonth.getDay() - 1
         const dayFirstDateNextMonth = firstDateNextMonth.getDay() === 0 ? 6 : firstDateNextMonth.getDay() - 1
-        
+
         const startDate = new Date(this.selectedYear, this.selectedMonth, -(dayFirstDateCurrentMonth - 1))
         const endDate = new Date(this.selectedYear, this.selectedMonth + 1, (6 - dayFirstDateNextMonth))
         const menstrualCalendarData = {
@@ -329,21 +329,46 @@ export default {
           cycle.push(test)
         }
 
+        cycle.sort((a, b) => parseInt(a.date.replaceAll(",", "")) - parseInt(b.date.replaceAll(",", "")))
+        const lastMens = cycle.find(c => (new Date(Number(c.date.replaceAll(",", "")))).getMonth() === this.selectedMonth - 1)
+        let firstDayOfLastPeriod =  new Date(Number(lastMens.date.replaceAll(",", "")))
+        let lastMonthPrediction = []
+        if(lastMens) {
+          for (let i = 0; i < 16; i++) {
+            if (i < 5) lastMonthPrediction.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + Number(data.averageCycle) + i))
+            firstDayOfLastPeriod = new Date(Number(lastMens.date.replaceAll(",", "")))
+          }          
+        }
+
+        
         while(date.getTime() < endDate.getTime()) {
           date = new Date(this.selectedYear, this.selectedMonth, (-(dayFirstDateCurrentMonth - 1) + indexDate))
           const log = cycle.filter(log => Number(log.date.replaceAll(",", "")) === date.getTime())
           const menstruation = log[0]
-
           const symptoms = this.emojiDays[date.getTime()] ?? []
 
           if (menstruation) this.menstruationPeriodeIndex.push(indexDate)
-          const currentData = {
-            date: date.getTime(),
-            menstruation: menstruation ? 1: 0,
-            prediction: indexDate >= this.menstruationPeriodeIndex[0] + Number(data.averageCycle) &&  indexDate < this.menstruationPeriodeIndex[0] + Number(data.averageCycle) + 5 ? 1 : 0,
-            fertility: indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
-            ovulation: indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
-            symptoms: symptoms
+
+          let currentData
+
+          if(lastMens) {
+            currentData = {
+              date: date.getTime(),
+              menstruation: menstruation ? 1: 0,
+              prediction: lastMonthPrediction.find(pred => pred === date.getTime()) || (indexDate >= this.menstruationPeriodeIndex[0] + Number(data.averageCycle) &&  indexDate < this.menstruationPeriodeIndex[0] + Number(data.averageCycle) + 5) ? 1 : 0,
+              fertility:  indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
+              ovulation: indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
+              symptoms: symptoms
+            }
+          } else {
+            currentData = {
+              date: date.getTime(),
+              menstruation: menstruation ? 1: 0,
+              prediction: indexDate >= this.menstruationPeriodeIndex[0] + Number(data.averageCycle) &&  indexDate < this.menstruationPeriodeIndex[0] + Number(data.averageCycle) + 5 ? 1 : 0,
+              fertility: indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
+              ovulation: indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
+              symptoms: symptoms
+            }
           }
 
           menstrualCalendarData.cycleLog.push(currentData)
@@ -390,8 +415,6 @@ export default {
     const today = new Date()
     this.selectedMonthText = this.monthList[today.getMonth()].text
     this.currentYear = today.getFullYear().toString()
-
-    await this.getMenstruationCalendarData()
   },
 
   components: {
