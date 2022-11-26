@@ -80,6 +80,12 @@ export default [
         props: { isUpdate: true }
       },
       {
+        path: "phr/menstrual-calendar/express-yourself",
+        name: "menstrual-calendar-select-emoji",
+        meta: { pageHeader: "Menstrual Calendar", parent: "customer-phr" },
+        component: () => import(/* webpackChunkName */ "@/views/Dashboard/Customer/Home/Phr/MenstrualCalendar/SelectEmoji")
+      },
+      {
         path: "phr/maintenance",
         name: "menstrual-calendar-maintenance",
         meta: { pageHeader: "Menstrual Calendar", parent: "customer-phr" },

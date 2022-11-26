@@ -35,7 +35,7 @@
               )
                 v-img.emoticon-item(
                   alt="emoji-depressed-active"
-                  :src="require(`../../assets/${date.data.symptoms[0].name}-active.svg`)"
+                  :src="require(`../../assets/${date.data.symptoms[0]}-active.svg`)"
                   max-width="16px"
                   max-height="16px"
                 )
@@ -43,7 +43,7 @@
               v-img.emoticon-item(
                 v-else-if="date.data.symptoms.length > 0"
                 alt="emoji-depressed-active"
-                :src="require(`../../assets/${date.data.symptoms[0].name}-active.svg`)"
+                :src="require(`../../assets/${date.data.symptoms[0]}-active.svg`)"
                 max-width="16px"
                 max-height="16px"
               )

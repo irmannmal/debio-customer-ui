@@ -12,10 +12,10 @@
             )
 
           .dialog-loading__message
-            b Loading...
+            b {{ msg }}
           
           .dialog-loading__desc
-            b Please wait while we're processing your order
+            b {{ desc }}
 
 </template>
 
@@ -30,7 +30,9 @@ export default {
   },
 
   props: {
-    show: Boolean
+    show: Boolean,
+    desc: String,
+    msg: {type: String, default: "Loading..."}
   }
 }
 </script>

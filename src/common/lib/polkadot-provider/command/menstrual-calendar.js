@@ -39,8 +39,8 @@ export async function updateMenstrualCalendar(api, pair, menstrualCalendarId, av
   )
 }
 
-export async function updateMenstrualCycleLog(api, pair, menstrualCalendarId, menstrualCycleLogId, date, symptoms, menstruation, callback) {
-  let unsub = await api.tx.menstrualCalendar.updateMenstrualCycleLog(menstrualCalendarId, menstrualCycleLogId, date, symptoms, menstruation).signAndSend(
+export async function updateMenstrualCycleLog(api, pair, cycleLog, callback) {
+  let unsub = await api.tx.menstrualCalendar.updateMenstrualCycleLog(cycleLog).signAndSend(
     pair, 
     { nonce: -1},
     ({ events, status}) => {

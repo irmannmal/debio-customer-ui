@@ -60,40 +60,30 @@
             :month="selectedMonth"
             v-model="selectedDates"
             :menstrualData="menstrualCalendarData"
+            :isLoading="calendarLoading"
           )
-
-          .menstrual-calendar-detail__icons
-            .menstrual-calendar-detail__icon(v-for="description in descriptions")
-              v-img(
-                :alt="description.toLowerCase()"
-                :src="require(`../../../../../../assets/${description.toLowerCase()}.svg`)"
-                max-width="16px"
-                max-height="16px"
-              )
-              span {{ description}}
-
-          .menstrual-calendar-detail__note
-            .menstrual-calendar-detail__note-text Note
-            span.menstrual-calendar-detail__note-desc your previous menstrual cycle does not guarantee your future menstrual cycle medically or diagnostically
+          .menstrual-calendar-detail__emoticons_action
+            ui-debio-button(
+              outlined
+              height="36"
+              width="165"
+              style="font-size: 13px"
+              @click="backToDetail()"
+              color="error"
+            ) Cancel
+            
+            v-btn(
+              color="secondary"
+              elevation='0'
+              width="165"
+              height="36"
+              class='white--text mnemonic-list-item'
+              @click="submitEmojis()"
+              :disabled="emojiChangesAdded.length < 0 || emojiChangesUpdate.length < 0"
+            ) Apply
             
 
         .menstrual-calendar-detail__menu
-          ui-debio-card.menstrual-calendar-detail__summary(width="394")
-            .menstrual-calendar-detail__summary-header
-              v-img.menstrual-calendar-detail__summary-img(
-                alt="no-list-data"
-                src="@/assets/calendar.svg"
-                max-width="44px"
-                max-height="44px"
-              )
-              .menstrual-calendar-detail__summary-text
-                .menstrual-calendar-detail__summary-title Summary
-                .menstrual-calendar-detail__summary-desc Today Overview
-          
-          ui-debio-card(width="394")
-            .menstrual-calendar-detail__text {{ getSummary() }}
-
-
           ui-debio-card.menstrual-calendar-detail__setting(width="394")
             .menstrual-calendar-detail__summary-header
               v-img.menstrual-calendar-detail__summary-img(
@@ -108,79 +98,67 @@
                 .menstrual-calendar-detail__summary-desc you can choose more than 1 emoticon
 
             v-divider.menstrual-calendar-detail__navigation
+            .menstrual-calendar-detail__emoticons
+              v-row
+                .menstrual-calendar-detail__emoticons-row(v-for="emoji in emojis")
+                  v-col.menstrual-calendar-detail__emoticons-col(cols="3" )
+                    .menstrual-calendar-detail__emoji(align="center")
+                      v-img.menstrual-calendar-detail__emoji-img(
+                        max-width="32px"
+                        type="button"
+                        @click="addEmoji(emoji)"
+                        :src="require(`../../../../../../assets/${emoji.name}-${emoji.disabled}.svg`)"
+                      )
+                      .menstrual-calendar-detail__emoji-text.mt-3(:style="{color: emoji.color}") {{ emoji.text}}
+          
+          LoadingDialog(
+            :show="loadingSubmitChange"
+            desc="Please wait while we are applying your changes to the Substrate Blockchain"
+            msg="Saving your changes"
+          )
 
-            ui-debio-button.menstrual-calendar-detail__button(
-              color="#F3F3F3" 
-              height="48"
+          ui-debio-modal.menstrual-calendar-detail__modal-success(
+            :show="isSuccess"
+            :show-title="false"
+            :show-cta="false"
+            disable-dismiss
+          )
+            ui-debio-icon(
+              :icon="checkCircleIcon"
+              size="90"
+              color="#c400a5"
+              stroke
+            )
+            .menstrual-calendar-detail__modal-title Success!
+
+            .menstrual-calendar-detail__modal-desc Congratulations, your menstrual calendar has been updated
+
+            ui-debio-button(
+              color="secondary" 
               width="100%"
-              @click="toMenstrualCalendarExpress()"
-            ) 
-              .menstrual-calendar-detail__button-text Express yourself
-              v-icon mdi-chevron-right
+              height="35"
+              style="font-size: 10px;"
+              @click="backToDetail()"
+            ) DISMISS
 
-          ui-debio-card.menstrual-calendar-detail__setting(width="394")
-            .menstrual-calendar-detail__summary-header
-              v-img.menstrual-calendar-detail__summary-img(
-                alt="no-list-data"
-                src="@/assets/calendar.svg"
-                max-width="44px"
-                max-height="44px"
-              )
-
-              .menstrual-calendar-detail__setting-text
-                .menstrual-calendar-detail__summary-title Menstrual Calendar Settings
-                .menstrual-calendar-detail__summary-desc Update menstruation day and subscription
-           
-            v-divider.menstrual-calendar-detail__navigation
-            
-            ui-debio-button.menstrual-calendar-detail__button(
-              color="#F3F3F3" 
-              height="48"
-              width="100%"
-              @click="toMenstrualSelectionUpdate()"
-            ) 
-              .menstrual-calendar-detail__button-text Update Menstruation Day
-              v-icon mdi-chevron-right
-
-            ui-debio-button.menstrual-calendar-detail__button(
-              color="#F3F3F3" 
-              height="48"
-              width="100%"
-              disabled
-              @click="toSubscriptionSetting()"
-            ) 
-              .menstrual-calendar-detail__button-text Subscription Settings
-              v-alert.menstrual-calendar-detail__alert.ml-1(color="#FFE6E6" )
-                .menstrual-calendar-detail__alert-text Coming Soon
-              v-icon mdi-chevron-right
-
-            ui-debio-button.menstrual-calendar-detail__button(
-              color="#F3F3F3" 
-              height="48"
-              width="100%"
-              disabled
-            ) 
-              .menstrual-calendar-detail__button-text Journaling
-              v-alert.menstrual-calendar-detail__alert(color="#FFE6E6" )
-                .menstrual-calendar-detail__alert-text Coming Soon
-
-              v-icon mdi-chevron-right
 </template>
 
 <script>
-
+import { checkCircleIcon } from "@debionetwork/ui-icons"
 import emojis from "@/common/constants/menstrual-symptoms-emoji"
 import moods from "@/common/constants/menstruation-moods"
 import MenstrualCalendarBanner from "./Banner.vue"
 import Calendar from "@/common/components/Calendar"
 import { mapState } from "vuex"
 import { getLastMenstrualCalendarByOwner, getMenstrualCalendarById, getLastMenstrualCalendarCycleLogByOwner, getMenstrualCycleLog } from "@/common/lib/polkadot-provider/query/menstrual-calendar"
-
+import { addMenstrualCycleLog, updateMenstrualCycleLog } from "@/common/lib/polkadot-provider/command/menstrual-calendar"
+import LoadingDialog from "@/common/components/Dialog/LoadingDialog.vue"
 
 export default {
-  name: "MenstrualCalendarDetail",
+  name: "SelectEmoji",
 
   data: () => ({
+    checkCircleIcon,
     emojis,
     moods,
     selectedMonthText: "",
@@ -213,7 +191,14 @@ export default {
     emojiSelected: [],
 
     days: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
-    descriptions: ["Today", "Menstruation", "Prediction", "Fertility", "Ovulation"]
+    descriptions: ["Today", "Menstruation", "Prediction", "Fertility", "Ovulation"],
+    cycleLog: [],
+    dataMenstrualCalanedar: null,
+    emojiChangesUpdate: {},
+    emojiChangesAdded: {},
+    loadingSubmitChange: false,
+    isSuccess: false,
+    calendarLoading: false
   }),
 
   computed: {
@@ -227,7 +212,6 @@ export default {
     async selectedMonthText(newMonth) {
       this.menstruationPeriodeIndex = []
       this.selectedMonth = this.monthList.find((value) => value.text === newMonth).value
-      await this.getMenstruationCalendarData()
     },
 
     selectedDates(newSelected) {
@@ -235,12 +219,13 @@ export default {
       this.emojiSelected = this.emojiDays[newSelected?.getTime()] ?? []
     },
 
-    emojiSelected() {
+    async emojiSelected() {
       this.updateEmojis()
     },
 
     async emojiDays() {
-      await this.getMenstruationCalendarData()
+      await this.reRenderMenstrualCalendarData()
+      this.updateEmojis()
     }
   },
 
@@ -259,12 +244,8 @@ export default {
       if (!this.selectedDates) return
 
       if (emoji.disabled === "active") {
-        emoji.disabled = "inactive"
-        emoji.color = "#363636"
         await this.removeSymptoms(this.selectedDates, emoji)
       } else {
-        emoji.disabled = "active"
-        emoji.color = "#E27625"
         await this.addSymptoms(this.selectedDates, emoji)
       }
     },
@@ -273,19 +254,21 @@ export default {
       let emojiDaysCopy = {...this.emojiDays}
       const time = date.getTime()
       let emojiCollection = emojiDaysCopy[time] ?? []
-      emojiCollection.push(emoji)
+      emojiCollection.push(emoji.name)
       emojiDaysCopy[time] = emojiCollection
 
       this.emojiDays = emojiDaysCopy
+      await this.storeUpdated()
     },
 
     async removeSymptoms(date, emoji) {
       let emojiDaysCopy = {...this.emojiDays}
       const time = date.getTime()
-      let emojiCollection = emojiDaysCopy[time]?.filter((val) => val.name !== emoji.name) ?? []
-      emojiDaysCopy[time] = emojiCollection
+      emojiDaysCopy[time] = emojiDaysCopy[time]?.filter((val) => val !== emoji.name) ?? []
 
       this.emojiDays = emojiDaysCopy
+
+      await this.storeUpdated()
     },
 
     getSummary() {
@@ -295,10 +278,27 @@ export default {
       return moods.NONE
     },
 
-    async getMenstruationCalendarData() {
+    async getData() {
+      const menstrualCalendar = await getLastMenstrualCalendarByOwner(this.api, this.wallet.address)
+      const data = await getMenstrualCalendarById(this.api, menstrualCalendar[0])
+      this.dataMenstrualCalanedar = data
+
+      const menstrualCycleLogByOwner = await getLastMenstrualCalendarCycleLogByOwner(this.api, menstrualCalendar[menstrualCalendar.length-1])
+      const cycle = []
+
+      for (let i = 0; i < menstrualCycleLogByOwner.length; i++) {
+        const test = await getMenstrualCycleLog(this.api, menstrualCycleLogByOwner[i])
+        cycle.push(test)
+      }
+
+      cycle.sort((a, b) => parseInt(a.date.replaceAll(",", "")) - parseInt(b.date.replaceAll(",", "")))
+      this.cycleLog = cycle
+
+      await this.getMenstruationCalendarData()
+    },
+
+    async reRenderMenstrualCalendarData() {
       try {
-        const menstrualCalendar = await getLastMenstrualCalendarByOwner(this.api, this.wallet.address)
-        const data = await getMenstrualCalendarById(this.api, menstrualCalendar[0])
         const today = new Date()
         const firstDateCurrentMonth = new Date(this.selectedYear, this.selectedMonth, 1)
         const firstDateNextMonth = new Date(this.selectedYear, this.selectedMonth + 1, 0)
@@ -308,81 +308,87 @@ export default {
 
         const startDate = new Date(this.selectedYear, this.selectedMonth, -(dayFirstDateCurrentMonth - 1))
         const endDate = new Date(this.selectedYear, this.selectedMonth + 1, (6 - dayFirstDateNextMonth))
+
         const menstrualCalendarData = {
-          addressId: data.addressId,
-          averageCycle: data.averageCycle,
+          addressId: this.dataMenstrualCalanedar.addressId,
+          averageCycle: this.dataMenstrualCalanedar.averageCycle,
           cycleLog: []
         }
-
         let date = startDate
         let indexDate = 0
-        this.menstruationPeriodeIndex = []
-
-        const menstrualCycleLogByOwner = await getLastMenstrualCalendarCycleLogByOwner(this.api, menstrualCalendar[menstrualCalendar.length-1])
-        const cycle = []
-
-        for (let i = 0; i < menstrualCycleLogByOwner.length; i++) {
-          const test = await getMenstrualCycleLog(this.api, menstrualCycleLogByOwner[i])
-          cycle.push(test)
-        }
-
-        cycle.sort((a, b) => parseInt(a.date.replaceAll(",", "")) - parseInt(b.date.replaceAll(",", "")))
-        const lastMens = cycle.find(c => (new Date(Number(c.date.replaceAll(",", "")))).getMonth() === this.selectedMonth - 1)
-        let firstDayOfLastPeriod =  new Date(Number(lastMens.date.replaceAll(",", "")))
-        let lastMonthPrediction = []
-        if(lastMens) {
-          for (let i = 0; i < 16; i++) {
-            if (i < 5) lastMonthPrediction.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + Number(data.averageCycle) + i))
-            firstDayOfLastPeriod = new Date(Number(lastMens.date.replaceAll(",", "")))
-          }          
-        }
-
+        const emojiDays = {...this.emojiDays}
         
         while(date.getTime() < endDate.getTime()) {
           date = new Date(this.selectedYear, this.selectedMonth, (-(dayFirstDateCurrentMonth - 1) + indexDate))
-          const log = cycle.filter(log => Number(log.date.replaceAll(",", "")) === date.getTime())
-          const menstruation = log[0]
-          const symptoms = menstruation ? menstruation.symptoms : []
+          const symptoms = emojiDays[date.getTime()]
 
-          if (menstruation) this.menstruationPeriodeIndex.push(indexDate)
-
-          let currentData
-
-          if(lastMens) {
-            currentData = {
-              date: date.getTime(),
-              menstruation: menstruation ? 1: 0,
-              prediction: lastMonthPrediction.find(pred => pred === date.getTime()) || (indexDate >= this.menstruationPeriodeIndex[0] + Number(data.averageCycle) &&  indexDate < this.menstruationPeriodeIndex[0] + Number(data.averageCycle) + 5) ? 1 : 0,
-              fertility:  indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
-              ovulation: indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
-              symptoms: symptoms
-            }
-          } else {
-            currentData = {
-              date: date.getTime(),
-              menstruation: menstruation ? 1: 0,
-              prediction: indexDate >= this.menstruationPeriodeIndex[0] + Number(data.averageCycle) &&  indexDate < this.menstruationPeriodeIndex[0] + Number(data.averageCycle) + 5 ? 1 : 0,
-              fertility: indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
-              ovulation: indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
-              symptoms: symptoms
-            }
+          let currentData = {
+            date: date.getTime(),
+            symptoms: symptoms
           }
 
           menstrualCalendarData.cycleLog.push(currentData)
 
           if (today.getDate() === date.getDate()) {
             this.todaySum = currentData
-            this.menstruationPeriodeIndex.map((num, i) => {
-              this.todaySum.index = num
-              this.todaySum.days = i
-            })
-            
           }
           indexDate++
         }
         this.menstrualCalendarData = menstrualCalendarData
       } catch (err) {
         console.log(err.message)
+      }
+    },
+
+    async getMenstruationCalendarData() {
+      this.calendarLoading = true
+      try {
+        const today = new Date()
+        const firstDateCurrentMonth = new Date(this.selectedYear, this.selectedMonth, 1)
+        const firstDateNextMonth = new Date(this.selectedYear, this.selectedMonth + 1, 0)
+        
+        const dayFirstDateCurrentMonth = firstDateCurrentMonth.getDay() === 0 ? 6 : firstDateCurrentMonth.getDay() - 1
+        const dayFirstDateNextMonth = firstDateNextMonth.getDay() === 0 ? 6 : firstDateNextMonth.getDay() - 1
+
+        const startDate = new Date(this.selectedYear, this.selectedMonth, -(dayFirstDateCurrentMonth - 1))
+        const endDate = new Date(this.selectedYear, this.selectedMonth + 1, (6 - dayFirstDateNextMonth))
+
+        const menstrualCalendarData = {
+          addressId: this.dataMenstrualCalanedar.addressId,
+          averageCycle: this.dataMenstrualCalanedar.averageCycle,
+          cycleLog: []
+        }
+        let date = startDate
+        let indexDate = 0
+        const emojiDays = {...this.emojiDays}
+        
+        while(date.getTime() < endDate.getTime()) {
+          date = new Date(this.selectedYear, this.selectedMonth, (-(dayFirstDateCurrentMonth - 1) + indexDate))
+          const log = this.cycleLog.filter(log => Number(log.date.replaceAll(",", "")) === date.getTime())
+          const menstruation = log[0]
+          emojiDays[date.getTime()] = menstruation ? menstruation.symptoms : emojiDays[date.getTime()] ?? []
+          const symptoms = emojiDays[date.getTime()]
+
+          let currentData = {
+            date: date.getTime(),
+            symptoms: symptoms
+          }
+
+          menstrualCalendarData.cycleLog.push(currentData)
+
+          if (today.getDate() === date.getDate()) {
+            this.todaySum = currentData
+          }
+          indexDate++
+        }
+        this.menstrualCalendarData = menstrualCalendarData
+        if (this.emojiDays) {
+          this.emojiDays = emojiDays
+        }
+      } catch (err) {
+        console.log(err.message)
+      } finally {
+        this.calendarLoading = false
       }
     },
 
@@ -395,9 +401,13 @@ export default {
     },
 
     updateEmojis() {
+      if (!this.selectedDates) return
+
       const emojies = this.emojis.map((value) => {
-        const active = this.emojiSelected.some(({name}) => name === value.name)
+        const selectedEmojies = this.emojiDays[this.selectedDates.getTime()]
         
+        const active = selectedEmojies.some((name) => name === value.name)
+
         value.disabled = active ? "active" : "inactive"
         value.color = active ? "#E27625" : "#363636"
         
@@ -407,20 +417,104 @@ export default {
       this.emojis = emojies
     },
 
-    toMenstrualCalendarExpress() {
-      this.$router.push({ name: "menstrual-calendar-select-emoji" })
+    async storeUpdated() {
+      if (!this.selectedDates) return
+
+      const filter = this.cycleLog.filter((val) => {
+        const date = val.date.split(",").join("")
+        const selectedDate = this.selectedDates.getTime()
+        return Number(date) === selectedDate
+      })
+
+      const emoji = this.emojiDays[this.selectedDates.getTime()]
+
+      if (filter.length > 0) {
+        const emojiChangeUpdateCopy = {...this.emojiChangesUpdate}
+
+        emojiChangeUpdateCopy[this.selectedDates.getTime()] = {
+          id: filter[0].id,
+          menstrualCalendarId: filter[0].menstrualCalendarId,
+          date: Number(filter[0].date.split(",").join("")),
+          menstruation: filter[0].menstruation,
+          symptoms: emoji,
+          createdAt: filter[0].createdAt,
+          updatedAt: new Date().getTime()
+        }
+
+        this.emojiChangesUpdate = emojiChangeUpdateCopy
+      } else {
+        const emojiChangesAddedCopy = {...this.emojiChangesAdded}
+
+        emojiChangesAddedCopy[this.selectedDates.getTime()] = {
+          date: this.selectedDates.getTime(),
+          symptoms: emoji,
+          menstruation: false
+        }
+
+        this.emojiChangesAdded = emojiChangesAddedCopy
+      }
+    },
+
+    async submitEmojis() {
+      if (this.loadingSubmitChange) return
+
+      this.loadingSubmitChange = true
+
+      const menstrualCalendar = await getLastMenstrualCalendarByOwner(this.api, this.wallet.address)
+      let dataUpdate = []
+
+      for (const updateEmoji in this.emojiChangesUpdate) {
+        dataUpdate.push(this.emojiChangesUpdate[updateEmoji])
+      }
+
+      let dataAdded = []
+
+      for (const addedEmoji in this.emojiChangesAdded) {
+        dataAdded.push(this.emojiChangesAdded[addedEmoji])
+      }
+
+      updateMenstrualCycleLog(
+        this.api,
+        this.wallet,
+        dataUpdate,
+        async () => {
+          addMenstrualCycleLog(
+            this.api,
+            this.wallet,
+            menstrualCalendar[menstrualCalendar.length - 1],
+            dataAdded,
+            async () => {
+              this.loadingSubmitChange = false
+              this.isSuccess = true
+            }
+          )
+        }
+      )
+    },
+
+    backToDetail() {
+      this.$router.push({ name: "menstrual-calendar-detail" })
     }
   },
 
   async created() {
+    const emojies = this.emojis.map((value) => {
+      value.disabled = "inactive"
+      value.color = "#363636"
+      return value
+    })
+
+    this.emojis = emojies
     const today = new Date()
     this.selectedMonthText = this.monthList[today.getMonth()].text
     this.currentYear = today.getFullYear().toString()
+    await this.getData()
   },
 
   components: {
     MenstrualCalendarBanner,
-    Calendar
+    Calendar,
+    LoadingDialog
   }
 }
 </script>
@@ -429,6 +523,25 @@ export default {
   @import "@/common/styles/mixins.sass"
 
   .menstrual-calendar-detail
+    &__modal
+      display: flex
+      align-items: center
+      justify-content: center
+
+    &__modal-desc
+      text-align: center
+      max-width: 264px
+
+    &__modal-title
+      text-align: center
+      max-width: 264px
+      @include h3-opensans
+    
+    &__modal-buttons
+      display: flex
+      justify-content: space-between
+      gap: 20px
+
     &__wrapper
       height: 100%
     
@@ -468,7 +581,7 @@ export default {
       @include button-1
 
     &__setting
-      margin-top: 16px
+      margin-top: 0
 
     &__emoticons
       max-width: 394px
@@ -481,6 +594,12 @@ export default {
     &__emoticons-col
       display: flex
       max-width: 394px
+    
+    &__emoticons_action
+      margin: 32px 0 0 0
+      display: flex
+      justify-content: flex-end
+      gap: 30px 20px
 
     &__emoji
       width: 36px

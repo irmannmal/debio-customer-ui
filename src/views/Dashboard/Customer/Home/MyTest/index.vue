@@ -149,6 +149,7 @@
 
           LoadingDialog(
             :show="loadingDialog"
+            desc="Please wait while we're processing your payment"
           )
 
           ui-debio-error-dialog(
