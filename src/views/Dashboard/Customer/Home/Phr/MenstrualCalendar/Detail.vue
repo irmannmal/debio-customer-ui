@@ -328,16 +328,43 @@ export default {
 
         cycle.sort((a, b) => parseInt(a.date.replaceAll(",", "")) - parseInt(b.date.replaceAll(",", "")))
         const lastMens = cycle.find(c => (new Date(Number(c.date.replaceAll(",", "")))).getMonth() === this.selectedMonth - 1)
-        let firstDayOfLastPeriod =  new Date(Number(lastMens.date.replaceAll(",", "")))
+
+        let firstDayOfLastPeriod
         let lastMonthPrediction = []
+        let lastMonthFertility = []
+        let lastMonthOvulation = []
+
+        // define cycle when first day of menstruation is in the middle - end of month
+
         if(lastMens) {
-          for (let i = 0; i < 16; i++) {
-            if (i < 5) lastMonthPrediction.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + Number(data.averageCycle) + i))
-            firstDayOfLastPeriod = new Date(Number(lastMens.date.replaceAll(",", "")))
+          firstDayOfLastPeriod = new Date(Number(lastMens.date.replaceAll(",", "")))
+
+          
+          for (let pointer = 0; pointer < 17; pointer++) { // loop up to 16 as the longest date for fertility
+
+            // calculate prediction days (5 days)
+            if (pointer < 5) {
+              lastMonthPrediction.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + Number(data.averageCycle) + pointer))
+              firstDayOfLastPeriod = new Date(Number(lastMens.date.replaceAll(",", "")))
+            }
+
+            // calculate fertility days (9 dayas)
+            if (pointer > 8) {
+              lastMonthFertility.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + pointer))
+              firstDayOfLastPeriod = new Date(Number(lastMens.date.replaceAll(",", "")))
+            }
+
+            // calculate ovulation days (3 days)
+            if (pointer > 12 && pointer < 16) {
+              lastMonthOvulation.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + pointer))
+              firstDayOfLastPeriod = new Date(Number(lastMens.date.replaceAll(",", "")))
+            }
           }          
         }
 
         
+        // define cycle when first day of menstruation is in the beginning of month
+
         while(date.getTime() < endDate.getTime()) {
           date = new Date(this.selectedYear, this.selectedMonth, (-(dayFirstDateCurrentMonth - 1) + indexDate))
           const log = cycle.filter(log => Number(log.date.replaceAll(",", "")) === date.getTime())
@@ -348,13 +375,13 @@ export default {
 
           let currentData
 
-          if(lastMens) {
+          if(lastMonthPrediction.length) {
             currentData = {
               date: date.getTime(),
               menstruation: menstruation ? 1: 0,
               prediction: lastMonthPrediction.find(pred => pred === date.getTime()) || (indexDate >= this.menstruationPeriodeIndex[0] + Number(data.averageCycle) &&  indexDate < this.menstruationPeriodeIndex[0] + Number(data.averageCycle) + 5) ? 1 : 0,
-              fertility:  indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
-              ovulation: indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
+              fertility:  lastMonthFertility.find(pred => pred === date.getTime()) || indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
+              ovulation: lastMonthOvulation.find(pred => pred === date.getTime()) || indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
               symptoms: symptoms
             }
           } else {
