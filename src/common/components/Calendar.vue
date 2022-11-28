@@ -62,8 +62,13 @@ export default {
   },
 
   watch: {
-    async month(newMonth) {
-      await this.updateCalendar(this.year, newMonth)
+    month(newMonth) {
+      if (this.menstrualData) {
+        this.isMenstrualData = true
+        this.processFromData(this.year, newMonth)
+      } else {
+        this.updateCalendar(this.year, newMonth)
+      }
     },
 
     isLoading(newLoad) {

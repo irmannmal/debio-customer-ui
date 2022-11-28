@@ -210,8 +210,6 @@ export default {
     menstrualCalendarData: null,
     menstruationPeriodeIndex: [],
     todaySum: null,
-    emojiDays: {},
-    emojiSelected: [],
 
     days: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
     descriptions: ["Today", "Menstruation", "Prediction", "Fertility", "Ovulation"]
@@ -235,15 +233,6 @@ export default {
 
     selectedDates(newSelected) {
       this.submitEnabled = newSelected !== null && newSelected.length > 0
-      this.emojiSelected = this.emojiDays[newSelected?.getTime()] ?? []
-    },
-
-    emojiSelected() {
-      this.updateEmojis()
-    },
-
-    async emojiDays() {
-      await this.getMenstruationCalendarData()
     }
   },
 
@@ -266,39 +255,6 @@ export default {
         this.selectedYear++
       }
       this.selectedMonthText = this.monthList[this.selectedMonth].text
-    },
-
-    async addEmoji(emoji) {
-      if (!this.selectedDates) return
-
-      if (emoji.disabled === "active") {
-        emoji.disabled = "inactive"
-        emoji.color = "#363636"
-        await this.removeSymptoms(this.selectedDates, emoji)
-      } else {
-        emoji.disabled = "active"
-        emoji.color = "#E27625"
-        await this.addSymptoms(this.selectedDates, emoji)
-      }
-    },
-
-    async addSymptoms(date, emoji) {
-      let emojiDaysCopy = {...this.emojiDays}
-      const time = date.getTime()
-      let emojiCollection = emojiDaysCopy[time] ?? []
-      emojiCollection.push(emoji)
-      emojiDaysCopy[time] = emojiCollection
-
-      this.emojiDays = emojiDaysCopy
-    },
-
-    async removeSymptoms(date, emoji) {
-      let emojiDaysCopy = {...this.emojiDays}
-      const time = date.getTime()
-      let emojiCollection = emojiDaysCopy[time]?.filter((val) => val.name !== emoji.name) ?? []
-      emojiDaysCopy[time] = emojiCollection
-
-      this.emojiDays = emojiDaysCopy
     },
 
     getSummary() {
@@ -392,7 +348,6 @@ export default {
             }
           }
         }
-
         
         // define cycle when first day of menstruation is in the beginning of month
 
@@ -451,19 +406,6 @@ export default {
 
     toMenstrualSelectionUpdate() {
       this.$router.push({ name: "menstrual-calendar-selection-update" })
-    },
-
-    updateEmojis() {
-      const emojies = this.emojis.map((value) => {
-        const active = this.emojiSelected.some(({name}) => name === value.name)
-        
-        value.disabled = active ? "active" : "inactive"
-        value.color = active ? "#E27625" : "#363636"
-        
-        return value
-      })
-
-      this.emojis = emojies
     },
 
     toMenstrualCalendarExpress() {

@@ -230,14 +230,26 @@ export default {
   },
 
   methods: {
-    prev() {
-      this.selectedMonth--
+    async prev() {
+      let prevMonth = this.selectedMonth - 1
+      if (prevMonth < 0) {
+        prevMonth = 11
+        this.selectedYear = this.selectedYear - 1
+      } 
+      this.selectedMonth = prevMonth
       this.selectedMonthText = this.monthList[this.selectedMonth].text
+      await this.getData()
     },
 
-    next() { 
-      this.selectedMonth++
+    async next() { 
+      let nextMonth = this.selectedMonth + 1
+      if (nextMonth > 11) {
+        nextMonth = 0
+        this.selectedYear = this.selectedYear + 1
+      }
+      this.selectedMonth = nextMonth
       this.selectedMonthText = this.monthList[this.selectedMonth].text
+      await this.getData()
     },
 
     async addEmoji(emoji) {
