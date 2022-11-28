@@ -52,12 +52,11 @@ export default {
     this.selectedMonth = this.month
     this.selectedYear = this.year
 
-    if (this.isUpdate) {
-      await this.updateCalendar(this.year, this.month)
+    if (this.menstrualData) {
       this.isMenstrualData = true
+      this.processFromData(this.year, this.month)
     } else {
-      this.isMenstrualData = true
-      await this.processFromData(this.year, this.month)
+      this.updateCalendar(this.year, this.month)
     }
   },
 
@@ -227,6 +226,7 @@ export default {
         this.listDate = this.listDate.filter(d => d.getTime() !== date.getTime() )
         await this.updateCalendar(this.year, this.month)
         this.$emit("input", date)
+        return
       }
 
       if (this.listUnselectDate.length > 0) {        

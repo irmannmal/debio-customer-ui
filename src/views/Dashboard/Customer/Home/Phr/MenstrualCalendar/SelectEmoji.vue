@@ -291,6 +291,7 @@ export default {
     },
 
     async getData() {
+      this.calendarLoading = true
       const menstrualCalendar = await getLastMenstrualCalendarByOwner(this.api, this.wallet.address)
       const data = await getMenstrualCalendarById(this.api, menstrualCalendar[0])
       this.dataMenstrualCalanedar = data
@@ -307,6 +308,7 @@ export default {
       this.cycleLog = cycle
 
       await this.getMenstruationCalendarData()
+      this.calendarLoading = false
     },
 
     async reRenderMenstrualCalendarData() {
@@ -353,7 +355,6 @@ export default {
     },
 
     async getMenstruationCalendarData() {
-      this.calendarLoading = true
       try {
         const today = new Date()
         const firstDateCurrentMonth = new Date(this.selectedYear, this.selectedMonth, 1)
@@ -399,8 +400,6 @@ export default {
         }
       } catch (err) {
         console.log(err.message)
-      } finally {
-        this.calendarLoading = false
       }
     },
 
