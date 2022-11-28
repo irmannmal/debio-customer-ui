@@ -7,10 +7,12 @@
         Day(
           :dates="date" 
           @on-selected="onSelect" 
+          @on-unselected="onUnselect"
           @on-remove-select="onRemoveSelect"
           @on-day-select="onDaySelect"
           :isLoading="isLoading"
           :isMenstrualData="isMenstrualData"
+          :isUpdate="isUpdate"
         )
 </template>
 
@@ -28,7 +30,8 @@ export default {
     month: {type: Number, default: 0},
     year: {type: Number, default: new Date().getFullYear()},
     isLoading: {type: Boolean, default: false},
-    menstrualData: {type: Object, default: null}
+    menstrualData: {type: Object, default: null},
+    isUpdate:  {type: Boolean, default: false}
   },
 
   data: () => ({
@@ -39,38 +42,48 @@ export default {
     selectedDate: null,
     isMenstrualData: false,
     indexList: [],
-    listDate: []
+    listDate: [],
+    selectedMenstrualData: null,
+    listUnselectDate: [],
+    reselectDate: null
   }),
 
   async created() {
     this.selectedMonth = this.month
     this.selectedYear = this.year
 
-    if (this.menstrualData) {
+    if (this.isUpdate) {
+      await this.updateCalendar(this.year, this.month)
       this.isMenstrualData = true
-      this.processFromData(this.year, this.month)
     } else {
-      this.updateCalendar(this.year, this.month)
+      this.isMenstrualData = true
+      await this.processFromData(this.year, this.month)
     }
   },
 
   watch: {
-    month(newMonth) {
-      this.updateCalendar(this.year, newMonth)
+    async month(newMonth) {
+      await this.updateCalendar(this.year, newMonth)
     },
+
     isLoading(newLoad) {
       console.log("loading", newLoad)
     },
-    menstrualData() {
+
+    async menstrualData() {
       if (this.menstrualData) {
         this.isMenstrualData = true
-        this.processFromData(this.year, this.month)
+        await this.processFromData(this.year, this.month)
+      }
+
+      if(this.isUpdate) {
+        await this.updateCalendar(this.year, this.month)
       }
     }
   },
 
   methods: {
-    updateCalendar(year, month) {
+    async updateCalendar(year, month) {
       this.dateList.splice(0, this.dateList.length)
       const today = new Date()
       const firstDateCurrentMonth = new Date(year, month, 1)
@@ -93,17 +106,31 @@ export default {
           weekDays = []
         }
 
-        weekDays.push({
+        const selectedMenstrualData = this.menstrualData ? this.menstrualData.cycleLog[indexDate] : null
+        const data = {
           index: indexDate,
           isPast: date < today, 
           date: date,
           indexStartSelected: this.indexList[0] === indexDate,
           thisMonth: date.getMonth() === month,
+          isMenstruation: selectedMenstrualData?.date === date.getTime() && selectedMenstrualData?.menstruation === 1 ? true : false,
           isSelected: this.indexList.find(i => i === indexDate) ? true : false,
           text: date.getDate(),
           today: today.getDate() === date.getDate() && today.getMonth() === date.getMonth(),
           previousDay: today.getDate() <= date.getDate() && today.getMonth() <= date.getMonth() && today.getFullYear() <= date.getFullYear()
-        })
+        }
+
+        if(this.reselectDate === date.getTime()) {
+          data.isMenstruation = true
+          data.isSelected = false
+          this.reselectDate = null
+        }
+
+        if(this.listUnselectDate.find(d => d === date.getTime())) {
+          data.isMenstruation = false
+          data.isSelected = false
+        }
+        weekDays.push(data)
 
         indexDate++
       }
@@ -111,7 +138,7 @@ export default {
       this.dateList.push(weekDays)
     },
 
-    processFromData(year, month) {
+    async processFromData(year, month) {
       this.dateList.splice(0, this.dateList.length)
       const today = new Date()
       const firstDateCurrentMonth = new Date(year, month, 1)
@@ -128,6 +155,11 @@ export default {
       let indexDate = 0
       let indexMenstrualData = 0
       let dateList = []
+
+      if (!this.menstrualData) {
+        await this.updateCalendar(this.year, this.month)
+        return
+      }
 
       const lastIndexCycleLog = this.menstrualData.cycleLog.length - 2
       while (date.getTime() < endDate.getTime()) {
@@ -183,31 +215,41 @@ export default {
       return val.sort(function(a, b){return a - b})
     },
 
-    onSelect(date, index) {
-
+    async onSelect(date, index) {
+      this.selectedDate = date.getTime()
       if (this.indexList.find(i => i === index)) {
         this.indexList = this.functionSort(this.indexList.filter(i => i !== index))
         this.listDate = this.listDate.filter(d => d.getTime() !== date.getTime() )
-        this.updateCalendar(this.year, this.month)
-        return
+        await this.updateCalendar(this.year, this.month)
+        this.$emit("input", date)
+      }
+
+      if (this.listUnselectDate.length > 0) {        
+        this.listUnselectDate = this.listUnselectDate.filter(d => d !== this.selectedDate)
+        this.reselectDate = this.selectedDate
       }
 
       this.indexList.push(index)
       this.listDate.push(date)
- 
-      this.updateCalendar(this.year, this.month)
+      await this.updateCalendar(this.year, this.month)
       this.$emit("input", date)
     },
 
-    onRemoveSelect() {
+    async onUnselect(date) {
+      this.listUnselectDate.push(date.getTime())
+      await this.updateCalendar(this.year, this.month)
+      this.$emit("input", date)
+    },
+
+    async onRemoveSelect() {
       this.selectedDate = null
-      this.processFromData(this.year, this.month)
+      await this.processFromData(this.year, this.month)
       this.$emit("input", null)
     },
 
-    onDaySelect(selectedDate) {
+    async onDaySelect(selectedDate) {
       this.selectedDate = selectedDate
-      this.processFromData(this.year, this.month)
+      await this.processFromData(this.year, this.month)
       this.$emit("input", selectedDate)
     }
   }

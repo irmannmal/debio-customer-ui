@@ -22,6 +22,15 @@
               max-width="23px"
               max-height="23px"
             )
+
+            v-img.checked(
+              v-if="(date.isSelected)"
+              alt="checked"
+              src="@/assets/tick-circle.svg"
+              max-width="16px"
+              max-height="16px"
+            )
+
             v-img.today(
               v-if="date.today"
               alt="today"
@@ -54,8 +63,8 @@
       template(v-if="!isMenstrualData")
         div.day-card(
           v-for="date in dates" 
-          :class="{day: (date.thisMonth), none: !(date.thisMonth), selected: (date.isSelected && date.thisMonth)}" 
-          @click="daySelectionClick(date.thisMonth && date.isPast, date.date, date.index)"
+          :class="{day: (date.thisMonth), none: !(date.thisMonth), selected: (date.isSelected && date.thisMonth), menstruation: (date.isMenstruation && date.thisMonth)}" 
+          @click="daySelectionClick(date.thisMonth && date.isPast, date.date, date.index, date)"
         )
           div(
             v-if="date.thisMonth"
@@ -92,13 +101,24 @@ export default {
   data: () => ({
     selectedIndex: -1,
     countDay: 7,
-    selectedDate: []
+    selectedDate: [],
+    isUpdate: false
   }),
 
-  methods: {
-    daySelectionClick(active, date, index) {
+  mounted() {
+    if (this.$route.name === "menstrual-calendar-selection-update") {
+      this.isUpdate = true      
+    }
+  },
 
+  methods: {
+    daySelectionClick(active, date, index, data) {
       if(!active) return
+      if (data.isMenstruation) {
+        this.$emit("on-unselected", new Date(date.getFullYear(), date.getMonth(), (date.getDate())), index)
+        return
+      }
+
       this.$emit("on-selected", new Date(date.getFullYear(), date.getMonth(), (date.getDate())), index)
     },
 
@@ -114,12 +134,14 @@ export default {
     
     setClass(date) {
       return {
-        "selected-day": (date !== undefined && date.isSelected), 
+        "selected-day": (date !== undefined && date.isSelected && !this.isUpdate), 
+        selected: (date !== undefined && date.isSelected && this.isUpdate), 
         day: (date !== undefined && date.thisMonth), 
         none: !(date !== undefined && date.thisMonth), 
         menstruation: (date !== undefined && date.data.isMenstruation && date.thisMonth),
         prediction: (date !== undefined && date.data.isPrediction && date.thisMonth),
-        fertility: (date !== undefined && date.data.isFertility && date.thisMonth)}
+        fertility: (date !== undefined && date.data.isFertility && date.thisMonth)
+      }
     }
   }
 }

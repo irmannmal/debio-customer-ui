@@ -58,6 +58,7 @@
           Calendar.menstrual-calendar-detail__calendar(
             :year="selectedYear" 
             :month="selectedMonth"
+            :isLoading="submitPreview"
             v-model="selectedDates"
             :menstrualData="menstrualCalendarData"
           )
@@ -225,9 +226,11 @@ export default {
 
   watch: {
     async selectedMonthText(newMonth) {
+      this.submitPreview = true
       this.menstruationPeriodeIndex = []
       this.selectedMonth = this.monthList.find((value) => value.text === newMonth).value
       await this.getMenstruationCalendarData()
+      this.submitPreview = false
     },
 
     selectedDates(newSelected) {
@@ -246,12 +249,22 @@ export default {
 
   methods: {
     prev() {
-      this.selectedMonth--
-      this.selectedMonthText = this.monthList[this.selectedMonth].text
+      if (this.selectedMonth > 0) {
+        this.selectedMonth--
+      } else {
+        this.selectedMonth = 11
+        this.selectedYear--
+      }
+      this.selectedMonthText = this.monthList[this.selectedMonth].text        
     },
 
     next() { 
-      this.selectedMonth++
+      if (this.selectedMonth < 11) {
+        this.selectedMonth++
+      } else {
+        this.selectedMonth = 0
+        this.selectedYear++
+      }
       this.selectedMonthText = this.monthList[this.selectedMonth].text
     },
 
@@ -296,6 +309,7 @@ export default {
     },
 
     async getMenstruationCalendarData() {
+      this.submitPreview = true
       try {
         const menstrualCalendar = await getLastMenstrualCalendarByOwner(this.api, this.wallet.address)
         const data = await getMenstrualCalendarById(this.api, menstrualCalendar[0])
@@ -327,7 +341,7 @@ export default {
         }
 
         cycle.sort((a, b) => parseInt(a.date.replaceAll(",", "")) - parseInt(b.date.replaceAll(",", "")))
-        const lastMens = cycle.find(c => (new Date(Number(c.date.replaceAll(",", "")))).getMonth() === this.selectedMonth - 1)
+        const lastMens = cycle.find(c => (new Date(Number(c.date.replaceAll(",", "")))).getMonth() === this.selectedMonth === 0 ? 11 : this.selectedMonth - 1)
 
         let firstDayOfLastPeriod
         let lastMonthPrediction = []
@@ -345,8 +359,25 @@ export default {
             // calculate prediction days (5 days)
             if (pointer < 5) {
               lastMonthPrediction.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + Number(data.averageCycle) + pointer))
+
+              // calculate 2nd prediction
+              if (pointer === 0) {
+                lastMonthPrediction.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + Number(data.averageCycle) + pointer))
+              } else {
+                lastMonthPrediction.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + Number(data.averageCycle)))
+              }
+
+              // calculate 3rd prediction
+
+              if (pointer === 0) {
+                lastMonthPrediction.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + Number(data.averageCycle) + pointer))
+              } else {
+                lastMonthPrediction.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + Number(data.averageCycle)))
+              }
+
               firstDayOfLastPeriod = new Date(Number(lastMens.date.replaceAll(",", "")))
             }
+
 
             // calculate fertility days (9 dayas)
             if (pointer > 8) {
@@ -359,7 +390,7 @@ export default {
               lastMonthOvulation.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + pointer))
               firstDayOfLastPeriod = new Date(Number(lastMens.date.replaceAll(",", "")))
             }
-          }          
+          }
         }
 
         
@@ -378,7 +409,7 @@ export default {
           if(lastMonthPrediction.length) {
             currentData = {
               date: date.getTime(),
-              menstruation: menstruation ? 1: 0,
+              menstruation: log.length && menstruation.menstruation ? 1: 0,
               prediction: lastMonthPrediction.find(pred => pred === date.getTime()) || (indexDate >= this.menstruationPeriodeIndex[0] + Number(data.averageCycle) &&  indexDate < this.menstruationPeriodeIndex[0] + Number(data.averageCycle) + 5) ? 1 : 0,
               fertility:  lastMonthFertility.find(pred => pred === date.getTime()) || indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
               ovulation: lastMonthOvulation.find(pred => pred === date.getTime()) || indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
@@ -387,7 +418,7 @@ export default {
           } else {
             currentData = {
               date: date.getTime(),
-              menstruation: menstruation ? 1: 0,
+              menstruation: log.length && menstruation.menstruation ? 1: 0,
               prediction: indexDate >= this.menstruationPeriodeIndex[0] + Number(data.averageCycle) &&  indexDate < this.menstruationPeriodeIndex[0] + Number(data.averageCycle) + 5 ? 1 : 0,
               fertility: indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
               ovulation: indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
@@ -411,6 +442,7 @@ export default {
       } catch (err) {
         console.log(err.message)
       }
+      this.submitPreview = false
     },
 
     toSubscriptionSetting() {
