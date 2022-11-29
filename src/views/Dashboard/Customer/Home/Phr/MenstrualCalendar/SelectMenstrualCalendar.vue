@@ -494,6 +494,7 @@ export default {
 
       this.menstrualCalendarCycleDetail = menstrualCalendarData
       this.startDaySelectedAverage = Number(menstrualCalendarDetail.averageCycle)
+      this.daySelectedAverage = this.startDaySelectedAverage
       this.submitPreview = false
     },
 
