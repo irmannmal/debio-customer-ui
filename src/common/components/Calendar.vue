@@ -191,12 +191,11 @@ export default {
             data.isFertility = selectedMenstrualData.fertility === 1
             data.isOvulation = selectedMenstrualData.ovulation === 1
             data.symptoms = selectedMenstrualData.symptoms
-
             indexMenstrualData++
           }
         }
 
-        weekDays.push({
+        const detail = {
           index: indexDate,
           isPast: date.getTime() < today.getTime(), 
           date: date,
@@ -204,10 +203,22 @@ export default {
           text: date.getDate(),
           today: today.getDate() === date.getDate() && today.getMonth() === date.getMonth(),
           previousDay: today.getDate() <= date.getDate() && today.getMonth() <= date.getMonth() && today.getFullYear() <= date.getFullYear(),
-          isSelected: this.selectedDate !== null ? this.selectedDate.getTime() === date.getTime() : false,
+          isSelected: this.indexList.find(i => i === indexDate) ? true : false,
           data: data
-        })
-        
+        }
+
+        if(this.listUnselectDate.find(d => d === date.getTime())) {
+          detail.data.isMenstruation = false
+          detail.isSelected = false
+        }
+
+        if(this.reselectDate === date.getTime()) {
+          detail.data.isMenstruation = true
+          data.isSelected = false
+          this.reselectDate = null
+        }
+
+        weekDays.push(detail) 
         indexDate++
       }
       
@@ -229,11 +240,6 @@ export default {
         return
       }
 
-      if (this.listUnselectDate.length > 0) {        
-        this.listUnselectDate = this.listUnselectDate.filter(d => d !== this.selectedDate)
-        this.reselectDate = this.selectedDate
-      }
-
       this.indexList.push(index)
       this.listDate.push(date)
       await this.updateCalendar(this.year, this.month)
@@ -246,13 +252,27 @@ export default {
       this.$emit("input", date)
     },
 
-    async onRemoveSelect() {
+    async onRemoveSelect(date, index) {
+      if (this.indexList.find(i => i === index)) {
+        this.indexList = this.functionSort(this.indexList.filter(i => i !== index))
+        await this.updateCalendar(this.year, this.month)
+      }
+
+      if (this.listUnselectDate.length > 0) {
+        this.listUnselectDate = this.listUnselectDate.filter(d => d !== this.selectedDate.getTime())
+        this.reselectDate = this.selectedDate.getTime()
+        this.$emit("input", date)
+      }
+
       this.selectedDate = null
       await this.processFromData(this.year, this.month)
       this.$emit("input", null)
     },
 
-    async onDaySelect(selectedDate) {
+    async onDaySelect(selectedDate, index, detail) {
+      if (detail.data.isMenstruation) this.listUnselectDate.push(selectedDate.getTime())
+
+      this.indexList.push(index)
       this.selectedDate = selectedDate
       await this.processFromData(this.year, this.month)
       this.$emit("input", selectedDate)

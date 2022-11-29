@@ -10,7 +10,7 @@
         div.day-card(
           v-for="date in dates"
           :class="setClass(date)"
-          @click="selectDayClick(date.thisMonth && date.isPast, date.date, date.index)"
+          @click="selectDayClick(date.thisMonth && date.isPast, date.date, date.index, date)"
         )
           div(
             v-if="date.thisMonth"
@@ -122,12 +122,12 @@ export default {
       this.$emit("on-selected", new Date(date.getFullYear(), date.getMonth(), (date.getDate())), index)
     },
 
-    selectDayClick(active, date, index) {
+    selectDayClick(active, date, index, data) {
       if (index === this.selectedIndex) {
-        active && this.$emit("on-remove-select")
+        active && this.$emit("on-remove-select", date, index)
         this.selectedIndex = -1
       } else {
-        active && this.$emit("on-day-select", date)
+        active && this.$emit("on-day-select", date, index, data)
         this.selectedIndex = index
       }
     },
