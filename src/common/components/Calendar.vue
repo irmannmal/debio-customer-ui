@@ -213,7 +213,7 @@ export default {
           detail.isSelected = false
         }
 
-        if(this.reselectDate === date.getTime()) {
+        if(this.reselectDate === this.selectedDate === date.getTime()) {
           detail.data.isMenstruation = true
           data.isSelected = false
           this.reselectDate = null
@@ -265,15 +265,22 @@ export default {
         this.$emit("input", date)
       }
 
-      this.selectedDate = null
       await this.processFromData(this.year, this.month)
       this.$emit("input", null)
     },
 
     async onDaySelect(selectedDate, index, detail) {
       if (detail.data.isMenstruation) this.listUnselectDate.push(selectedDate.getTime())
+      if (!detail.data.isMenstruation && !this.indexList.find(i => i === index)) {
+        if (this.listUnselectDate.find(date => date === selectedDate.getTime())) {
+          this.listUnselectDate = this.listUnselectDate.filter(d => d !==  selectedDate.getTime())
+        } else {
+          this.indexList.push(index)
+        }
+      } else {
+        this.indexList = this.indexList.filter(i => i !== index)
+      }
 
-      this.indexList.push(index)
       this.selectedDate = selectedDate
       await this.processFromData(this.year, this.month)
       this.$emit("input", selectedDate)
