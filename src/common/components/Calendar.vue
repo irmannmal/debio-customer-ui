@@ -68,6 +68,7 @@ export default {
       } else {
         this.updateCalendar(this.year, newMonth)
       }
+      this.indexList = []
     },
 
     isLoading(newLoad) {

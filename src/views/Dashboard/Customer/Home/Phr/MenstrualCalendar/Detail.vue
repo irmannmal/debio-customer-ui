@@ -297,7 +297,19 @@ export default {
         }
 
         cycle.sort((a, b) => parseInt(a.date.replaceAll(",", "")) - parseInt(b.date.replaceAll(",", "")))
-        const lastMens = cycle.find(c => (new Date(Number(c.date.replaceAll(",", "")))).getMonth() === this.selectedMonth === 0 ? 11 : this.selectedMonth - 1)
+
+        let temp = []
+        for (let i = 0; i < cycle.length; i++) {
+          const date = Number(cycle[i].date.replaceAll(",", ""))
+          const day = new Date(date).getDate()
+          const yesterday = i !== 0 ? Number(cycle[i - 1].date.replaceAll(",", "")) : null
+
+          if( new Date(yesterday).getDate() !== day -1 ) {
+            temp.push(cycle[i])
+          }
+        }
+
+        const lastMens = temp[temp.length-1]
 
         let firstDayOfLastPeriod
         let lastMonthPrediction = []
@@ -308,8 +320,6 @@ export default {
 
         if(lastMens) {
           firstDayOfLastPeriod = new Date(Number(lastMens.date.replaceAll(",", "")))
-
-          
           for (let pointer = 0; pointer < 17; pointer++) { // loop up to 16 as the longest date for fertility
 
             // calculate prediction days (5 days)
@@ -335,20 +345,30 @@ export default {
             }
 
 
+            const lastPeriod =  temp.find(t => new Date(Number(t.date.replaceAll(",", ""))).getMonth() === this.selectedMonth - 1)
+
             // calculate fertility days (9 dayas)
             if (pointer > 8) {
+              if (lastPeriod) { // if calculation of last cycle fertility is on current month
+                lastMonthFertility.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + pointer))
+                firstDayOfLastPeriod = new Date(Number(lastPeriod.date.replaceAll(",", "")))
+              }
               lastMonthFertility.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + pointer))
               firstDayOfLastPeriod = new Date(Number(lastMens.date.replaceAll(",", "")))
             }
 
             // calculate ovulation days (3 days)
             if (pointer > 12 && pointer < 16) {
+              if (lastPeriod) { // if calculation of last cycle fertility is on current month
+                lastMonthFertility.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + pointer))
+                firstDayOfLastPeriod = new Date(Number(lastPeriod.date.replaceAll(",", "")))
+              }
               lastMonthOvulation.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + pointer))
               firstDayOfLastPeriod = new Date(Number(lastMens.date.replaceAll(",", "")))
             }
           }
         }
-        
+
         // define cycle when first day of menstruation is in the beginning of month
 
         while(date.getTime() < endDate.getTime()) {
@@ -356,30 +376,17 @@ export default {
           const log = cycle.filter(log => Number(log.date.replaceAll(",", "")) === date.getTime())
           const menstruation = log[0]
 
-          const symptoms = menstruation?.menstruation ? menstruation.symptoms : []
+          const symptoms = menstruation ? menstruation.symptoms : []
 
-          if (menstruation) this.menstruationPeriodeIndex.push(indexDate)
+          if (menstruation?.menstruation) this.menstruationPeriodeIndex.push(indexDate)
 
-          let currentData
-
-          if(lastMonthPrediction.length) {
-            currentData = {
-              date: date.getTime(),
-              menstruation: log.length && menstruation.menstruation ? 1: 0,
-              prediction: lastMonthPrediction.find(pred => pred === date.getTime()) || (indexDate >= this.menstruationPeriodeIndex[0] + Number(data.averageCycle) &&  indexDate < this.menstruationPeriodeIndex[0] + Number(data.averageCycle) + 5) ? 1 : 0,
-              fertility:  lastMonthFertility.find(pred => pred === date.getTime()) || indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
-              ovulation: lastMonthOvulation.find(pred => pred === date.getTime()) || indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
-              symptoms: symptoms
-            }
-          } else {
-            currentData = {
-              date: date.getTime(),
-              menstruation: log.length && menstruation.menstruation ? 1: 0,
-              prediction: indexDate >= this.menstruationPeriodeIndex[0] + Number(data.averageCycle) &&  indexDate < this.menstruationPeriodeIndex[0] + Number(data.averageCycle) + 5 ? 1 : 0,
-              fertility: indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
-              ovulation: indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
-              symptoms: symptoms
-            }
+          let currentData = {
+            date: date.getTime(),
+            menstruation: log.length && menstruation.menstruation ? 1: 0,
+            prediction: lastMonthPrediction.find(pred => pred === date.getTime()) || (indexDate >= this.menstruationPeriodeIndex[0] + Number(data.averageCycle) &&  indexDate < this.menstruationPeriodeIndex[0] + Number(data.averageCycle) + 5) ? 1 : 0,
+            fertility:  lastMonthFertility.find(pred => pred === date.getTime()) || indexDate >= this.menstruationPeriodeIndex[0] + 8 && indexDate <= this.menstruationPeriodeIndex[0] + 16 ? 1 : 0,
+            ovulation: lastMonthOvulation.find(pred => pred === date.getTime()) || indexDate >= this.menstruationPeriodeIndex[0] + 13 && indexDate <= this.menstruationPeriodeIndex[0] + 15 ? 1 : 0,
+            symptoms: symptoms
           }
 
           menstrualCalendarData.cycleLog.push(currentData)
