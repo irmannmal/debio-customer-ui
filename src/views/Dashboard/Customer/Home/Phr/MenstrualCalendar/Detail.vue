@@ -304,8 +304,12 @@ export default {
           const day = new Date(date).getDate()
           const yesterday = i !== 0 ? Number(cycle[i - 1].date.replaceAll(",", "")) : null
 
-          if( new Date(yesterday).getDate() !== day -1 ) {
-            temp.push(cycle[i])
+          if (cycle[i].menstruation) {
+            if (i === 0) {
+              temp.push(cycle[i])
+            } else if(new Date(yesterday).getDate() !== day - 1) {
+              temp.push(cycle[i])
+            }
           }
         }
 
@@ -360,7 +364,7 @@ export default {
             // calculate ovulation days (3 days)
             if (pointer > 12 && pointer < 16) {
               if (lastPeriod) { // if calculation of last cycle fertility is on current month
-                lastMonthFertility.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + pointer))
+                lastMonthOvulation.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + pointer))
                 firstDayOfLastPeriod = new Date(Number(lastPeriod.date.replaceAll(",", "")))
               }
               lastMonthOvulation.push(firstDayOfLastPeriod.setDate(firstDayOfLastPeriod.getDate() + pointer))

@@ -45,7 +45,8 @@ export default {
     listDate: [],
     selectedMenstrualData: null,
     listUnselectDate: [],
-    reselectDate: null
+    reselectDate: null,
+    allIndex: {}
   }),
 
   async created() {
@@ -62,13 +63,16 @@ export default {
 
   watch: {
     month(newMonth) {
+      if (newMonth) {
+        this.indexList = this.allIndex[newMonth] ? this.allIndex[newMonth] : []
+      }
+
       if (this.menstrualData) {
         this.isMenstrualData = true
         this.processFromData(this.year, newMonth)
       } else {
         this.updateCalendar(this.year, newMonth)
       }
-      this.indexList = []
     },
 
     isLoading(newLoad) {
@@ -88,7 +92,7 @@ export default {
   },
 
   methods: {
-    async updateCalendar(year, month) {
+    updateCalendar(year, month) {
       this.dateList.splice(0, this.dateList.length)
       const today = new Date()
       const firstDateCurrentMonth = new Date(year, month, 1)
@@ -143,7 +147,7 @@ export default {
       this.dateList.push(weekDays)
     },
 
-    async processFromData(year, month) {
+    processFromData(year, month) {
       this.dateList.splice(0, this.dateList.length)
       const today = new Date()
       const firstDateCurrentMonth = new Date(year, month, 1)
@@ -162,7 +166,7 @@ export default {
       let dateList = []
 
       if (!this.menstrualData) {
-        await this.updateCalendar(this.year, this.month)
+        this.updateCalendar(this.year, this.month)
         return
       }
 
@@ -231,32 +235,35 @@ export default {
       return val.sort(function(a, b){return a - b})
     },
 
-    async onSelect(date, index) {
+    onSelect(date, index) {
       this.selectedDate = date.getTime()
       if (this.indexList.find(i => i === index)) {
         this.indexList = this.functionSort(this.indexList.filter(i => i !== index))
         this.listDate = this.listDate.filter(d => d.getTime() !== date.getTime() )
-        await this.updateCalendar(this.year, this.month)
+        this.updateCalendar(this.year, this.month)
+        this.allIndex[this.month] = this.indexList
         this.$emit("input", date)
         return
       }
 
       this.indexList.push(index)
+      this.allIndex[this.month] = this.indexList
       this.listDate.push(date)
-      await this.updateCalendar(this.year, this.month)
+      this.updateCalendar(this.year, this.month)
       this.$emit("input", date)
     },
 
-    async onUnselect(date) {
+    onUnselect(date) {
       this.listUnselectDate.push(date.getTime())
-      await this.updateCalendar(this.year, this.month)
+      this.updateCalendar(this.year, this.month)
       this.$emit("input", date)
     },
 
-    async onRemoveSelect(date, index) {
+    onRemoveSelect(date, index) {
       if (this.indexList.find(i => i === index)) {
         this.indexList = this.functionSort(this.indexList.filter(i => i !== index))
-        await this.updateCalendar(this.year, this.month)
+        this.allIndex[this.month] = this.indexList
+        this.updateCalendar(this.year, this.month)
       }
 
       if (this.listUnselectDate.length > 0) {
@@ -265,24 +272,26 @@ export default {
         this.$emit("input", date)
       }
 
-      await this.processFromData(this.year, this.month)
+      this.processFromData(this.year, this.month)
       this.$emit("input", null)
     },
 
-    async onDaySelect(selectedDate, index, detail) {
+    onDaySelect(selectedDate, index, detail) {
       if (detail.data.isMenstruation) this.listUnselectDate.push(selectedDate.getTime())
       if (!detail.data.isMenstruation && !this.indexList.find(i => i === index)) {
         if (this.listUnselectDate.find(date => date === selectedDate.getTime())) {
           this.listUnselectDate = this.listUnselectDate.filter(d => d !==  selectedDate.getTime())
         } else {
           this.indexList.push(index)
+          this.allIndex[this.month] = this.indexList
         }
       } else {
         this.indexList = this.indexList.filter(i => i !== index)
+        this.allIndex[this.month] = this.indexList
       }
 
       this.selectedDate = selectedDate
-      await this.processFromData(this.year, this.month)
+      this.processFromData(this.year, this.month)
       this.$emit("input", selectedDate)
     }
   }

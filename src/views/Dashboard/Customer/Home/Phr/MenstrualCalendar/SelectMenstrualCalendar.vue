@@ -424,6 +424,7 @@ export default {
     }),
 
     prev() {
+      this.submitPreview = true
       if (this.selectedMonth > 0) {
         this.selectedMonth--
       } else {
@@ -431,10 +432,11 @@ export default {
         this.selectedYear--
       }
       this.selectedMonthText = this.monthList[this.selectedMonth].text
-      this.submitPreview = true
+      this.submitPreview = false
     },
 
     next() { 
+      this.submitPreview = true
       if (this.selectedMonth < 11) {
         this.selectedMonth++
       } else {
@@ -442,7 +444,7 @@ export default {
         this.selectedYear++
       }
       this.selectedMonthText = this.monthList[this.selectedMonth].text
-
+      this.submitPreview = false
     },
 
     async fetchData() {
