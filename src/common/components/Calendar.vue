@@ -277,17 +277,21 @@ export default {
     },
 
     onDaySelect(selectedDate, index, detail) {
-      if (detail.data.isMenstruation) this.listUnselectDate.push(selectedDate.getTime())
-      if (!detail.data.isMenstruation && !this.indexList.find(i => i === index)) {
-        if (this.listUnselectDate.find(date => date === selectedDate.getTime())) {
-          this.listUnselectDate = this.listUnselectDate.filter(d => d !==  selectedDate.getTime())
+      if (this.$route.name === "menstrual-calendar-selection" || this.$route.name === "menstrual-calendar-selection-update" ) { // bulk select only in selection pages
+        if (detail.data.isMenstruation) this.listUnselectDate.push(selectedDate.getTime())
+        if (!detail.data.isMenstruation && !this.indexList.find(i => i === index)) {
+          if (this.listUnselectDate.find(date => date === selectedDate.getTime())) {
+            this.listUnselectDate = this.listUnselectDate.filter(d => d !==  selectedDate.getTime())
+          } else {
+            this.indexList.push(index)
+            this.allIndex[this.month] = this.indexList
+          }
         } else {
-          this.indexList.push(index)
+          this.indexList = this.indexList.filter(i => i !== index)
           this.allIndex[this.month] = this.indexList
         }
       } else {
-        this.indexList = this.indexList.filter(i => i !== index)
-        this.allIndex[this.month] = this.indexList
+        this.indexList[0] = index
       }
 
       this.selectedDate = selectedDate
