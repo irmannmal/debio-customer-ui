@@ -214,7 +214,7 @@ export default {
 
   async created() {
     if (this.mnemonicData) this.initialDataKey()
-    await this.metamaskDispatchAction(this.getPHRHistory)
+    await this.getPHRHistory()
   },
 
   methods: {
@@ -247,7 +247,7 @@ export default {
             documents.push(documentDetail)
           }
         }
-
+        
         this.phrDocuments = documents
         this.isLoading = false
       } catch (error) {
@@ -260,10 +260,7 @@ export default {
       let files = []
 
       for (let i = 0; i < dataPHR.files?.length; i++) {
-        const file = await this.metamaskDispatchAction(queryElectronicMedicalRecordFileById,
-          this.api,
-          dataPHR.files[i]
-        )
+        const file = await queryElectronicMedicalRecordFileById(this.api, dataPHR.files[i])
 
         dataPHR.createdAt = new Date(+file.uploadedAt.replaceAll(",", "")).toLocaleDateString("id", {
           day: "2-digit",
