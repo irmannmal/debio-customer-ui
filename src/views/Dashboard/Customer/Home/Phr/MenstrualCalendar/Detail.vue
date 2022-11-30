@@ -292,8 +292,8 @@ export default {
         const cycle = []
 
         for (let i = 0; i < menstrualCycleLogByOwner.length; i++) {
-          const test = await getMenstrualCycleLog(this.api, menstrualCycleLogByOwner[i])
-          cycle.push(test)
+          const cycleLogData = await getMenstrualCycleLog(this.api, menstrualCycleLogByOwner[i])
+          cycle.push(cycleLogData)
         }
 
         cycle.sort((a, b) => parseInt(a.date.replaceAll(",", "")) - parseInt(b.date.replaceAll(",", "")))

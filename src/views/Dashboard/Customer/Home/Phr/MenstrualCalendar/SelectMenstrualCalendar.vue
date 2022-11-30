@@ -585,13 +585,14 @@ export default {
 
       if (newDate.length) {
         const menstrualCalendarInfo = []
-        this.dateSelected.forEach(d => {
-          menstrualCalendarInfo.push({
-            date: d.getTime(),
-            symptoms: [],
-            menstruation: true
-          })}
-        )
+        this.dateSelected.forEach(detail => {
+          if(newDate.find(date => date === detail.getTime())) {
+            menstrualCalendarInfo.push({
+              date: detail.getTime(),
+              symptoms: [],
+              menstruation: true
+            })}
+        })
 
         await addMenstrualCycleLog(
           this.api,
