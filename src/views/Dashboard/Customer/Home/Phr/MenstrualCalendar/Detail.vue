@@ -27,8 +27,16 @@
       .menstrual-calendar-detail__details
         ui-debio-card(width="740")
           .menstrual-calendar-detail__head-text
-            span.menstrual-calendar-detail__head-text-primary My Menstrual Calendar
-            span.menstrual-calendar-detail__head-text-secondary Choose date to perform action
+            .menstrual-calendar-detail__head-text-column
+              span.menstrual-calendar-detail__head-text-primary My Menstrual Calendar
+              span.menstrual-calendar-detail__head-text-secondary Choose date to perform action
+            .menstrual-calendar-detail__head-info-column
+              a.menstrual-calendar-detail__head-text-link
+                span View statistics
+                v-icon(small color="rgba(86, 64, 165, 1)") mdi-open-in-new
+              span.menstrual-calendar-detail__head-text-reminder
+                v-icon(small color="rgba(255, 143, 143, 1)") mdi-clock-outline 
+                span Your subscription will end in {{ reminder }}
           
           v-divider.menstrual-calendar-detail__divider
 
@@ -176,7 +184,7 @@ import MenstrualCalendarBanner from "./Banner.vue"
 import Calendar from "@/common/components/Calendar"
 import { mapState } from "vuex"
 import { getLastMenstrualCalendarByOwner, getMenstrualCalendarById, getLastMenstrualCalendarCycleLogByOwner, getMenstrualCycleLog } from "@/common/lib/polkadot-provider/query/menstrual-calendar"
-
+import { getActiveSubscriptionByOwner, getMenstrualSubscriptionById } from "@/common/lib/polkadot-provider/query/menstrual-subscription"
 
 export default {
   name: "MenstrualCalendarDetail",
@@ -212,7 +220,13 @@ export default {
     todaySum: null,
 
     days: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
-    descriptions: ["Today", "Menstruation", "Prediction", "Fertility", "Ovulation"]
+    descriptions: ["Today", "Menstruation", "Prediction", "Fertility", "Ovulation"],
+    durationSubscription: {
+      "Monthly": 30 * 24 * 60 * 60 * 1000,
+      "Quarterly": 3 * 30 * 24 * 60 * 60 * 1000,
+      "Yearly": 12 * 30 * 24 * 60 * 60 * 1000
+    },
+    reminder: ""
   }),
 
   computed: {
@@ -422,6 +436,35 @@ export default {
 
     toMenstrualCalendarExpress() {
       this.$router.push({ name: "menstrual-calendar-select-emoji" })
+    },
+
+    async getActiveSubscription() {
+      const activeSubs = await getActiveSubscriptionByOwner(this.api, this.wallet.address)
+      const subscriptionDetail = await getMenstrualSubscriptionById(this.api, activeSubs)
+
+      // get current date
+      let currentDate = new Date().getTime()
+      
+      // date subscription
+      const date = subscriptionDetail.updatedAt === "0" ? Number(subscriptionDetail.createdAt.split(",").join("")) : Number(subscriptionDetail.updatedAt.split(",").join(""))
+      const endDateSubscription = date + this.durationSubscription[subscriptionDetail.duration]
+
+      const reminder = Math.ceil((endDateSubscription - currentDate) / (24 * 60 * 60 * 1000))
+      if (reminder < 30) {
+        this.reminder = reminder === 1 ? `${reminder} Day` : `${reminder} Days`
+      } else if (reminder < 365) {
+        const month = Math.floor(reminder / 30)
+        const days = reminder % 30
+        if (days > 0) {
+          this.reminder = `${month} ${month === 1 ? "Month" : "Months"} ${days} ${days === 1 ? "Day" : "Days"}`
+        } else {
+          this.reminder = `${month} ${month === 1 ? "Month" : "Months"}`
+        }
+      } else {
+        const year = Math.floor(reminder / 365)
+        
+        this.reminder = `${year} ${year === 1 ? "Year" : "Years"}`
+      }
     }
   },
 
@@ -429,6 +472,8 @@ export default {
     const today = new Date()
     this.selectedMonthText = this.monthList[today.getMonth()].text
     this.currentYear = today.getFullYear().toString()
+
+    this.getActiveSubscription()
   },
 
   components: {
@@ -541,9 +586,19 @@ export default {
 
     &__head-text
       display: flex
+      flex-direction: row
+      justify-content: space-between
+
+    &__head-text-column
+      display: flex
       flex-direction: column
       gap: 8px
 
+    &__head-info-column
+      display: flex
+      flex-direction: column
+      align-items: flex-end
+      justify-content: space-between
     
     &__head-text-primary
       height: 32px
@@ -556,6 +611,26 @@ export default {
       display: flex
       align-items: center
       @include body-text-2
+
+    &__head-text-link
+      height: 32px
+      display: flex
+      font-size: 14px
+      align-items: center
+      color: #5640A5
+      font-weight: 600
+      line-height: 20px
+      gap: 3px
+
+    &__head-text-reminder
+      height: 20px
+      font-size: 12px
+      display: flex
+      align-items: center
+      background: #FFE6E6
+      padding: 0 4px
+      color: #FF8F8F
+      gap: 3px
 
     &__divider
       margin: 24px 0
