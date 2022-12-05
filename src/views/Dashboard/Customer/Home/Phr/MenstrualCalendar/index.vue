@@ -199,7 +199,8 @@ export default {
     ],
     currency: "",
     loading: false,
-    error: null
+    error: null,
+    lowBalance: false
   }),
 
   computed: {
@@ -285,8 +286,9 @@ export default {
 
     async toSusbsribe() {
       this.loading = true
-
-      if (this.walletBalance < this.subscription.price) {
+      
+      const price = Number(String(this.subscription.price).split(",").join(""))
+      if (this.walletBalance < price) {
         this.error = {
           title: "Insufficient Balance",
           message: "Your transaction cannot succeed due to insufficient balance, check your account balance"
@@ -336,7 +338,6 @@ export default {
     },
 
     toPaymentPreview() {
-      
       this.paymentPreview = true
       this.breadcrumbs[0].disabled = true
       this.breadcrumbs[1].disabled = false
